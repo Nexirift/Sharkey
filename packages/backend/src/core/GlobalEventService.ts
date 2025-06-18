@@ -276,6 +276,7 @@ export interface InternalEventTypes {
 	userListMemberBulkUpdated: { userListIds: MiUserList['id'][]; memberId: MiUser['id']; };
 	userListMemberBulkRemoved: { userListIds: MiUserList['id'][]; memberId: MiUser['id']; };
 	quantumCacheUpdated: { name: string, keys: string[] };
+	quantumCacheReset: { name: string };
 }
 
 type EventTypesToEventPayload<T> = EventUnionFromDictionary<UndefinedAsNullAll<SerializedAll<T>>>;

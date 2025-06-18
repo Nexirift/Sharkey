@@ -778,6 +778,43 @@ describe(QuantumKVCache, () => {
 		});
 	});
 
+	describe('refresh', () => {
+		it('should erase all items', async () => {
+			const cache = makeCache<string>();
+			await cache.set('foo', 'bar');
+			await cache.set('alpha', 'omega');
+
+			await cache.reset();
+
+			expect(cache.size).toBe(0);
+		});
+
+		it('should call onReset', async () => {
+			const fakeOnReset = jest.fn(() => Promise.resolve());
+			const cache = makeCache<string>({
+				onReset: fakeOnReset,
+			});
+			await cache.set('foo', 'bar');
+			await cache.set('alpha', 'omega');
+
+			await cache.reset();
+
+			expect(fakeOnReset).toHaveBeenCalled();
+		});
+
+		it('should emit event', async () => {
+			const cache = makeCache<string>({
+				name: 'fake',
+			});
+			await cache.set('foo', 'bar');
+			await cache.set('alpha', 'omega');
+
+			await cache.reset();
+
+			expect(fakeInternalEventService._calls).toContainEqual(['emit', ['quantumCacheReset', { name: 'fake' }]]);
+		});
+	});
+
 	describe('add', () => {
 		it('should add the item', () => {
 			const cache = makeCache();

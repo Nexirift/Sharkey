@@ -41,6 +41,13 @@ export interface QuantumKVOpts<T> {
 	 */
 	onChanged?: (keys: string[], cache: QuantumKVCache<T>) => void | Promise<void>;
 
+	/**
+	 * Optional callback when all values are removed from the cache, either locally or elsewhere in the cluster.
+	 * This is called *after* the cache state is updated.
+	 * Implementations may be synchronous or async.
+	 */
+	onReset?: (cache: QuantumKVCache<T>) => void | Promise<void>;
+
 	// TODO equality comparer
 }
 
@@ -65,6 +72,7 @@ export class QuantumKVCache<T> implements Iterable<readonly [key: string, value:
 	public readonly fetcher: QuantumKVOpts<T>['fetcher'];
 	public readonly bulkFetcher: QuantumKVOpts<T>['bulkFetcher'];
 	public readonly onChanged: QuantumKVOpts<T>['onChanged'];
+	public readonly onReset: QuantumKVOpts<T>['onReset'];
 
 	/**
 	 * @param name Unique name of the cache - must be the same in all processes.
@@ -83,9 +91,14 @@ export class QuantumKVCache<T> implements Iterable<readonly [key: string, value:
 		this.fetcher = opts.fetcher;
 		this.bulkFetcher = opts.bulkFetcher;
 		this.onChanged = opts.onChanged;
+		this.onReset = opts.onReset;
 
 		this.internalEventService = services.internalEventService;
 		this.internalEventService.on('quantumCacheUpdated', this.onQuantumCacheUpdated, {
+			// Ignore our own events, otherwise we'll immediately erase any set value.
+			ignoreLocal: true,
+		});
+		this.internalEventService.on('quantumCacheReset', this.onQuantumCacheReset, {
 			// Ignore our own events, otherwise we'll immediately erase any set value.
 			ignoreLocal: true,
 		});
@@ -376,8 +389,22 @@ export class QuantumKVCache<T> implements Iterable<readonly [key: string, value:
 	 * Does not send any events or update other processes.
 	 */
 	@bindThis
-	public clear() {
+	public clear(): void {
 		this.memoryCache.clear();
+	}
+
+	/**
+	 * Erases all entries from the cache.
+	 * Fires an onReset event and updates other processes.
+	 */
+	public async reset(): Promise<void> {
+		this.clear();
+
+		await this.internalEventService.emit('quantumCacheReset', { name: this.name });
+
+		if (this.onReset) {
+			await this.onReset(this);
+		}
 	}
 
 	/**
@@ -396,6 +423,7 @@ export class QuantumKVCache<T> implements Iterable<readonly [key: string, value:
 	@bindThis
 	public dispose() {
 		this.internalEventService.off('quantumCacheUpdated', this.onQuantumCacheUpdated);
+		this.internalEventService.off('quantumCacheReset', this.onQuantumCacheReset);
 
 		this.memoryCache.dispose();
 	}
@@ -458,6 +486,17 @@ export class QuantumKVCache<T> implements Iterable<readonly [key: string, value:
 			}
 
 			throw new FetchFailedError(this.name, key, renderInlineError(err), { cause: err });
+		}
+	}
+
+	@bindThis
+	private async onQuantumCacheReset(data: InternalEventTypes['quantumCacheReset']): Promise<void> {
+		if (data.name === this.name) {
+			this.clear();
+
+			if (this.onReset) {
+				await this.onReset(this);
+			}
 		}
 	}
 
