@@ -207,7 +207,7 @@ export class DriveService {
 
 			//#region Uploads
 			this.registerLogger.debug(`uploading original: ${key}`);
-			const uploads = [
+			const uploads: Promise<void>[] = [
 				this.upload(key, fs.createReadStream(path), type, null, name),
 			];
 
