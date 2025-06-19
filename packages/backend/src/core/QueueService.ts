@@ -19,6 +19,7 @@ import { ApRequestCreator } from '@/core/activitypub/ApRequestService.js';
 import { TimeService } from '@/global/TimeService.js';
 import type { SystemWebhookPayload } from '@/core/SystemWebhookService.js';
 import type { MiNote } from '@/models/Note.js';
+import type { MinimalNote } from '@/misc/is-renote.js';
 import { type UserWebhookPayload } from './UserWebhookService.js';
 import type {
 	BackgroundTaskJobData,
@@ -44,7 +45,6 @@ import type {
 } from './QueueModule.js';
 import type httpSignature from '@peertube/http-signature';
 import type * as Bull from 'bullmq';
-import type { MiUser } from '@/models/User.js';
 
 export const QUEUE_TYPES = [
 	'system',
@@ -846,147 +846,93 @@ export class QueueService implements OnModuleInit {
 
 	@bindThis
 	public async createUpdateUserJob(userId: string) {
-		return await this.createBackgroundTask(
-			'update-user',
-			{
-				type: 'update-user',
-				userId,
-			},
-			{
-				id: `update-user:${userId}`,
-			},
-		);
+		return await this.createBackgroundTask({ type: 'update-user', userId }, userId);
 	}
 
 	@bindThis
 	public async createUpdateFeaturedJob(userId: string) {
-		return await this.createBackgroundTask(
-			'update-featured',
-			{
-				type: 'update-featured',
-				userId,
-			},
-			{
-				id: `update-featured:${userId}`,
-			},
-		);
+		return await this.createBackgroundTask({ type: 'update-featured', userId }, userId);
 	}
 
 	@bindThis
 	public async createUpdateInstanceJob(host: string) {
-		return await this.createBackgroundTask(
-			'update-instance',
-			{
-				type: 'update-instance',
-				host,
-			},
-			{
-				id: `update-instance:${host}`,
-			},
-		);
+		return await this.createBackgroundTask({ type: 'update-instance', host }, host);
 	}
 
 	@bindThis
 	public async createPostDeliverJob(host: string, result: 'success' | 'temp-fail' | 'perm-fail') {
-		return await this.createBackgroundTask(
-			'post-deliver',
-			{
-				type: 'post-deliver',
-				host,
-				result,
-			},
-		);
+		return await this.createBackgroundTask({ type: 'post-deliver', host, result });
 	}
 
 	@bindThis
 	public async createPostInboxJob(host: string) {
-		return await this.createBackgroundTask(
-			'post-inbox',
-			{
-				type: 'post-inbox',
-				host,
-			},
-		);
+		return await this.createBackgroundTask({ type: 'post-inbox', host });
 	}
 
 	@bindThis
 	public async createPostNoteJob(noteId: string, silent: boolean, type: 'create' | 'edit') {
-		return await this.createBackgroundTask(
-			'post-note',
-			{
-				type: 'post-note',
-				noteId,
-				silent,
-				edit: type === 'edit',
-			},
-			{
-				id: `post-note:${noteId}:${type}`,
-			},
-		);
+		const edit = type === 'edit';
+		const duplication = `${noteId}:${type}`;
+
+		return await this.createBackgroundTask({ type: 'post-note', noteId, silent, edit }, duplication);
 	}
 
 	@bindThis
 	public async createCheckHibernationJob(userId: string) {
 		return await this.createBackgroundTask(
-			'check-hibernation',
-			{
-				type: 'check-hibernation',
-				userId,
-			},
-			{
-				id: `check-hibernation:${userId}`,
-				ttl: 1000 * 60 * 60 * 24, // This is a very heavy task, so only run once per day per user
-			},
+			{ type: 'check-hibernation', userId },
+
+			// This is a very heavy task, so only run once per day per user
+			{ id: `check-hibernation:${userId}`, ttl: 1000 * 60 * 60 * 24 },
 		);
 	}
 
 	@bindThis
 	public async createUpdateUserTagsJob(userId: string) {
-		return await this.createBackgroundTask(
-			'update-user-tags',
-			{
-				type: 'update-user-tags',
-				userId,
-			},
-			{
-				id: `update-user-tags:${userId}`,
-			},
-		);
+		return await this.createBackgroundTask({ type: 'update-user-tags', userId }, userId);
 	}
 
 	@bindThis
 	public async createUpdateNoteTagsJob(noteId: string) {
-		return await this.createBackgroundTask(
-			'update-note-tags',
-			{
-				type: 'update-note-tags',
-				noteId,
-			},
-			{
-				id: `update-note-tags:${noteId}`,
-			},
-		);
+		return await this.createBackgroundTask({ type: 'update-note-tags', noteId }, noteId);
 	}
 
 	@bindThis
 	public async createDeleteFileJob(fileId: string, isExpired?: boolean, deleterId?: string) {
-		return await this.createBackgroundTask(
-			'delete-file',
-			{
-				type: 'delete-file',
-				fileId,
-				isExpired,
-				deleterId,
-			},
-			{
-				id: `delete-file:${fileId}`,
-			},
-		);
+		return await this.createBackgroundTask({ type: 'delete-file', fileId, isExpired, deleterId }, fileId);
 	}
 
-	private async createBackgroundTask(name: string, data: BackgroundTaskJobData, duplication?: { id: string, ttl?: number }) {
+	@bindThis
+	public async createUpdateLatestNoteJob(note: MinimalNote) {
+		// Compact the note to avoid storing the entire thing in Redis, when all we need is minimal data for categorization
+		const packedNote: MinimalNote = {
+			id: note.id,
+			visibility: note.visibility,
+			userId: note.userId,
+			replyId: note.replyId,
+			renoteId: note.renoteId,
+			hasPoll: note.hasPoll,
+			text: note.text ? '1' : null,
+			cw: note.text ? '1' : null,
+			fileIds: note.fileIds.length > 0 ? ['1'] : [],
+		};
+
+		return await this.createBackgroundTask({ type: 'update-latest-note', note: packedNote }, note.id);
+	}
+
+	@bindThis
+	public async createPostSuspendJob(userId: string) {
+		return await this.createBackgroundTask({ type: 'post-suspend', userId }, userId);
+	}
+
+	@bindThis
+	public async createPostUnsuspendJob(userId: string) {
+		return await this.createBackgroundTask({ type: 'post-unsuspend', userId }, userId);
+	}
+
+	private async createBackgroundTask<T extends BackgroundTaskJobData>(data: T, duplication?: string | { id: string, ttl?: number }) {
 		return await this.backgroundTaskQueue.add(
-			name,
+			data.type,
 			data,
 			{
 				removeOnComplete: {
@@ -1006,7 +952,9 @@ export class QueueService implements OnModuleInit {
 				},
 
 				// https://docs.bullmq.io/guide/jobs/deduplication
-				deduplication: duplication,
+				deduplication: typeof(duplication) === 'string'
+					? { id: `${data.type}:${duplication}` }
+					: duplication,
 			},
 		);
 	};

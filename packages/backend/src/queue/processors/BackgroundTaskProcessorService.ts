@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import * as Bull from 'bullmq';
-import { BackgroundTaskJobData, CheckHibernationBackgroundTask, PostDeliverBackgroundTask, PostInboxBackgroundTask, PostNoteBackgroundTask, UpdateFeaturedBackgroundTask, UpdateInstanceBackgroundTask, UpdateUserTagsBackgroundTask, UpdateUserBackgroundTask, UpdateNoteTagsBackgroundTask, DeleteFileBackgroundTask } from '@/queue/types.js';
+import { BackgroundTaskJobData, CheckHibernationBackgroundTask, PostDeliverBackgroundTask, PostInboxBackgroundTask, PostNoteBackgroundTask, UpdateFeaturedBackgroundTask, UpdateInstanceBackgroundTask, UpdateUserTagsBackgroundTask, UpdateUserBackgroundTask, UpdateNoteTagsBackgroundTask, DeleteFileBackgroundTask, UpdateLatestNoteBackgroundTask, PostSuspendBackgroundTask, PostUnsuspendBackgroundTask } from '@/queue/types.js';
 import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { QueueLoggerService } from '@/queue/QueueLoggerService.js';
 import Logger from '@/logger.js';
@@ -19,11 +19,14 @@ import ApRequestChart from '@/core/chart/charts/ap-request.js';
 import FederationChart from '@/core/chart/charts/federation.js';
 import { UpdateInstanceQueue } from '@/core/UpdateInstanceQueue.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
-import type { DriveFilesRepository, NotesRepository } from '@/models/_.js';
+import type { DriveFilesRepository, NoteEditsRepository, NotesRepository } from '@/models/_.js';
 import { MiUser } from '@/models/_.js';
 import { NoteEditService } from '@/core/NoteEditService.js';
 import { HashtagService } from '@/core/HashtagService.js';
 import { DriveService } from '@/core/DriveService.js';
+import { LatestNoteService } from '@/core/LatestNoteService.js';
+import { trackTask } from '@/misc/promise-tracker.js';
+import { UserSuspendService } from '@/core/UserSuspendService.js';
 
 @Injectable()
 export class BackgroundTaskProcessorService {
@@ -39,6 +42,9 @@ export class BackgroundTaskProcessorService {
 		@Inject(DI.driveFilesRepository)
 		private readonly driveFilesRepository: DriveFilesRepository,
 
+		@Inject(DI.noteEditsRepository)
+		private readonly noteEditsRepository: NoteEditsRepository,
+
 		private readonly apPersonService: ApPersonService,
 		private readonly cacheService: CacheService,
 		private readonly federatedInstanceService: FederatedInstanceService,
@@ -51,6 +57,8 @@ export class BackgroundTaskProcessorService {
 		private readonly noteEditService: NoteEditService,
 		private readonly hashtagService: HashtagService,
 		private readonly driveService: DriveService,
+		private readonly latestNoteService: LatestNoteService,
+		private readonly userSuspendService: UserSuspendService,
 
 		queueLoggerService: QueueLoggerService,
 	) {
@@ -76,9 +84,15 @@ export class BackgroundTaskProcessorService {
 			return await this.processPostNote(job.data);
 		} else if (job.data.type === 'check-hibernation') {
 			return await this.processCheckHibernation(job.data);
-			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 		} else if (job.data.type === 'delete-file') {
 			return await this.processDeleteFile(job.data);
+		} else if (job.data.type === 'update-latest-note') {
+			return await this.processUpdateLatestNote(job.data);
+		} else if (job.data.type === 'post-suspend') {
+			return await this.processPostSuspend(job.data);
+			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+		} else if (job.data.type === 'post-unsuspend') {
+			return await this.processPostUnsuspend(job.data);
 		} else {
 			this.logger.warn(`Can't process unknown job type "${job.data}"; this is likely a bug. Full job data:`, job.data);
 			throw new Error(`Unknown job type ${job.data}, see system logs for details`);
@@ -201,12 +215,13 @@ export class BackgroundTaskProcessorService {
 		const instance = await this.federatedInstanceService.fetchOrRegister(task.host);
 		if (instance.isBlocked) return `Skipping post-inbox task: instance ${task.host} is blocked`;
 
+		// TODO move chart stuff out of background?
 		// Update charts
 		if (this.meta.enableChartsForFederatedInstances) {
-			await this.instanceChart.requestReceived(task.host);
+			this.instanceChart.requestReceived(task.host);
 		}
-		await this.apRequestChart.inbox();
-		await this.federationChart.inbox(task.host);
+		this.apRequestChart.inbox();
+		this.federationChart.inbox(task.host);
 
 		// Update instance metadata (deferred)
 		await this.fetchInstanceMetadataService.fetchInstanceMetadataLazy(instance);
@@ -229,9 +244,9 @@ export class BackgroundTaskProcessorService {
 		const mentionedUsers = await this.cacheService.getUsers(note.mentions);
 
 		if (task.edit) {
-			await this.noteEditService.postNoteEdited(note, user, note, task.silent, note.tags, Array.from(mentionedUsers.values()));
+			await this.noteEditService.postNoteEdited(note, user, note, task.silent, Array.from(mentionedUsers.values()));
 		} else {
-			await this.noteCreateService.postNoteCreated(note, user, note, task.silent, note.tags, Array.from(mentionedUsers.values()));
+			await this.noteCreateService.postNoteCreated(note, user, note, task.silent, Array.from(mentionedUsers.values()));
 		}
 
 		return 'ok';
@@ -258,6 +273,52 @@ export class BackgroundTaskProcessorService {
 		}
 
 		await this.driveService.deleteFileSync(file, task.isExpired, deleter);
+		return 'ok';
+	}
+
+	private async processUpdateLatestNote(task: UpdateLatestNoteBackgroundTask): Promise<string> {
+		const note = await this.notesRepository.findOneBy({ id: task.note.id });
+
+		if (note) {
+			const lastEdit = await this.noteEditsRepository.findOne({
+				where: { noteId: task.note.id },
+				order: { id: 'desc' },
+			});
+
+			if (lastEdit) {
+				// Update
+				await this.latestNoteService.handleUpdatedNote(lastEdit, note);
+			} else {
+				// Create
+				await this.latestNoteService.handleDeletedNote(note);
+			}
+		} else {
+			// Delete
+			await this.latestNoteService.handleDeletedNote(task.note);
+		}
+
+		return 'ok';
+	}
+
+	private async processPostSuspend(task: PostSuspendBackgroundTask): Promise<string> {
+		const user = await this.cacheService.findOptionalUserById(task.userId);
+		if (!user || user.isDeleted) return `Skipping post-suspend task: user ${task.userId} has been deleted`;
+
+		await trackTask(async () => {
+			await this.userSuspendService.postSuspend(user);
+		});
+
+		return 'ok';
+	}
+
+	private async processPostUnsuspend(task: PostUnsuspendBackgroundTask): Promise<string> {
+		const user = await this.cacheService.findOptionalUserById(task.userId);
+		if (!user || user.isDeleted) return `Skipping post-unsuspend task: user ${task.userId} has been deleted`;
+
+		await trackTask(async () => {
+			await this.userSuspendService.postUnsuspend(user);
+		});
+
 		return 'ok';
 	}
 }

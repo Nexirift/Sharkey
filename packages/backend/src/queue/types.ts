@@ -12,6 +12,7 @@ import type { MiWebhook, WebhookEventTypes } from '@/models/Webhook.js';
 import type { IActivity } from '@/core/activitypub/type.js';
 import type { SystemWebhookPayload } from '@/core/SystemWebhookService.js';
 import type { UserWebhookPayload } from '@/core/UserWebhookService.js';
+import type { MinimalNote } from '@/misc/is-renote.js';
 import type httpSignature from '@peertube/http-signature';
 
 export type DeliverJobData = {
@@ -179,7 +180,10 @@ export type BackgroundTaskJobData =
 	PostInboxBackgroundTask |
 	PostNoteBackgroundTask |
 	CheckHibernationBackgroundTask |
-	DeleteFileBackgroundTask;
+	DeleteFileBackgroundTask |
+	UpdateLatestNoteBackgroundTask |
+	PostSuspendBackgroundTask |
+	PostUnsuspendBackgroundTask;
 
 export type UpdateUserBackgroundTask = {
 	type: 'update-user';
@@ -234,4 +238,19 @@ export type DeleteFileBackgroundTask = {
 	fileId: string;
 	isExpired?: boolean;
 	deleterId?: string;
+};
+
+export type UpdateLatestNoteBackgroundTask = {
+	type: 'update-latest-note';
+	note: MinimalNote;
+};
+
+export type PostSuspendBackgroundTask = {
+	type: 'post-suspend';
+	userId: string;
+};
+
+export type PostUnsuspendBackgroundTask = {
+	type: 'post-unsuspend';
+	userId: string;
 };

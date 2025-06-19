@@ -14,7 +14,7 @@ import { extractCustomEmojisFromMfm } from '@/misc/extract-custom-emojis-from-mf
 import { extractHashtags } from '@/misc/extract-hashtags.js';
 import type { IMentionedRemoteUsers } from '@/models/Note.js';
 import { MiNote } from '@/models/Note.js';
-import type { NoteEditRepository, ChannelFollowingsRepository, ChannelsRepository, FollowingsRepository, InstancesRepository, MiFollowing, MiMeta, MutingsRepository, NotesRepository, NoteThreadMutingsRepository, UserListMembershipsRepository, UserProfilesRepository, UsersRepository, PollsRepository } from '@/models/_.js';
+import type { NoteEditsRepository, ChannelFollowingsRepository, ChannelsRepository, FollowingsRepository, InstancesRepository, MiFollowing, MiMeta, MutingsRepository, NotesRepository, NoteThreadMutingsRepository, UserListMembershipsRepository, UserProfilesRepository, UsersRepository, PollsRepository } from '@/models/_.js';
 import type { MiDriveFile } from '@/models/DriveFile.js';
 import type { MiApp } from '@/models/App.js';
 import { concat } from '@/misc/prelude/array.js';
@@ -195,8 +195,8 @@ export class NoteEditService implements OnApplicationShutdown {
 		@Inject(DI.channelFollowingsRepository)
 		private channelFollowingsRepository: ChannelFollowingsRepository,
 
-		@Inject(DI.noteEditRepository)
-		private noteEditRepository: NoteEditRepository,
+		@Inject(DI.noteEditsRepository)
+		private noteEditsRepository: NoteEditsRepository,
 
 		@Inject(DI.pollsRepository)
 		private pollsRepository: PollsRepository,
@@ -234,29 +234,29 @@ export class NoteEditService implements OnApplicationShutdown {
 			throw new UnrecoverableError('edit failed: missing editid');
 		}
 
-		const oldnote = await this.notesRepository.findOneBy({
+		const oldNote = await this.notesRepository.findOneBy({
 			id: editid,
 		});
 
-		if (oldnote == null) {
+		if (oldNote == null) {
 			throw new UnrecoverableError(`edit failed for ${editid}: missing oldnote`);
 		}
 
-		if (oldnote.userId !== user.id) {
+		if (oldNote.userId !== user.id) {
 			throw new UnrecoverableError(`edit failed for ${editid}: user is not the note author`);
 		}
 
 		// we never want to change the replyId, so fetch the original "parent"
-		if (oldnote.replyId) {
-			data.reply = await this.notesRepository.findOneBy({ id: oldnote.replyId });
+		if (oldNote.replyId) {
+			data.reply = await this.notesRepository.findOneBy({ id: oldNote.replyId });
 		} else {
 			data.reply = undefined;
 		}
 
 		// changing visibility on an edit is ill-defined, let's try to
 		// keep the same visibility as the original note
-		data.visibility = oldnote.visibility;
-		data.localOnly = oldnote.localOnly;
+		data.visibility = oldNote.visibility;
+		data.localOnly = oldNote.localOnly;
 
 		// チャンネル外にリプライしたら対象のスコープに合わせる
 		// (クライアントサイドでやっても良い処理だと思うけどとりあえずサーバーサイドで)
@@ -463,46 +463,55 @@ export class NoteEditService implements OnApplicationShutdown {
 		}
 
 		const update: Partial<MiNote> = {};
-		if (data.text !== undefined && data.text !== oldnote.text) {
+		if (data.text !== undefined && data.text !== oldNote.text) {
 			update.text = data.text;
 		}
-		if (data.cw !== undefined && data.cw !== oldnote.cw) {
+		if (data.cw !== undefined && data.cw !== oldNote.cw) {
 			update.cw = data.cw;
 		}
-		if (data.poll !== undefined && oldnote.hasPoll !== !!data.poll) {
+		if (data.poll !== undefined && oldNote.hasPoll !== !!data.poll) {
 			update.hasPoll = !!data.poll;
 		}
-		if (data.mandatoryCW !== undefined && oldnote.mandatoryCW !== data.mandatoryCW) {
+		if (data.mandatoryCW !== undefined && oldNote.mandatoryCW !== data.mandatoryCW) {
 			update.mandatoryCW = data.mandatoryCW;
 		}
 
 		// TODO deep-compare files
-		const filesChanged = oldnote.fileIds.length || data.files?.length;
+		const filesChanged = oldNote.fileIds.length || data.files?.length;
 
-		const poll = await this.pollsRepository.findOneBy({ noteId: oldnote.id });
+		const oldPoll = await this.pollsRepository.findOneBy({ noteId: oldNote.id });
 
-		const oldPoll = poll ? { choices: poll.choices, multiple: poll.multiple, expiresAt: poll.expiresAt } : null;
-		const pollChanged = data.poll != null && JSON.stringify(data.poll) !== JSON.stringify(oldPoll);
+		const oldPollData = oldPoll ? { choices: oldPoll.choices, multiple: oldPoll.multiple, expiresAt: oldPoll.expiresAt } : null;
+		const pollChanged =
+			(data.poll == null && oldPoll != null) ||
+			(data.poll != null && oldPoll == null) ||
+			(data.poll != null && oldPoll != null && JSON.stringify(data.poll) !== JSON.stringify(oldPollData));
 
 		if (Object.keys(update).length > 0 || filesChanged || pollChanged) {
-			const exists = await this.noteEditRepository.findOneBy({ noteId: oldnote.id });
+			const exists = await this.noteEditsRepository.findOneBy({ noteId: oldNote.id });
 
-			await this.noteEditRepository.insert({
+			await this.noteEditsRepository.insert({
 				id: this.idService.gen(),
-				noteId: oldnote.id,
-				oldText: oldnote.text || undefined,
+				userId: oldNote.userId,
+				noteId: oldNote.id,
+				renoteId: oldNote.renoteId,
+				replyId: oldNote.replyId,
+				visibility: oldNote.visibility,
+				text: oldNote.text || undefined,
 				newText: update.text || undefined,
-				cw: update.cw || undefined,
-				fileIds: undefined,
-				oldDate: exists ? oldnote.updatedAt as Date : this.idService.parse(oldnote.id).date,
+				cw: oldNote.cw || undefined,
+				newCw: update.cw || undefined,
+				fileIds: oldNote.fileIds,
+				oldDate: exists ? oldNote.updatedAt as Date : this.idService.parse(oldNote.id).date,
 				updatedAt: this.timeService.date,
+				hasPoll: oldPoll != null,
 			});
 
 			const note = new MiNote({
-				id: oldnote.id,
+				id: oldNote.id,
 				updatedAt: data.updatedAt ? data.updatedAt : this.timeService.date,
 				fileIds: data.files ? data.files.map(file => file.id) : [],
-				replyId: oldnote.replyId,
+				replyId: oldNote.replyId,
 				renoteId: data.renote ? data.renote.id : null,
 				channelId: data.channel ? data.channel.id : null,
 				threadId: data.reply
@@ -516,7 +525,7 @@ export class NoteEditService implements OnApplicationShutdown {
 				cw: data.cw ?? null,
 				tags: tags.map(tag => normalizeForSearch(tag)),
 				emojis,
-				reactions: oldnote.reactions,
+				reactions: oldNote.reactions,
 				userId: user.id,
 				localOnly: data.localOnly!,
 				reactionAcceptance: data.reactionAcceptance,
@@ -535,7 +544,7 @@ export class NoteEditService implements OnApplicationShutdown {
 				renoteUserId: data.renote ? data.renote.userId : null,
 				renoteUserHost: data.renote ? data.renote.userHost : null,
 				userHost: user.host,
-				reactionAndUserPairCache: oldnote.reactionAndUserPairCache,
+				reactionAndUserPairCache: oldNote.reactionAndUserPairCache,
 				mandatoryCW: data.mandatoryCW,
 			});
 
@@ -561,41 +570,44 @@ export class NoteEditService implements OnApplicationShutdown {
 			if (pollChanged) {
 				// Start transaction
 				await this.db.transaction(async transactionalEntityManager => {
-					await transactionalEntityManager.update(MiNote, oldnote.id, note);
+					await transactionalEntityManager.update(MiNote, oldNote.id, note);
 
-					const poll = new MiPoll({
-						noteId: note.id,
-						choices: data.poll!.choices,
-						expiresAt: data.poll!.expiresAt,
-						multiple: data.poll!.multiple,
-						votes: new Array(data.poll!.choices.length).fill(0),
-						noteVisibility: note.visibility,
-						userId: user.id,
-						userHost: user.host,
-						channelId: data.channel?.id ?? null,
-					});
+					// Insert or update poll
+					if (data.poll) {
+						const poll = new MiPoll({
+							noteId: note.id,
+							choices: data.poll.choices,
+							expiresAt: data.poll.expiresAt,
+							multiple: data.poll.multiple,
+							votes: new Array(data.poll.choices.length).fill(0),
+							noteVisibility: note.visibility,
+							userId: user.id,
+							userHost: user.host,
+							channelId: data.channel?.id ?? null,
+						});
 
-					if (!oldnote.hasPoll) {
-						await transactionalEntityManager.insert(MiPoll, poll);
-					} else {
-						await transactionalEntityManager.update(MiPoll, oldnote.id, poll);
+						if (oldPoll) {
+							await transactionalEntityManager.update(MiPoll, { pollId: oldPoll.noteId }, poll);
+						} else {
+							await transactionalEntityManager.insert(MiPoll, poll);
+						}
+					// Delete poll
+					} else if (oldPoll) {
+						await transactionalEntityManager.delete(MiPoll, { pollId: oldPoll.noteId });
 					}
 				});
 			} else {
-				await this.notesRepository.update(oldnote.id, note);
+				await this.notesRepository.update(oldNote.id, note);
 			}
 
 			// Re-fetch note to get the default values of null / unset fields.
 			const edited = await this.notesRepository.findOneByOrFail({ id: note.id });
 
-			// Update the Latest Note index / following feed
-			this.latestNoteService.handleUpdatedNoteBG(edited, oldnote);
-
 			await this.queueService.createPostNoteJob(note.id, silent, 'edit');
 
 			return edited;
 		} else {
-			return oldnote;
+			return oldNote;
 		}
 	}
 
@@ -606,7 +618,7 @@ export class NoteEditService implements OnApplicationShutdown {
 		host: MiUser['host'];
 		isBot: MiUser['isBot'];
 		noindex: MiUser['noindex'];
-	}, data: Option, silent: boolean, tags: string[], mentionedUsers: MinimumUser[]) {
+	}, data: Option, silent: boolean, mentionedUsers: MinimumUser[]) {
 		// Register host
 		if (this.meta.enableStatsForFederatedInstances) {
 			if (isRemoteUser(user)) {
@@ -621,15 +633,15 @@ export class NoteEditService implements OnApplicationShutdown {
 			}
 		}
 
-		this.usersRepository.update({ id: user.id }, { updatedAt: this.timeService.date });
+		await this.usersRepository.update({ id: user.id }, { updatedAt: this.timeService.date });
 
 		// ハッシュタグ更新
-		this.pushToTl(note, user);
+		await this.pushToTl(note, user);
 
 		if (data.poll && data.poll.expiresAt) {
 			const delay = data.poll.expiresAt.getTime() - this.timeService.now;
-			this.queueService.endedPollNotificationQueue.remove(`pollEnd:${note.id}`);
-			this.queueService.endedPollNotificationQueue.add(note.id, {
+			await this.queueService.endedPollNotificationQueue.remove(`pollEnd:${note.id}`);
+			await this.queueService.endedPollNotificationQueue.add(note.id, {
 				noteId: note.id,
 			}, {
 				jobId: `pollEnd_${note.id}`,
@@ -648,9 +660,9 @@ export class NoteEditService implements OnApplicationShutdown {
 				text: note.text ?? '',
 			});
 
-			this.roleService.addNoteToRoleTimeline(noteObj);
+			await this.roleService.addNoteToRoleTimeline(noteObj);
 
-			this.webhookService.enqueueUserWebhook(user.id, 'note', { note: noteObj });
+			await this.webhookService.enqueueUserWebhook(user.id, 'note', { note: noteObj });
 
 			const nm = new NotificationManager(this.mutingsRepository, this.notificationService, user, note);
 
@@ -673,16 +685,16 @@ export class NoteEditService implements OnApplicationShutdown {
 					if (!isThreadMuted && !muted) {
 						nm.push(data.reply.userId, 'edited');
 						this.globalEventService.publishMainStream(data.reply.userId, 'edited', noteObj);
-						this.webhookService.enqueueUserWebhook(data.reply.userId, 'reply', { note: noteObj });
+						await this.webhookService.enqueueUserWebhook(data.reply.userId, 'reply', { note: noteObj });
 					}
 				}
 			}
 
-			nm.notify();
+			await nm.notify();
 
 			//#region AP deliver
 			if (!data.localOnly && isLocalUser(user)) {
-				trackTask(async () => {
+				await trackTask(async () => {
 					const noteActivity = await this.apRendererService.renderNoteOrRenoteActivity(note, user, { renote: data.renote });
 					const dm = this.apDeliverManagerService.createDeliverManager(user, noteActivity);
 
@@ -737,8 +749,8 @@ export class NoteEditService implements OnApplicationShutdown {
 		}
 
 		if (data.channel) {
-			this.channelsRepository.increment({ id: data.channel.id }, 'notesCount', 1);
-			this.channelsRepository.update(data.channel.id, {
+			await this.channelsRepository.increment({ id: data.channel.id }, 'notesCount', 1);
+			await this.channelsRepository.update(data.channel.id, {
 				lastNotedAt: this.timeService.date,
 			});
 
@@ -754,8 +766,11 @@ export class NoteEditService implements OnApplicationShutdown {
 			});
 		}
 
+		// Update the Latest Note index / following feed
+		await this.latestNoteService.handleUpdatedNoteDeferred(note);
+
 		// Register to search database
-		if (!user.noindex) this.index(note);
+		if (!user.noindex) await this.index(note);
 	}
 
 	@bindThis
@@ -776,10 +791,10 @@ export class NoteEditService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private index(note: MiNote) {
+	private async index(note: MiNote) {
 		if (note.text == null && note.cw == null) return;
 
-		this.searchService.indexNote(note);
+		await this.searchService.indexNote(note);
 	}
 
 	@bindThis
@@ -909,7 +924,7 @@ export class NoteEditService implements OnApplicationShutdown {
 			// checkHibernation moved to HibernateUsersProcessorService
 		}
 
-		r.exec();
+		await r.exec();
 	}
 
 	// checkHibernation moved to HibernateUsersProcessorService

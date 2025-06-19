@@ -158,7 +158,11 @@ export class NoteDeleteService {
 			userId: user.id,
 		});
 
-		this.latestNoteService.handleDeletedNoteBG(note);
+		// Update the Latest Note index / following feed
+		this.latestNoteService.handleDeletedNoteDeferred(note);
+		for (const cascadingNote of cascadingNotes) {
+			this.latestNoteService.handleDeletedNote(cascadingNote);
+		}
 
 		if (deleter && (note.userId !== deleter.id)) {
 			const user = await this.usersRepository.findOneByOrFail({ id: note.userId });
@@ -174,14 +178,14 @@ export class NoteDeleteService {
 			.map(n => n.uri)
 			.filter((u): u is string => u != null);
 		if (deletedUris.length > 0) {
-			this.apLogService.deleteObjectLogs(deletedUris)
-				.catch(err => this.logger.error(err, `Failed to delete AP logs for note '${note.uri}'`));
+			trackPromise(this.apLogService.deleteObjectLogs(deletedUris)
+				.catch(err => this.logger.error(err, `Failed to delete AP logs for note '${note.uri}'`)));
 		}
 	}
 
 	@bindThis
-	private decNotesCountOfUser(user: { id: MiUser['id']; }) {
-		this.usersRepository.createQueryBuilder().update()
+	private async decNotesCountOfUser(user: { id: MiUser['id']; }) {
+		await this.usersRepository.createQueryBuilder().update()
 			.set({
 				updatedAt: this.timeService.date,
 				notesCount: () => '"notesCount" - 1',
