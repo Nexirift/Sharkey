@@ -187,10 +187,7 @@ export class FetchInstanceMetadataService {
 				throw new Error('No nodeinfo link provided');
 			}
 
-			const info = await this.httpRequestService.getJson(link.href)
-				.catch(err => {
-					throw err.statusCode ?? err.message;
-				});
+			const info = await this.httpRequestService.getJson(link.href);
 
 			this.logger.debug(`Successfuly fetched nodeinfo of ${instance.host}`);
 
