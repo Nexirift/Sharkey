@@ -290,7 +290,7 @@ export class BackgroundTaskProcessorService {
 				await this.latestNoteService.handleUpdatedNote(lastEdit, note);
 			} else {
 				// Create
-				await this.latestNoteService.handleDeletedNote(note);
+				await this.latestNoteService.handleCreatedNote(note);
 			}
 		} else {
 			// Delete
