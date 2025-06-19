@@ -592,6 +592,7 @@ export class NoteEntityService implements OnModuleInit {
 
 		const bypassSilence = opts.bypassSilence || note.userId === meId;
 
+		// noinspection ES6MissingAwait
 		const packed: Packed<'Note'> = await awaitAll({
 			id: note.id,
 			threadId,

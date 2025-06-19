@@ -77,7 +77,7 @@ export class FlashEntityService {
 				.getRawMany<{ flashLike_flashId: string }>()
 				.then(likes => [...new Set(likes.map(like => like.flashLike_flashId))])
 			: [];
-		return Promise.all(
+		return await Promise.all(
 			flashes.map(flash => this.pack(flash, me, {
 				packedUser: _userMap.get(flash.userId),
 				likedFlashIds: _likedFlashIds,

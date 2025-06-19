@@ -151,7 +151,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			const note = await this.notesRepository.findOneBy({ id });
 			if (note) {
 				note.reactionAndUserPairCache ??= [];
-				return this.noteEntityService.pack(note, me);
+				return await this.noteEntityService.pack(note, me);
 			}
 		}
 		return null;

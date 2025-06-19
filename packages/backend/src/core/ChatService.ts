@@ -605,12 +605,12 @@ export class ChatService {
 
 	@bindThis
 	public async findMyRoomById(ownerId: MiUser['id'], roomId: MiChatRoom['id']) {
-		return this.chatRoomsRepository.findOneBy({ id: roomId, ownerId: ownerId });
+		return await this.chatRoomsRepository.findOneBy({ id: roomId, ownerId: ownerId });
 	}
 
 	@bindThis
 	public async findRoomById(roomId: MiChatRoom['id']) {
-		return this.chatRoomsRepository.findOne({ where: { id: roomId }, relations: ['owner'] });
+		return await this.chatRoomsRepository.findOne({ where: { id: roomId }, relations: ['owner'] });
 	}
 
 	@bindThis

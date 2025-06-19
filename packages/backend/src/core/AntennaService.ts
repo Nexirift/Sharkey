@@ -107,7 +107,7 @@ export class AntennaService implements OnApplicationShutdown {
 			this.globalEventService.publishAntennaStream(antenna.id, 'note', note);
 		}
 
-		redisPipeline.exec();
+		await redisPipeline.exec();
 	}
 
 	// NOTE: フォローしているユーザーのノート、リストのユーザーのノート、グループのユーザーのノート指定はパフォーマンス上の理由で無効になっている

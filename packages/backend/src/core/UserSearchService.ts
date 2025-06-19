@@ -99,7 +99,7 @@ export class UserSearchService {
 			}
 		}
 
-		return this.userEntityService.packMany<'UserLite' | 'UserDetailed'>(
+		return await this.userEntityService.packMany<'UserLite' | 'UserDetailed'>(
 			[...resultSet].slice(0, limit),
 			me,
 			{ schema: opts?.detail ? 'UserDetailed' : 'UserLite' },

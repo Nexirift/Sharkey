@@ -75,7 +75,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private captchaService: CaptchaService,
 	) {
 		super(meta, paramDef, async () => {
-			return this.captchaService.get();
+			return await this.captchaService.get();
 		});
 	}
 }

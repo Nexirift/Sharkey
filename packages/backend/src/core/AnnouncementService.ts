@@ -218,9 +218,9 @@ export class AnnouncementService {
 				announcementId: announcement.id,
 				userId: me.id,
 			});
-			return this.announcementEntityService.pack({ ...announcement, isRead: read !== null }, me);
+			return await this.announcementEntityService.pack({ ...announcement, isRead: read !== null }, me);
 		} else {
-			return this.announcementEntityService.pack(announcement, null);
+			return await this.announcementEntityService.pack(announcement, null);
 		}
 	}
 

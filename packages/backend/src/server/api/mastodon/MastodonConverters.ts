@@ -175,7 +175,7 @@ export class MastodonConverters {
 
 		const bioText = profile?.description && this.mfmService.toMastoApiHtml(mfm.parse(profile.description));
 
-		return awaitAll({
+		return await awaitAll({
 			id: account.id,
 			username: user.username,
 			acct: acct,

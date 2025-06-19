@@ -94,12 +94,12 @@ export class SponsorsService {
 	@bindThis
 	public async instanceSponsors(forceUpdate: boolean) {
 		if (forceUpdate) await this.cache.refresh('instance');
-		return this.cache.fetch('instance');
+		return await this.cache.fetch('instance');
 	}
 
 	@bindThis
 	public async sharkeySponsors(forceUpdate: boolean) {
 		if (forceUpdate) await this.cache.refresh('sharkey');
-		return this.cache.fetch('sharkey');
+		return await this.cache.fetch('sharkey');
 	}
 }

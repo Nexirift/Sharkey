@@ -485,7 +485,7 @@ export class UserEntityService implements OnModuleInit {
 		if (user.avatarId != null && user.avatarUrl === null) {
 			const avatar = await this.driveFilesRepository.findOneByOrFail({ id: user.avatarId });
 			user.avatarUrl = this.driveFileEntityService.getPublicUrl(avatar, 'avatar');
-			this.usersRepository.update(user.id, {
+			await this.usersRepository.update(user.id, {
 				avatarUrl: user.avatarUrl,
 				avatarBlurhash: avatar.blurhash,
 			});
@@ -493,7 +493,7 @@ export class UserEntityService implements OnModuleInit {
 		if (user.bannerId != null && user.bannerUrl === null) {
 			const banner = await this.driveFilesRepository.findOneByOrFail({ id: user.bannerId });
 			user.bannerUrl = this.driveFileEntityService.getPublicUrl(banner);
-			this.usersRepository.update(user.id, {
+			await this.usersRepository.update(user.id, {
 				bannerUrl: user.bannerUrl,
 				bannerBlurhash: banner.blurhash,
 			});
@@ -501,7 +501,7 @@ export class UserEntityService implements OnModuleInit {
 		if (user.backgroundId != null && user.backgroundUrl === null) {
 			const background = await this.driveFilesRepository.findOneByOrFail({ id: user.backgroundId });
 			user.backgroundUrl = this.driveFileEntityService.getPublicUrl(background);
-			this.usersRepository.update(user.id, {
+			await this.usersRepository.update(user.id, {
 				backgroundUrl: user.backgroundUrl,
 				backgroundBlurhash: background.blurhash,
 			});
@@ -581,6 +581,7 @@ export class UserEntityService implements OnModuleInit {
 
 		const bypassSilence = isMe || (myFollowings ? myFollowings.has(user.id) : false);
 
+		// noinspection ES6MissingAwait
 		const packed = {
 			id: user.id,
 			name: user.name,
@@ -894,7 +895,7 @@ export class UserEntityService implements OnModuleInit {
 			myFollowingsPromise,
 		]);
 
-		return Promise.all(
+		return await Promise.all(
 			_users.map(u => this.pack(
 				u,
 				me,

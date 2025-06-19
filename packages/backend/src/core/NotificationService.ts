@@ -72,9 +72,9 @@ export class NotificationService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private postReadAllNotifications(userId: MiUser['id']) {
+	private async postReadAllNotifications(userId: MiUser['id']) {
 		this.globalEventService.publishMainStream(userId, 'readAllNotifications');
-		this.pushNotificationService.pushNotification(userId, 'readAllNotifications', undefined);
+		await this.pushNotificationService.pushNotification(userId, 'readAllNotifications', undefined);
 	}
 
 	@bindThis

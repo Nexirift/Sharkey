@@ -70,6 +70,6 @@ export class UserService {
 	@bindThis
 	public async notifySystemWebhook(user: MiUser, type: 'userCreated') {
 		const packedUser = await this.userEntityService.pack(user, null, { schema: 'UserLite' });
-		return this.systemWebhookService.enqueueSystemWebhook(type, packedUser);
+		return await this.systemWebhookService.enqueueSystemWebhook(type, packedUser);
 	}
 }

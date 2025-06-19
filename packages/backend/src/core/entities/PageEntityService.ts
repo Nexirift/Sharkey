@@ -83,11 +83,12 @@ export class PageEntityService {
 		};
 		migrate(page.content);
 		if (migrated) {
-			this.pagesRepository.update(page.id, {
+			await this.pagesRepository.update(page.id, {
 				content: page.content,
 			});
 		}
 
+		// noinspection ES6MissingAwait
 		return await awaitAll({
 			id: page.id,
 			createdAt: this.idService.parse(page.id).date.toISOString(),
@@ -119,7 +120,7 @@ export class PageEntityService {
 		const _users = pages.map(({ user, userId }) => user ?? userId);
 		const _userMap = await this.userEntityService.packMany(_users, me)
 			.then(users => new Map(users.map(u => [u.id, u])));
-		return Promise.all(pages.map(page => this.pack(page, me, { packedUser: _userMap.get(page.userId) })));
+		return await Promise.all(pages.map(page => this.pack(page, me, { packedUser: _userMap.get(page.userId) })));
 	}
 }
 

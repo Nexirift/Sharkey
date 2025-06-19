@@ -329,8 +329,9 @@ export class ApPersonService implements OnModuleInit {
 		return user;
 	}
 
+	// TODO fix these "any" types
 	private async resolveAvatarAndBanner(user: MiRemoteUser, icon: any, image: any, bgimg: any): Promise<Partial<Pick<MiRemoteUser, 'avatarId' | 'bannerId' | 'backgroundId' | 'avatarUrl' | 'bannerUrl' | 'backgroundUrl' | 'avatarBlurhash' | 'bannerBlurhash' | 'backgroundBlurhash'>>> {
-		const [avatar, banner, background] = await Promise.all([icon, image, bgimg].map(img => {
+		const [avatar, banner, background] = await Promise.all([icon, image, bgimg].map(async img => {
 			// icon and image may be arrays
 			// see https://www.w3.org/TR/activitystreams-vocabulary/#dfn-icon
 			if (Array.isArray(img)) {
@@ -343,7 +344,7 @@ export class ApPersonService implements OnModuleInit {
 				return { id: null, url: null, blurhash: null };
 			}
 
-			return this.apImageService.resolveImage(user, img).catch(() => null);
+			return await this.apImageService.resolveImage(user, img).catch(() => null);
 		}));
 
 		if (((avatar != null && avatar.id != null) || (banner != null && banner.id != null))
