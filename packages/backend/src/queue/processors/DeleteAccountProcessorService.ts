@@ -6,7 +6,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { In, MoreThan } from 'typeorm';
 import { DI } from '@/di-symbols.js';
-import type { DriveFilesRepository, NoteReactionsRepository, NotesRepository, UserProfilesRepository, UsersRepository, NoteScheduleRepository, MiNoteSchedule, FollowingsRepository, FollowRequestsRepository, BlockingsRepository, MutingsRepository, ClipsRepository, ClipNotesRepository, LatestNotesRepository, NoteEditRepository, NoteFavoritesRepository, PollVotesRepository, PollsRepository, SigninsRepository, UserIpsRepository, RegistryItemsRepository } from '@/models/_.js';
+import type { DriveFilesRepository, NoteReactionsRepository, NotesRepository, UserProfilesRepository, UsersRepository, NoteScheduleRepository, MiNoteSchedule, FollowingsRepository, FollowRequestsRepository, BlockingsRepository, MutingsRepository, ClipsRepository, ClipNotesRepository, LatestNotesRepository, NoteEditsRepository, NoteFavoritesRepository, PollVotesRepository, PollsRepository, SigninsRepository, UserIpsRepository, RegistryItemsRepository } from '@/models/_.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import type { MiDriveFile } from '@/models/DriveFile.js';
@@ -69,8 +69,8 @@ export class DeleteAccountProcessorService {
 		@Inject(DI.latestNotesRepository)
 		private readonly latestNotesRepository: LatestNotesRepository,
 
-		@Inject(DI.noteEditRepository)
-		private readonly noteEditRepository: NoteEditRepository,
+		@Inject(DI.noteEditsRepository)
+		private readonly noteEditsRepository: NoteEditsRepository,
 
 		@Inject(DI.noteFavoritesRepository)
 		private readonly noteFavoritesRepository: NoteFavoritesRepository,
@@ -318,7 +318,7 @@ export class DeleteAccountProcessorService {
 
 				const ids = notes.map(note => note.id);
 
-				await this.noteEditRepository.delete({
+				await this.noteEditsRepository.delete({
 					noteId: In(ids),
 				});
 				await this.notesRepository.delete({

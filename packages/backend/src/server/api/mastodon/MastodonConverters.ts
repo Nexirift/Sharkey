@@ -13,7 +13,7 @@ import { MfmService } from '@/core/MfmService.js';
 import type { Config } from '@/config.js';
 import { IMentionedRemoteUsers, MiNote } from '@/models/Note.js';
 import type { MiLocalUser, MiUser } from '@/models/User.js';
-import type { NoteEditRepository, UserProfilesRepository } from '@/models/_.js';
+import type { NoteEditsRepository, UserProfilesRepository } from '@/models/_.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
@@ -60,8 +60,8 @@ export class MastodonConverters {
 		@Inject(DI.userProfilesRepository)
 		private readonly userProfilesRepository: UserProfilesRepository,
 
-		@Inject(DI.noteEditRepository)
-		private readonly noteEditRepository: NoteEditRepository,
+		@Inject(DI.noteEditsRepository)
+		private readonly noteEditsRepository: NoteEditsRepository,
 
 		private readonly mfmService: MfmService,
 		private readonly getterService: GetterService,
@@ -214,7 +214,7 @@ export class MastodonConverters {
 		const noteUser = await this.getUser(note.userId);
 		const noteInstance = noteUser.instance ?? (noteUser.host ? await this.federatedInstanceService.fetch(noteUser.host) : null);
 		const account = await this.convertAccount(noteUser);
-		const edits = await this.noteEditRepository.find({ where: { noteId: note.id }, order: { id: 'ASC' } });
+		const edits = await this.noteEditsRepository.find({ where: { noteId: note.id }, order: { id: 'ASC' } });
 		const history: StatusEdit[] = [];
 
 		const mentionedRemoteUsers = JSON.parse(note.mentionedRemoteUsers);

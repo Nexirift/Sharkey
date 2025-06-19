@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { NotesRepository, UsersRepository, NoteEditRepository } from '@/models/_.js';
+import type { NotesRepository, UsersRepository, NoteEditsRepository } from '@/models/_.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import type { MiLocalUser, MiRemoteUser, MiUser } from '@/models/User.js';
 import { isRemoteUser, isLocalUser } from '@/models/User.js';
@@ -22,8 +22,8 @@ export class GetterService {
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
 
-		@Inject(DI.noteEditRepository)
-		private noteEditRepository: NoteEditRepository,
+		@Inject(DI.noteEditsRepository)
+		private noteEditsRepository: NoteEditsRepository,
 
 		private readonly cacheService: CacheService,
 	) {
@@ -59,7 +59,7 @@ export class GetterService {
 	 */
 	@bindThis
 	public async getEdits(noteId: MiNote['id']) {
-		const edits = await this.noteEditRepository.findBy({ noteId: noteId }).catch(() => {
+		const edits = await this.noteEditsRepository.findBy({ noteId: noteId }).catch(() => {
 			throw new IdentifiableError('9725d0ce-ba28-4dde-95a7-2cbb2c15de24', `Note ${noteId} does not exist`);
 		});
 

@@ -93,7 +93,7 @@ export const DI = {
 	chatRoomsRepository: Symbol('chatRoomsRepository'),
 	chatRoomMembershipsRepository: Symbol('chatRoomMembershipsRepository'),
 	chatRoomInvitationsRepository: Symbol('chatRoomInvitationsRepository'),
-	noteEditRepository: Symbol('noteEditRepository'),
+	noteEditsRepository: Symbol('noteEditsRepository'),
 	bubbleGameRecordsRepository: Symbol('bubbleGameRecordsRepository'),
 	reversiGamesRepository: Symbol('reversiGamesRepository'),
 	noteScheduleRepository: Symbol('noteScheduleRepository'),
