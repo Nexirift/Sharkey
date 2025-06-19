@@ -118,12 +118,12 @@ export const miRepository = {
 		if (opt.replication) {
 			const queryRunner = this.manager.connection.createQueryRunner('master');
 			try {
-				return this.insertOneImpl(entity, findOptions, queryRunner);
+				return await this.insertOneImpl(entity, findOptions, queryRunner);
 			} finally {
 				await queryRunner.release();
 			}
 		} else {
-			return this.insertOneImpl(entity, findOptions);
+			return await this.insertOneImpl(entity, findOptions);
 		}
 	},
 	async insertOneImpl(entity, findOptions?, queryRunner?) {
