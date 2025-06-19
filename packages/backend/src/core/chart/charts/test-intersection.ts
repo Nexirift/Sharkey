@@ -44,15 +44,15 @@ export default class TestIntersectionChart extends Chart<typeof schema> { // esl
 	}
 
 	@bindThis
-	public async addA(key: string): Promise<void> {
-		await this.commit({
+	public addA(key: string): void {
+		this.commit({
 			a: [key],
 		});
 	}
 
 	@bindThis
-	public async addB(key: string): Promise<void> {
-		await this.commit({
+	public addB(key: string): void {
+		this.commit({
 			b: [key],
 		});
 	}

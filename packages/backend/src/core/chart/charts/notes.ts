@@ -56,10 +56,10 @@ export default class NotesChart extends Chart<typeof schema> { // eslint-disable
 	}
 
 	@bindThis
-	public async update(note: MiNote, isAdditional: boolean): Promise<void> {
+	public update(note: MiNote, isAdditional: boolean): void {
 		const prefix = note.userHost === null ? 'local' : 'remote';
 
-		await this.commit({
+		this.commit({
 			[`${prefix}.total`]: isAdditional ? 1 : -1,
 			[`${prefix}.inc`]: isAdditional ? 1 : 0,
 			[`${prefix}.dec`]: isAdditional ? 0 : 1,

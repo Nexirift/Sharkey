@@ -118,8 +118,8 @@ export default class FederationChart extends Chart<typeof schema> { // eslint-di
 	}
 
 	@bindThis
-	public async deliverd(host: string, succeeded: boolean): Promise<void> {
-		await this.commit(succeeded ? {
+	public deliverd(host: string, succeeded: boolean): void {
+		this.commit(succeeded ? {
 			'deliveredInstances': [host],
 		} : {
 			'stalled': [host],
@@ -127,8 +127,8 @@ export default class FederationChart extends Chart<typeof schema> { // eslint-di
 	}
 
 	@bindThis
-	public async inbox(host: string): Promise<void> {
-		await this.commit({
+	public inbox(host: string): void {
+		this.commit({
 			'inboxInstances': [host],
 		});
 	}

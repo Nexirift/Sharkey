@@ -80,31 +80,31 @@ export default class InstanceChart extends Chart<typeof schema> { // eslint-disa
 	}
 
 	@bindThis
-	public async requestReceived(host: string): Promise<void> {
-		await this.commit({
+	public requestReceived(host: string): void {
+		this.commit({
 			'requests.received': 1,
 		}, this.utilityService.toPuny(host));
 	}
 
 	@bindThis
-	public async requestSent(host: string, isSucceeded: boolean): Promise<void> {
-		await this.commit({
+	public requestSent(host: string, isSucceeded: boolean): void {
+		this.commit({
 			'requests.succeeded': isSucceeded ? 1 : 0,
 			'requests.failed': isSucceeded ? 0 : 1,
 		}, this.utilityService.toPuny(host));
 	}
 
 	@bindThis
-	public async newUser(host: string): Promise<void> {
-		await this.commit({
+	public newUser(host: string): void {
+		this.commit({
 			'users.total': 1,
 			'users.inc': 1,
 		}, this.utilityService.toPuny(host));
 	}
 
 	@bindThis
-	public async updateNote(host: string, note: MiNote, isAdditional: boolean): Promise<void> {
-		await this.commit({
+	public updateNote(host: string, note: MiNote, isAdditional: boolean): void {
+		this.commit({
 			'notes.total': isAdditional ? 1 : -1,
 			'notes.inc': isAdditional ? 1 : 0,
 			'notes.dec': isAdditional ? 0 : 1,
@@ -116,8 +116,8 @@ export default class InstanceChart extends Chart<typeof schema> { // eslint-disa
 	}
 
 	@bindThis
-	public async updateFollowing(host: string, isAdditional: boolean): Promise<void> {
-		await this.commit({
+	public updateFollowing(host: string, isAdditional: boolean): void {
+		this.commit({
 			'following.total': isAdditional ? 1 : -1,
 			'following.inc': isAdditional ? 1 : 0,
 			'following.dec': isAdditional ? 0 : 1,
@@ -125,8 +125,8 @@ export default class InstanceChart extends Chart<typeof schema> { // eslint-disa
 	}
 
 	@bindThis
-	public async updateFollowers(host: string, isAdditional: boolean): Promise<void> {
-		await this.commit({
+	public updateFollowers(host: string, isAdditional: boolean): void {
+		this.commit({
 			'followers.total': isAdditional ? 1 : -1,
 			'followers.inc': isAdditional ? 1 : 0,
 			'followers.dec': isAdditional ? 0 : 1,
@@ -134,9 +134,9 @@ export default class InstanceChart extends Chart<typeof schema> { // eslint-disa
 	}
 
 	@bindThis
-	public async updateDrive(file: MiDriveFile, isAdditional: boolean): Promise<void> {
+	public updateDrive(file: MiDriveFile, isAdditional: boolean): void {
 		const fileSizeKb = file.size / 1000;
-		await this.commit({
+		this.commit({
 			'drive.totalFiles': isAdditional ? 1 : -1,
 			'drive.incFiles': isAdditional ? 1 : 0,
 			'drive.incUsage': isAdditional ? fileSizeKb : 0,
