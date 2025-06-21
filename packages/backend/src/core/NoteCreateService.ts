@@ -650,7 +650,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 			if (this.userEntityService.isLocalUser(user)) this.activeUsersChart.write(user);
 
 			// Pack the note
-			const noteObj = await this.noteEntityService.pack(note, null, { skipHide: true, withReactionAndUserPairCache: true });
+			const noteObj = await this.noteEntityService.pack(note, null, null, { skipHide: true, withReactionAndUserPairCache: true });
 
 			this.globalEventService.publishNotesStream(noteObj);
 
@@ -856,7 +856,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 				continue;
 			}
 
-			const detailPackedNote = await this.noteEntityService.pack(note, u, {
+			const detailPackedNote = await this.noteEntityService.pack(note, u, null, {
 				detail: true,
 			});
 

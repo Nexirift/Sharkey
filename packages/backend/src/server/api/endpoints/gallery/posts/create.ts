@@ -63,7 +63,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private galleryPostEntityService: GalleryPostEntityService,
 		private idService: IdService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const files = (await Promise.all(ps.fileIds.map(fileId =>
 				this.driveFilesRepository.findOneBy({
 					id: fileId,
@@ -85,7 +85,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				fileIds: files.map(file => file.id),
 			}));
 
-			return await this.galleryPostEntityService.pack(post, me);
+			return await this.galleryPostEntityService.pack(post, me, token);
 		});
 	}
 }

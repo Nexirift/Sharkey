@@ -72,7 +72,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private userFollowingService: UserFollowingService,
 		private readonly cacheService: CacheService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const followee = me;
 
 			// Check if the follower is yourself
@@ -95,7 +95,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			await this.userFollowingService.unfollow(follower, followee);
 
-			return await this.userEntityService.pack(follower.id, me);
+			return await this.userEntityService.pack(follower.id, me, { token });
 		});
 	}
 }

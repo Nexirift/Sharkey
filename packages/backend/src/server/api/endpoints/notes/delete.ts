@@ -59,13 +59,13 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private roleService: RoleService,
 		private noteDeleteService: NoteDeleteService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const note = await this.getterService.getNote(ps.noteId).catch(err => {
 				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') throw new ApiError(meta.errors.noSuchNote);
 				throw err;
 			});
 
-			if (!await this.roleService.isModerator(me) && (note.userId !== me.id)) {
+			if (!await this.roleService.isModerator(me, token) && (note.userId !== me.id)) {
 				throw new ApiError(meta.errors.accessDenied);
 			}
 

@@ -45,11 +45,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private readonly cacheService: CacheService,
 		private readonly roleService: RoleService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const profile = await this.cacheService.userProfileCache.fetch(ps.userId);
 
 			// These are structured weird to avoid un-necessary calls to roleService and cacheService
-			const iAmModeratorOrTarget = me && (me.id === ps.userId || await this.roleService.isModerator(me));
+			const iAmModeratorOrTarget = me && (me.id === ps.userId || await this.roleService.isModerator(me, token));
 			const iAmFollowingOrTarget = me && (me.id === ps.userId || await this.cacheService.isFollowing(me.id, ps.userId));
 
 			const canViewFollowing =

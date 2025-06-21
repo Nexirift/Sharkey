@@ -69,7 +69,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private notificationEntityService: NotificationEntityService,
 		private notificationService: NotificationService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			// includeTypes が空の場合はクエリしない
 			if (ps.includeTypes && ps.includeTypes.length === 0) {
 				return [];
@@ -95,7 +95,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				this.notificationService.readAllNotification(me.id);
 			}
 
-			return await this.notificationEntityService.packMany(notifications, me.id);
+			return await this.notificationEntityService.packMany(notifications, me.id, token);
 		});
 	}
 }

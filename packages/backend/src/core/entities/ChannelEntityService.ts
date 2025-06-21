@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { ChannelFavoritesRepository, ChannelFollowingsRepository, ChannelsRepository, DriveFilesRepository, NotesRepository } from '@/models/_.js';
+import type { ChannelFavoritesRepository, ChannelFollowingsRepository, ChannelsRepository, DriveFilesRepository, MiAccessToken, NotesRepository } from '@/models/_.js';
 import type { Packed } from '@/misc/json-schema.js';
 import type { } from '@/models/Blocking.js';
 import type { MiUser } from '@/models/User.js';
@@ -44,6 +44,7 @@ export class ChannelEntityService {
 	public async pack(
 		src: MiChannel['id'] | MiChannel,
 		me?: { id: MiUser['id'] } | null | undefined,
+		token?: MiAccessToken | null,
 		detailed?: boolean,
 	): Promise<Packed<'Channel'>> {
 		const channel = typeof src === 'object' ? src : await this.channelsRepository.findOneByOrFail({ id: src });
@@ -94,7 +95,7 @@ export class ChannelEntityService {
 			} : {}),
 
 			...(detailed ? {
-				pinnedNotes: (await this.noteEntityService.packMany(pinnedNotes, me)).sort((a, b) => channel.pinnedNoteIds.indexOf(a.id) - channel.pinnedNoteIds.indexOf(b.id)),
+				pinnedNotes: (await this.noteEntityService.packMany(pinnedNotes, me, token)).sort((a, b) => channel.pinnedNoteIds.indexOf(a.id) - channel.pinnedNoteIds.indexOf(b.id)),
 			} : {}),
 		};
 	}

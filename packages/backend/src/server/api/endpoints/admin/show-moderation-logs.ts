@@ -78,7 +78,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private moderationLogEntityService: ModerationLogEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.queryService.makePaginationQuery(this.moderationLogsRepository.createQueryBuilder('report'), ps.sinceId, ps.untilId);
 
 			if (ps.type != null) {
@@ -91,7 +91,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const reports = await query.limit(ps.limit).getMany();
 
-			return await this.moderationLogEntityService.packMany(reports);
+			return await this.moderationLogEntityService.packMany(reports, me, token);
 		});
 	}
 }

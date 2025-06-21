@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { AbuseUserReportsRepository, InstancesRepository, MiInstance, MiUser } from '@/models/_.js';
+import type { AbuseUserReportsRepository, InstancesRepository, MiAccessToken, MiInstance, MiUser } from '@/models/_.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { MiAbuseUserReport } from '@/models/AbuseUserReport.js';
 import { bindThis } from '@/decorators.js';
@@ -39,6 +39,7 @@ export class AbuseUserReportEntityService {
 			packedAssignee?: Packed<'UserDetailedNotMe'>,
 		},
 		me?: MiUser | null,
+		token?: MiAccessToken | null,
 	) {
 		const report = typeof src === 'object' ? src : await this.abuseUserReportsRepository.findOneByOrFail({ id: src });
 
@@ -53,21 +54,24 @@ export class AbuseUserReportEntityService {
 			assigneeId: report.assigneeId,
 			reporter: hint?.packedReporter ?? this.userEntityService.pack(report.reporter ?? report.reporterId, me, {
 				schema: 'UserDetailedNotMe',
+				token,
 			}),
 			targetUser: hint?.packedTargetUser ?? this.userEntityService.pack(report.targetUser ?? report.targetUserId, me, {
 				schema: 'UserDetailedNotMe',
+				token,
 			}),
 			// return hint, or pack by relation, or fetch and pack by id, or null
 			targetInstance: hint?.packedTargetInstance ?? (
 				report.targetUserInstance
-					? this.instanceEntityService.pack(report.targetUserInstance, me)
+					? this.instanceEntityService.pack(report.targetUserInstance, me, token)
 					: report.targetUserHost
 						? this.instancesRepository.findOneBy({ host: report.targetUserHost }).then(instance => instance
-							? this.instanceEntityService.pack(instance, me)
+							? this.instanceEntityService.pack(instance, me, token)
 							: null)
 						: null),
 			assignee: report.assigneeId ? hint?.packedAssignee ?? this.userEntityService.pack(report.assignee ?? report.assigneeId, me, {
 				schema: 'UserDetailedNotMe',
+				token,
 			}) : null,
 			forwarded: report.forwarded,
 			resolvedAs: report.resolvedAs,
@@ -79,6 +83,7 @@ export class AbuseUserReportEntityService {
 	public async packMany(
 		reports: MiAbuseUserReport[],
 		me?: MiUser | null,
+		token?: MiAccessToken | null,
 	) {
 		const _reporters = reports.map(({ reporter, reporterId }) => reporter ?? reporterId);
 		const _targetUsers = reports.map(({ targetUser, targetUserId }) => targetUser ?? targetUserId);
@@ -86,12 +91,12 @@ export class AbuseUserReportEntityService {
 		const _userMap = await this.userEntityService.packMany(
 			[..._reporters, ..._targetUsers, ..._assignees],
 			me,
-			{ schema: 'UserDetailedNotMe' },
+			{ schema: 'UserDetailedNotMe', token },
 		).then(users => new Map(users.map(u => [u.id, u])));
 		const _targetInstances = reports
 			.map(({ targetUserInstance, targetUserHost }) => targetUserInstance ?? targetUserHost)
 			.filter((i): i is MiInstance | string => i != null);
-		const _instanceMap = await this.instanceEntityService.packMany(await this.instanceEntityService.fetchInstancesByHost(_targetInstances), me)
+		const _instanceMap = await this.instanceEntityService.packMany(await this.instanceEntityService.fetchInstancesByHost(_targetInstances), me, token)
 			.then(instances => new Map(instances.map(i => [i.host, i])));
 		return Promise.all(
 			reports.map(report => {
@@ -99,7 +104,7 @@ export class AbuseUserReportEntityService {
 				const packedTargetUser = _userMap.get(report.targetUserId);
 				const packedTargetInstance = report.targetUserHost ? _instanceMap.get(report.targetUserHost) : undefined;
 				const packedAssignee = report.assigneeId != null ? _userMap.get(report.assigneeId) : undefined;
-				return this.pack(report, { packedReporter, packedTargetUser, packedAssignee, packedTargetInstance }, me);
+				return this.pack(report, { packedReporter, packedTargetUser, packedAssignee, packedTargetInstance }, me, token);
 			}),
 		);
 	}

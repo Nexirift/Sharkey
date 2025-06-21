@@ -35,6 +35,10 @@ export default abstract class Channel {
 		return this.connection.user;
 	}
 
+	protected get token() {
+		return this.connection.token;
+	}
+
 	protected get userProfile() {
 		return this.connection.userProfile;
 	}

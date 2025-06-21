@@ -69,7 +69,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private driveFileEntityService: DriveFileEntityService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			let file: MiDriveFile | null = null;
 
 			if (ps.fileId) {
@@ -90,7 +90,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				throw new ApiError(meta.errors.noSuchFile);
 			}
 
-			if (!await this.roleService.isModerator(me) && (file.userId !== me.id)) {
+			if (!await this.roleService.isModerator(me, token) && (file.userId !== me.id)) {
 				throw new ApiError(meta.errors.accessDenied);
 			}
 

@@ -7,7 +7,7 @@ import ms from 'ms';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import { DI } from '@/di-symbols.js';
-import type { MiNote, MiUser, MiNoteSchedule, NoteScheduleRepository, NotesRepository } from '@/models/_.js';
+import type { MiNote, MiUser, MiNoteSchedule, NoteScheduleRepository, NotesRepository, MiAccessToken } from '@/models/_.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
@@ -91,11 +91,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private driveFileEntityService: DriveFileEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.queryService.makePaginationQuery(this.noteScheduleRepository.createQueryBuilder('note'), ps.sinceId, ps.untilId)
 				.andWhere('note.userId = :userId', { userId: me.id });
 			const scheduleNotes = await query.limit(ps.limit).getMany();
-			const user = await this.userEntityService.pack(me, me);
+			const user = await this.userEntityService.pack(me, me, { token });
 			const scheduleNotesPack: {
 				id: string;
 				note: {
@@ -124,7 +124,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 						user: user,
 						visibility: item.note.visibility ?? 'public',
 						reactionAcceptance: item.note.reactionAcceptance ?? null,
-						visibleUsers: item.note.visibleUsers ? await this.userEntityService.packMany(item.note.visibleUsers.map(u => u.id), me) : [],
+						visibleUsers: item.note.visibleUsers ? await this.userEntityService.packMany(item.note.visibleUsers.map(u => u.id), me, { token }) : [],
 						fileIds: item.note.files ? item.note.files : [],
 						files: await this.driveFileEntityService.packManyByIds(item.note.files),
 						createdAt: item.scheduledAt.toISOString(),
@@ -146,12 +146,13 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 	private async fetchNote(
 		id: MiNote['id'] | null | undefined,
 		me: MiUser,
+		token?: MiAccessToken | null,
 	): Promise<Packed<'Note'> | null> {
 		if (id) {
 			const note = await this.notesRepository.findOneBy({ id });
 			if (note) {
 				note.reactionAndUserPairCache ??= [];
-				return this.noteEntityService.pack(note, me);
+				return this.noteEntityService.pack(note, me, token);
 			}
 		}
 		return null;

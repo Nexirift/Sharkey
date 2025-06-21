@@ -60,14 +60,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private moderationLogService: ModerationLogService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const page = await this.pagesRepository.findOneBy({ id: ps.pageId });
 
 			if (page == null) {
 				throw new ApiError(meta.errors.noSuchPage);
 			}
 
-			if (!await this.roleService.isModerator(me) && page.userId !== me.id) {
+			if (!await this.roleService.isModerator(me, token) && page.userId !== me.id) {
 				throw new ApiError(meta.errors.accessDenied);
 			}
 

@@ -86,7 +86,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private userListEntityService: UserListEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			// Fetch the list
 			const userList = await this.userListsRepository.findOneBy(!ps.forPublic && me !== null ? {
 				id: ps.listId,
@@ -108,7 +108,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				.limit(ps.limit)
 				.getMany();
 
-			return this.userListEntityService.packMembershipsMany(memberships);
+			return this.userListEntityService.packMembershipsMany(memberships, me, token);
 		});
 	}
 }

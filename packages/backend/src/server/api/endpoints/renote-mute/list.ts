@@ -53,7 +53,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private renoteMutingEntityService: RenoteMutingEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.queryService.makePaginationQuery(this.renoteMutingsRepository.createQueryBuilder('muting'), ps.sinceId, ps.untilId)
 				.andWhere('muting.muterId = :meId', { meId: me.id });
 
@@ -61,7 +61,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				.limit(ps.limit)
 				.getMany();
 
-			return await this.renoteMutingEntityService.packMany(mutings, me);
+			return await this.renoteMutingEntityService.packMany(mutings, me, token);
 		});
 	}
 }

@@ -201,7 +201,7 @@ export class ApiServerService {
 				return {
 					ok: true,
 					token: token.token,
-					user: await this.userEntityService.pack(token.userId, null, { schema: 'UserDetailedNotMe' }),
+					user: await this.userEntityService.pack(token.userId, null, { schema: 'UserDetailedNotMe', token }),
 				};
 			} else {
 				return {

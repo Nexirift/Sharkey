@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { FollowingsRepository } from '@/models/_.js';
+import type { FollowingsRepository, MiAccessToken } from '@/models/_.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { Packed } from '@/misc/json-schema.js';
 import { MiBlocking } from '@/models/Blocking.js';
@@ -76,23 +76,23 @@ export class FollowingEntityService {
 	}
 
 	@bindThis
-	public async getFollowing(me: MiLocalUser, params: FollowsQueryParams) {
-		return await this.getFollows(me, params, 'following.followerHost = :host');
+	public async getFollowing(me: MiLocalUser, token: MiAccessToken | null | undefined, params: FollowsQueryParams) {
+		return await this.getFollows(me, token, params, 'following.followerHost = :host');
 	}
 
 	@bindThis
-	public async getFollowers(me: MiLocalUser, params: FollowsQueryParams) {
-		return await this.getFollows(me, params, 'following.followeeHost = :host');
+	public async getFollowers(me: MiLocalUser, token: MiAccessToken | null | undefined, params: FollowsQueryParams) {
+		return await this.getFollows(me, token, params, 'following.followeeHost = :host');
 	}
 
-	private async getFollows(me: MiLocalUser, params: FollowsQueryParams, condition: string) {
+	private async getFollows(me: MiLocalUser, token: MiAccessToken | null | undefined, params: FollowsQueryParams, condition: string) {
 		const builder = this.followingsRepository.createQueryBuilder('following');
 		const query = this.queryService
 			.makePaginationQuery(builder, params.sinceId, params.untilId)
 			.andWhere(condition, { host: params.host })
 			.limit(params.limit);
 
-		if (!await this.roleService.isModerator(me)) {
+		if (!await this.roleService.isModerator(me, token)) {
 			query.setParameter('me', me.id);
 
 			// Make sure that the followee doesn't block us, if their profile will be included.
@@ -119,13 +119,14 @@ export class FollowingEntityService {
 		}
 
 		const followings = await query.getMany();
-		return await this.packMany(followings, me, { populateFollowee: params.includeFollowee, populateFollower: params.includeFollower });
+		return await this.packMany(followings, me, token, { populateFollowee: params.includeFollowee, populateFollower: params.includeFollower });
 	}
 
 	@bindThis
 	public async pack(
 		src: MiFollowing['id'] | MiFollowing,
 		me?: { id: MiUser['id'] } | null | undefined,
+		token?: MiAccessToken | null,
 		opts?: {
 			populateFollowee?: boolean;
 			populateFollower?: boolean;
@@ -146,9 +147,11 @@ export class FollowingEntityService {
 			followerId: following.followerId,
 			followee: opts.populateFollowee ? hint?.packedFollowee ?? this.userEntityService.pack(following.followee ?? following.followeeId, me, {
 				schema: 'UserDetailedNotMe',
+				token,
 			}) : undefined,
 			follower: opts.populateFollower ? hint?.packedFollower ?? this.userEntityService.pack(following.follower ?? following.followerId, me, {
 				schema: 'UserDetailedNotMe',
+				token,
 			}) : undefined,
 		});
 	}
@@ -157,6 +160,7 @@ export class FollowingEntityService {
 	public async packMany(
 		followings: MiFollowing[],
 		me?: { id: MiUser['id'] } | null | undefined,
+		token?: MiAccessToken | null,
 		opts?: {
 			populateFollowee?: boolean;
 			populateFollower?: boolean;
@@ -164,13 +168,13 @@ export class FollowingEntityService {
 	) {
 		const _followees = opts?.populateFollowee ? followings.map(({ followee, followeeId }) => followee ?? followeeId) : [];
 		const _followers = opts?.populateFollower ? followings.map(({ follower, followerId }) => follower ?? followerId) : [];
-		const _userMap = await this.userEntityService.packMany([..._followees, ..._followers], me, { schema: 'UserDetailedNotMe' })
+		const _userMap = await this.userEntityService.packMany([..._followees, ..._followers], me, { schema: 'UserDetailedNotMe', token })
 			.then(users => new Map(users.map(u => [u.id, u])));
 		return Promise.all(
 			followings.map(following => {
 				const packedFollowee = opts?.populateFollowee ? _userMap.get(following.followeeId) : undefined;
 				const packedFollower = opts?.populateFollower ? _userMap.get(following.followerId) : undefined;
-				return this.pack(following, me, opts, { packedFollowee, packedFollower });
+				return this.pack(following, me, token, opts, { packedFollowee, packedFollower });
 			}),
 		);
 	}

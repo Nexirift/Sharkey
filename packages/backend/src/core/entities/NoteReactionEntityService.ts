@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { NoteReactionsRepository } from '@/models/_.js';
+import type { MiAccessToken, NoteReactionsRepository } from '@/models/_.js';
 import type { Packed } from '@/misc/json-schema.js';
 import { bindThis } from '@/decorators.js';
 import { IdService } from '@/core/IdService.js';
@@ -49,6 +49,7 @@ export class NoteReactionEntityService implements OnModuleInit {
 	public async pack(
 		src: MiNoteReaction['id'] | MiNoteReaction,
 		me?: { id: MiUser['id'] } | null | undefined,
+		token?: MiAccessToken | null,
 		options?: {
 			withNote: boolean;
 		},
@@ -65,10 +66,10 @@ export class NoteReactionEntityService implements OnModuleInit {
 		return {
 			id: reaction.id,
 			createdAt: this.idService.parse(reaction.id).date.toISOString(),
-			user: hints?.packedUser ?? await this.userEntityService.pack(reaction.user ?? reaction.userId, me),
+			user: hints?.packedUser ?? await this.userEntityService.pack(reaction.user ?? reaction.userId, me, { token }),
 			type: this.reactionService.convertLegacyReaction(reaction.reaction),
 			...(opts.withNote ? {
-				note: await this.noteEntityService.pack(reaction.note ?? reaction.noteId, me),
+				note: await this.noteEntityService.pack(reaction.note ?? reaction.noteId, me, token),
 			} : {}),
 		};
 	}
@@ -77,6 +78,7 @@ export class NoteReactionEntityService implements OnModuleInit {
 	public async packMany(
 		reactions: MiNoteReaction[],
 		me?: { id: MiUser['id'] } | null | undefined,
+		token?: MiAccessToken | null,
 		options?: {
 			withNote: boolean;
 		},
@@ -85,8 +87,8 @@ export class NoteReactionEntityService implements OnModuleInit {
 			withNote: false,
 		}, options);
 		const _users = reactions.map(({ user, userId }) => user ?? userId);
-		const _userMap = await this.userEntityService.packMany(_users, me)
+		const _userMap = await this.userEntityService.packMany(_users, me, { token })
 			.then(users => new Map(users.map(u => [u.id, u])));
-		return Promise.all(reactions.map(reaction => this.pack(reaction, me, opts, { packedUser: _userMap.get(reaction.userId) })));
+		return Promise.all(reactions.map(reaction => this.pack(reaction, me, token, opts, { packedUser: _userMap.get(reaction.userId) })));
 	}
 }

@@ -53,7 +53,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private pageEntityService: PageEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.queryService.makePaginationQuery(this.pagesRepository.createQueryBuilder('page'), ps.sinceId, ps.untilId)
 				.andWhere('page.userId = :meId', { meId: me.id });
 
@@ -61,7 +61,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				.limit(ps.limit)
 				.getMany();
 
-			return await this.pageEntityService.packMany(pages);
+			return await this.pageEntityService.packMany(pages, me, token);
 		});
 	}
 }

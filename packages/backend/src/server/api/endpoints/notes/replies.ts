@@ -52,7 +52,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private noteEntityService: NoteEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'), ps.sinceId, ps.untilId)
 				.andWhere('note.replyId = :replyId', { replyId: ps.noteId })
 				.innerJoinAndSelect('note.user', 'user')
@@ -72,7 +72,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const timeline = await query.getMany();
 
-			return await this.noteEntityService.packMany(timeline, me);
+			return await this.noteEntityService.packMany(timeline, me, token);
 		});
 	}
 }

@@ -12,7 +12,7 @@ import { UtilityService } from '@/core/UtilityService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MiUser } from '@/models/User.js';
 import { DI } from '@/di-symbols.js';
-import type { InstancesRepository, MiMeta } from '@/models/_.js';
+import type { InstancesRepository, MiAccessToken, MiMeta } from '@/models/_.js';
 
 @Injectable()
 export class InstanceEntityService {
@@ -33,8 +33,9 @@ export class InstanceEntityService {
 	public async pack(
 		instance: MiInstance,
 		me?: { id: MiUser['id']; } | null | undefined,
+		token?: MiAccessToken | null,
 	): Promise<Packed<'FederationInstance'>> {
-		const iAmModerator = me ? await this.roleService.isModerator(me as MiUser) : false;
+		const iAmModerator = me ? await this.roleService.isModerator(me as MiUser, token) : false;
 		const softwareSuspended = this.utilityService.isDeliverSuspendedSoftware(instance);
 
 		return {
@@ -75,8 +76,9 @@ export class InstanceEntityService {
 	public packMany(
 		instances: MiInstance[],
 		me?: { id: MiUser['id']; } | null | undefined,
+		token?: MiAccessToken | null,
 	) {
-		return Promise.all(instances.map(x => this.pack(x, me)));
+		return Promise.all(instances.map(x => this.pack(x, me, token)));
 	}
 
 	@bindThis

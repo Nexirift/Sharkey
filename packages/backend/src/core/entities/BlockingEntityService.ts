@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { BlockingsRepository } from '@/models/_.js';
+import type { BlockingsRepository, MiAccessToken } from '@/models/_.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { Packed } from '@/misc/json-schema.js';
 import type { MiBlocking } from '@/models/Blocking.js';
@@ -29,6 +29,7 @@ export class BlockingEntityService {
 	public async pack(
 		src: MiBlocking['id'] | MiBlocking,
 		me?: { id: MiUser['id'] } | null | undefined,
+		token?: MiAccessToken | null,
 		hint?: {
 			blockee?: Packed<'UserDetailedNotMe'>,
 		},
@@ -41,6 +42,7 @@ export class BlockingEntityService {
 			blockeeId: blocking.blockeeId,
 			blockee: hint?.blockee ?? this.userEntityService.pack(blocking.blockeeId, me, {
 				schema: 'UserDetailedNotMe',
+				token,
 			}),
 		});
 	}
@@ -49,10 +51,11 @@ export class BlockingEntityService {
 	public async packMany(
 		blockings: MiBlocking[],
 		me: { id: MiUser['id'] },
+		token?: MiAccessToken | null,
 	) {
 		const _blockees = blockings.map(({ blockee, blockeeId }) => blockee ?? blockeeId);
-		const _userMap = await this.userEntityService.packMany(_blockees, me, { schema: 'UserDetailedNotMe' })
+		const _userMap = await this.userEntityService.packMany(_blockees, me, { schema: 'UserDetailedNotMe', token })
 			.then(users => new Map(users.map(u => [u.id, u])));
-		return Promise.all(blockings.map(blocking => this.pack(blocking, me, { blockee: _userMap.get(blocking.blockeeId) })));
+		return Promise.all(blockings.map(blocking => this.pack(blocking, me, token, { blockee: _userMap.get(blocking.blockeeId) })));
 	}
 }

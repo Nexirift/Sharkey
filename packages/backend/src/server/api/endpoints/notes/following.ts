@@ -81,7 +81,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private readonly queryService: QueryService,
 		private readonly activeUsersChart: ActiveUsersChart,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			if (ps.includeReplies && ps.filesOnly) throw new ApiError(meta.errors.bothWithRepliesAndWithFiles);
 			if (ps.list === 'followers' && ps.includeNonPublic) throw new ApiError(meta.errors.bothWithFollowersAndIncludeNonPublic);
 
@@ -170,7 +170,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				this.activeUsersChart.read(me);
 			});
 
-			return await this.noteEntityService.packMany(notes, me, { skipHide: true });
+			return await this.noteEntityService.packMany(notes, me, token, { skipHide: true });
 		});
 	}
 }

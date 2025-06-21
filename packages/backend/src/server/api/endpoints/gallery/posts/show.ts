@@ -52,7 +52,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		private galleryPostEntityService: GalleryPostEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const post = await this.galleryPostsRepository.findOneBy({
 				id: ps.postId,
 			});
@@ -61,7 +61,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				throw new ApiError(meta.errors.noSuchPost);
 			}
 
-			return await this.galleryPostEntityService.pack(post, me);
+			return await this.galleryPostEntityService.pack(post, me, token);
 		});
 	}
 }

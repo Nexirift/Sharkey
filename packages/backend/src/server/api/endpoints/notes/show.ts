@@ -60,7 +60,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private noteEntityService: NoteEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = await this.notesRepository.createQueryBuilder('note')
 				.where('note.id = :noteId', { noteId: ps.noteId })
 				.innerJoinAndSelect('note.user', 'user');
@@ -80,7 +80,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				throw new ApiError(meta.errors.signinRequired);
 			}
 
-			return await this.noteEntityService.pack(note, me, {
+			return await this.noteEntityService.pack(note, me, token, {
 				detail: true,
 			});
 		});

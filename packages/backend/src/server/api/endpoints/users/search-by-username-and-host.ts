@@ -51,14 +51,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 	constructor(
 		private userSearchService: UserSearchService,
 	) {
-		super(meta, paramDef, (ps, me) => {
+		super(meta, paramDef, (ps, me, token) => {
 			return this.userSearchService.searchByUsernameAndHost({
 				username: ps.username,
 				host: ps.host,
 			}, {
 				limit: ps.limit,
 				detail: ps.detail,
-			}, me);
+			}, me, token);
 		});
 	}
 }

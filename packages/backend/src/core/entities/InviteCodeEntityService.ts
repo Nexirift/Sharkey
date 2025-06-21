@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { RegistrationTicketsRepository } from '@/models/_.js';
+import type { MiAccessToken, RegistrationTicketsRepository } from '@/models/_.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { Packed } from '@/misc/json-schema.js';
 import type { MiUser } from '@/models/User.js';
@@ -29,6 +29,7 @@ export class InviteCodeEntityService {
 	public async pack(
 		src: MiRegistrationTicket['id'] | MiRegistrationTicket,
 		me?: { id: MiUser['id'] } | null | undefined,
+		token?: MiAccessToken | null,
 		hints?: {
 			packedCreatedBy?: Packed<'UserLite'>,
 			packedUsedBy?: Packed<'UserLite'>,
@@ -46,8 +47,8 @@ export class InviteCodeEntityService {
 			code: target.code,
 			expiresAt: target.expiresAt ? target.expiresAt.toISOString() : null,
 			createdAt: this.idService.parse(target.id).date.toISOString(),
-			createdBy: target.createdBy ? hints?.packedCreatedBy ?? await this.userEntityService.pack(target.createdBy, me) : null,
-			usedBy: target.usedBy ? hints?.packedUsedBy ?? await this.userEntityService.pack(target.usedBy, me) : null,
+			createdBy: target.createdBy ? hints?.packedCreatedBy ?? await this.userEntityService.pack(target.createdBy, me, { token }) : null,
+			usedBy: target.usedBy ? hints?.packedUsedBy ?? await this.userEntityService.pack(target.usedBy, me, { token }) : null,
 			usedAt: target.usedAt ? target.usedAt.toISOString() : null,
 			used: !!target.usedAt,
 		});
@@ -57,16 +58,17 @@ export class InviteCodeEntityService {
 	public async packMany(
 		tickets: MiRegistrationTicket[],
 		me: { id: MiUser['id'] },
+		token?: MiAccessToken | null,
 	) {
 		const _createdBys = tickets.map(({ createdBy, createdById }) => createdBy ?? createdById).filter(x => x != null);
 		const _usedBys = tickets.map(({ usedBy, usedById }) => usedBy ?? usedById).filter(x => x != null);
-		const _userMap = await this.userEntityService.packMany([..._createdBys, ..._usedBys], me)
+		const _userMap = await this.userEntityService.packMany([..._createdBys, ..._usedBys], me, { token })
 			.then(users => new Map(users.map(u => [u.id, u])));
 		return Promise.all(
 			tickets.map(ticket => {
 				const packedCreatedBy = ticket.createdById != null ? _userMap.get(ticket.createdById) : undefined;
 				const packedUsedBy = ticket.usedById != null ? _userMap.get(ticket.usedById) : undefined;
-				return this.pack(ticket, me, { packedCreatedBy, packedUsedBy });
+				return this.pack(ticket, me, token, { packedCreatedBy, packedUsedBy });
 			}),
 		);
 	}

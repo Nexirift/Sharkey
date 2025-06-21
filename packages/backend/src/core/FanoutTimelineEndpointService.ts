@@ -10,7 +10,7 @@ import type { MiUser } from '@/models/User.js';
 import type { MiNote } from '@/models/Note.js';
 import type { MiMeta } from '@/models/Meta.js';
 import { Packed } from '@/misc/json-schema.js';
-import type { NotesRepository } from '@/models/_.js';
+import type { MiAccessToken, NotesRepository } from '@/models/_.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { FanoutTimelineName, FanoutTimelineService } from '@/core/FanoutTimelineService.js';
 import { UtilityService } from '@/core/UtilityService.js';
@@ -28,6 +28,7 @@ type TimelineOptions = {
 	limit: number,
 	allowPartial: boolean,
 	me?: { id: MiUser['id'] } | undefined | null,
+	token?: MiAccessToken | null,
 	useDbFallback: boolean,
 	redisTimelines: FanoutTimelineName[],
 	noteFilter?: (note: MiNote) => boolean,
@@ -64,7 +65,7 @@ export class FanoutTimelineEndpointService {
 
 	@bindThis
 	async timeline(ps: TimelineOptions): Promise<Packed<'Note'>[]> {
-		return await this.noteEntityService.packMany(await this.getMiNotes(ps), ps.me);
+		return await this.noteEntityService.packMany(await this.getMiNotes(ps), ps.me, ps.token);
 	}
 
 	@bindThis

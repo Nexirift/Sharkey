@@ -58,7 +58,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private cacheService: CacheService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const userIdsWhoBlockingMe = me ? await this.cacheService.userBlockedCache.fetch(me.id) : new Set<string>();
 
 			// early return if me is blocked by requesting user
@@ -101,7 +101,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			notes.sort((a, b) => a.id > b.id ? -1 : 1);
 
-			return await this.noteEntityService.packMany(notes, me);
+			return await this.noteEntityService.packMany(notes, me, token);
 		});
 	}
 }

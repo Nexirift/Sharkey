@@ -618,7 +618,7 @@ export class NoteEditService implements OnApplicationShutdown {
 			if (this.userEntityService.isLocalUser(user)) this.activeUsersChart.write(user);
 
 			// Pack the note
-			const noteObj = await this.noteEntityService.pack(note, null, { skipHide: true, withReactionAndUserPairCache: true });
+			const noteObj = await this.noteEntityService.pack(note, null, null, { skipHide: true, withReactionAndUserPairCache: true });
 			this.globalEventService.publishNoteStream(note.id, 'updated', {
 				cw: note.cw,
 				text: note.text ?? '',

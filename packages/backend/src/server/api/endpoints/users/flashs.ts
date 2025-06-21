@@ -53,7 +53,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private flashEntityService: FlashEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.queryService.makePaginationQuery(this.flashsRepository.createQueryBuilder('flash'), ps.sinceId, ps.untilId)
 				.andWhere('flash.userId = :userId', { userId: ps.userId })
 				.andWhere('flash.visibility = \'public\'');
@@ -62,7 +62,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				.limit(ps.limit)
 				.getMany();
 
-			return await this.flashEntityService.packMany(flashs);
+			return await this.flashEntityService.packMany(flashs, me, token);
 		});
 	}
 }

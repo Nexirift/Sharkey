@@ -57,7 +57,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		private clipEntityService: ClipEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			try {
 				// 空文字列をnullにしたいので??は使わない
 				// eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
@@ -69,7 +69,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				throw e;
 			}
 
-			return await this.clipEntityService.pack(ps.clipId, me);
+			return await this.clipEntityService.pack(ps.clipId, me, token);
 		});
 	}
 }

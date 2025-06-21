@@ -80,9 +80,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private queryService: QueryService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const userIdsWhoBlockingMe = me ? await this.cacheService.userBlockedCache.fetch(me.id) : new Set<string>();
-			const iAmModerator = me ? await this.roleService.isModerator(me) : false; // Moderators can see reactions of all users
+			const iAmModerator = me ? await this.roleService.isModerator(me, token) : false; // Moderators can see reactions of all users
 			if (!iAmModerator) {
 				const user = await this.cacheService.findUserById(ps.userId);
 				if (this.userEntityService.isRemoteUser(user)) {
@@ -122,7 +122,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const reactions = await query.limit(ps.limit).getMany();
 
-			return await this.noteReactionEntityService.packMany(reactions, me, { withNote: true });
+			return await this.noteReactionEntityService.packMany(reactions, me, token, { withNote: true });
 		});
 	}
 }

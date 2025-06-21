@@ -8,6 +8,7 @@ import * as Redis from 'ioredis';
 import { In } from 'typeorm';
 import { ModuleRef } from '@nestjs/core';
 import type {
+	MiAccessToken,
 	MiMeta,
 	MiRole,
 	MiRoleAssignment,
@@ -512,14 +513,16 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 	}
 
 	@bindThis
-	public async isModerator(user: { id: MiUser['id'] } | null): Promise<boolean> {
+	public async isModerator(user: { id: MiUser['id'] } | null, token?: MiAccessToken | null): Promise<boolean> {
 		if (user == null) return false;
+		if (token?.rank != null && token.rank !== 'admin' && token.rank !== 'mod') return false;
 		return (this.meta.rootUserId === user.id) || (await this.getUserRoles(user.id)).some(r => r.isModerator || r.isAdministrator);
 	}
 
 	@bindThis
-	public async isAdministrator(user: { id: MiUser['id'] } | null): Promise<boolean> {
+	public async isAdministrator(user: { id: MiUser['id'] } | null, token?: MiAccessToken | null): Promise<boolean> {
 		if (user == null) return false;
+		if (token?.rank != null && token.rank !== 'admin') return false;
 		return (this.meta.rootUserId === user.id) || (await this.getUserRoles(user.id)).some(r => r.isAdministrator);
 	}
 

@@ -185,7 +185,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private roleService: RoleService,
 		private idService: IdService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const file = ps.fileId ? await this.driveFilesRepository.findOneBy({ id: ps.fileId }) : await this.driveFilesRepository.findOne({
 				where: [{
 					url: ps.url,
@@ -204,7 +204,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				id: file.userId,
 			}) : null;
 
-			const iAmModerator = await this.roleService.isModerator(me);
+			const iAmModerator = await this.roleService.isModerator(me, token);
 			const ownerIsModerator = owner ? await this.roleService.isModerator(owner) : false;
 
 			return {

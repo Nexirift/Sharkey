@@ -53,7 +53,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private channelEntityService: ChannelEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.queryService
 				.makePaginationQuery(
 					this.channelFollowingsRepository.createQueryBuilder(),
@@ -69,7 +69,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				.limit(ps.limit)
 				.getMany();
 
-			return await Promise.all(followings.map(x => this.channelEntityService.pack(x.followeeId, me)));
+			return await Promise.all(followings.map(x => this.channelEntityService.pack(x.followeeId, me, token)));
 		});
 	}
 }

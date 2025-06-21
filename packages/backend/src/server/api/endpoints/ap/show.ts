@@ -21,6 +21,7 @@ import { ApRequestService } from '@/core/activitypub/ApRequestService.js';
 import { SystemAccountService } from '@/core/SystemAccountService.js';
 import { ApiError } from '../../error.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
+import { MiAccessToken } from '@/models/AccessToken.js';
 
 export const meta = {
 	tags: ['federation'],
@@ -121,8 +122,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private readonly apRequestService: ApRequestService,
 		private readonly systemAccountService: SystemAccountService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const object = await this.fetchAny(ps.uri, me);
+		super(meta, paramDef, async (ps, me, token) => {
+			const object = await this.fetchAny(ps.uri, me, token);
 			if (object) {
 				return object;
 			} else {
@@ -135,12 +136,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 	 * URIからUserかNoteを解決する
 	 */
 	@bindThis
-	private async fetchAny(uri: string, me: MiLocalUser | null | undefined): Promise<SchemaType<typeof meta['res']> | null> {
+	private async fetchAny(uri: string, me: MiLocalUser | null | undefined, token?: MiAccessToken | null): Promise<SchemaType<typeof meta['res']> | null> {
 		if (!this.utilityService.isFederationAllowedUri(uri)) {
 			throw new ApiError(meta.errors.federationNotAllowed);
 		}
 
-		const local = await this.mergePack(me, ...await Promise.all([
+		const local = await this.mergePack(me, token, ...await Promise.all([
 			this.apDbResolverService.getUserFromApId(uri),
 			this.apDbResolverService.getNoteFromApId(uri),
 		]));
@@ -198,21 +199,22 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		// The resolve* methods automatically check for locally cached copies.
 		return await this.mergePack(
 			me,
+			token,
 			isActor(object) ? await this.apPersonService.resolvePerson(object, resolver, uri) : null,
 			isPost(object) ? await this.apNoteService.resolveNote(object, { resolver, sentFrom: uri }) : null,
 		);
 	}
 
 	@bindThis
-	private async mergePack(me: MiLocalUser | null | undefined, user: MiUser | null | undefined, note: MiNote | null | undefined): Promise<SchemaType<typeof meta.res> | null> {
+	private async mergePack(me: MiLocalUser | null | undefined, token: MiAccessToken | null | undefined, user: MiUser | null | undefined, note: MiNote | null | undefined): Promise<SchemaType<typeof meta.res> | null> {
 		if (user != null) {
 			return {
 				type: 'User',
-				object: await this.userEntityService.pack(user, me, { schema: 'UserDetailedNotMe' }),
+				object: await this.userEntityService.pack(user, me, { schema: 'UserDetailedNotMe', token }),
 			};
 		} else if (note != null) {
 			try {
-				const object = await this.noteEntityService.pack(note, me, { detail: true });
+				const object = await this.noteEntityService.pack(note, me, token, { detail: true });
 
 				return {
 					type: 'Note',

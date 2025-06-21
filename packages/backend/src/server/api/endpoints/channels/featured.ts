@@ -45,7 +45,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		private channelEntityService: ChannelEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.channelsRepository.createQueryBuilder('channel')
 				.where('channel.lastNotedAt IS NOT NULL')
 				.andWhere('channel.isArchived = FALSE')
@@ -53,7 +53,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const channels = await query.limit(10).getMany();
 
-			return await Promise.all(channels.map(x => this.channelEntityService.pack(x, me)));
+			return await Promise.all(channels.map(x => this.channelEntityService.pack(x, me, token)));
 		});
 	}
 }

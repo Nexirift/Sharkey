@@ -61,7 +61,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private noteEntityService: NoteEntityService,
 		private getterService: GetterService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const note = await this.getterService.getNote(ps.noteId).catch(err => {
 				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') throw new ApiError(meta.errors.noSuchNote);
 				throw err;
@@ -93,10 +93,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			}
 
 			if (note.hasPoll) {
-				return await this.noteEntityService.packMany(conversation, me, { detail: true });
+				return await this.noteEntityService.packMany(conversation, me, token, { detail: true });
 			}
 
-			return await this.noteEntityService.packMany(conversation, me);
+			return await this.noteEntityService.packMany(conversation, me, token);
 		});
 	}
 }

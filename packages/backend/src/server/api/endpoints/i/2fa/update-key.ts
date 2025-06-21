@@ -56,7 +56,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private userEntityService: UserEntityService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const key = await this.userSecurityKeysRepository.findOneBy({
 				id: ps.credentialId,
 			});
@@ -77,6 +77,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			this.globalEventService.publishMainStream(me.id, 'meUpdated', await this.userEntityService.pack(me.id, me, {
 				schema: 'MeDetailed',
 				includeSecrets: true,
+				token,
 			}));
 
 			return {};

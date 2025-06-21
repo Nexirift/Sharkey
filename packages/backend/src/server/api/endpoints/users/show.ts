@@ -104,10 +104,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private perUserPvChart: PerUserPvChart,
 		private apiLoggerService: ApiLoggerService,
 	) {
-		super(meta, paramDef, async (ps, me, _1, _2, _3, ip) => {
+		super(meta, paramDef, async (ps, me, token, _2, _3, ip) => {
 			let user;
 
-			const isModerator = await this.roleService.isModerator(me);
+			const isModerator = await this.roleService.isModerator(me, token);
 			ps.username = ps.username?.trim();
 
 			if (ps.userIds) {

@@ -45,14 +45,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		private galleryPostEntityService: GalleryPostEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.galleryPostsRepository.createQueryBuilder('post')
 				.andWhere('post.likedCount > 0')
 				.orderBy('post.likedCount', 'DESC');
 
 			const posts = await query.limit(10).getMany();
 
-			return await this.galleryPostEntityService.packMany(posts, me);
+			return await this.galleryPostEntityService.packMany(posts, me, token);
 		});
 	}
 }

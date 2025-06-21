@@ -85,7 +85,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const channel = await this.channelsRepository.findOneBy({
 				id: ps.channelId,
 			});
@@ -94,7 +94,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				throw new ApiError(meta.errors.noSuchChannel);
 			}
 
-			const iAmModerator = await this.roleService.isModerator(me);
+			const iAmModerator = await this.roleService.isModerator(me, token);
 			if (channel.userId !== me.id && !iAmModerator) {
 				throw new ApiError(meta.errors.accessDenied);
 			}
@@ -125,7 +125,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				...(typeof ps.allowRenoteToExternal === 'boolean' ? { allowRenoteToExternal: ps.allowRenoteToExternal } : {}),
 			});
 
-			return await this.channelEntityService.pack(channel.id, me);
+			return await this.channelEntityService.pack(channel.id, me, token);
 		});
 	}
 }

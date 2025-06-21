@@ -67,7 +67,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private idService: IdService,
 		private channelEntityService: ChannelEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			let banner = null;
 			if (ps.bannerId != null) {
 				banner = await this.driveFilesRepository.findOneBy({
@@ -91,7 +91,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				allowRenoteToExternal: ps.allowRenoteToExternal ?? true,
 			} as MiChannel);
 
-			return await this.channelEntityService.pack(channel, me);
+			return await this.channelEntityService.pack(channel, me, token);
 		});
 	}
 }

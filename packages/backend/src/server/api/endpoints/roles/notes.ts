@@ -77,7 +77,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private fanoutTimelineService: FanoutTimelineService,
 		private readonly activeUsersChart: ActiveUsersChart,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const untilId = ps.untilId ?? (ps.untilDate ? this.idService.gen(ps.untilDate!) : null);
 			const sinceId = ps.sinceId ?? (ps.sinceDate ? this.idService.gen(ps.sinceDate!) : null);
 
@@ -124,7 +124,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				this.activeUsersChart.read(me);
 			});
 
-			return await this.noteEntityService.packMany(notes, me);
+			return await this.noteEntityService.packMany(notes, me, token);
 		});
 	}
 }

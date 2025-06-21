@@ -63,7 +63,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private flashLikeEntityService: FlashLikeEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.queryService.makePaginationQuery(this.flashLikesRepository.createQueryBuilder('like'), ps.sinceId, ps.untilId)
 				.andWhere('like.userId = :meId', { meId: me.id })
 				.leftJoinAndSelect('like.flash', 'flash');
@@ -72,7 +72,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				.limit(ps.limit)
 				.getMany();
 
-			return this.flashLikeEntityService.packMany(likes, me);
+			return this.flashLikeEntityService.packMany(likes, me, token);
 		});
 	}
 }

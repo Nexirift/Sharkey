@@ -80,7 +80,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private userAuthService: UserAuthService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, at) => {
 			const token = ps.token;
 			const profile = await this.userProfilesRepository.findOneByOrFail({ userId: me.id });
 
@@ -119,6 +119,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			const iObj = await this.userEntityService.pack(me.id, me, {
 				schema: 'MeDetailed',
 				includeSecrets: true,
+				token: at,
 			});
 
 			// Publish meUpdated event

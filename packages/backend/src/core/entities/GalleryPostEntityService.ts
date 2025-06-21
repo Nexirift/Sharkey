@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { GalleryLikesRepository, GalleryPostsRepository } from '@/models/_.js';
+import type { GalleryLikesRepository, GalleryPostsRepository, MiAccessToken } from '@/models/_.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { Packed } from '@/misc/json-schema.js';
 import type { } from '@/models/Blocking.js';
@@ -35,6 +35,7 @@ export class GalleryPostEntityService {
 	public async pack(
 		src: MiGalleryPost['id'] | MiGalleryPost,
 		me?: { id: MiUser['id'] } | null | undefined,
+		token?: MiAccessToken | null,
 		hint?: {
 			packedUser?: Packed<'UserLite'>
 		},
@@ -47,7 +48,7 @@ export class GalleryPostEntityService {
 			createdAt: this.idService.parse(post.id).date.toISOString(),
 			updatedAt: post.updatedAt.toISOString(),
 			userId: post.userId,
-			user: hint?.packedUser ?? this.userEntityService.pack(post.user ?? post.userId, me),
+			user: hint?.packedUser ?? this.userEntityService.pack(post.user ?? post.userId, me, { token }),
 			title: post.title,
 			description: post.description,
 			fileIds: post.fileIds,
@@ -64,11 +65,12 @@ export class GalleryPostEntityService {
 	public async packMany(
 		posts: MiGalleryPost[],
 		me?: { id: MiUser['id'] } | null | undefined,
+		token?: MiAccessToken | null,
 	) {
 		const _users = posts.map(({ user, userId }) => user ?? userId);
-		const _userMap = await this.userEntityService.packMany(_users, me)
+		const _userMap = await this.userEntityService.packMany(_users, me, { token })
 			.then(users => new Map(users.map(u => [u.id, u])));
-		return Promise.all(posts.map(post => this.pack(post, me, { packedUser: _userMap.get(post.userId) })));
+		return Promise.all(posts.map(post => this.pack(post, me, token, { packedUser: _userMap.get(post.userId) })));
 	}
 }
 

@@ -91,7 +91,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private readonly userEntityService: UserEntityService,
 		private idService: IdService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, at) => {
 			const query = this.accessTokensRepository.createQueryBuilder('token')
 				.where('token.userId = :userId', { userId: me.id })
 				.leftJoinAndSelect('token.app', 'app');
@@ -114,7 +114,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				});
 
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				const grantees = await this.userEntityService.packMany(sharedTokens.map(t => t.grantee!), me);
+				const grantees = await this.userEntityService.packMany(sharedTokens.map(t => t.grantee!), me, { token: at });
 
 				return {
 					id: token.id,

@@ -45,7 +45,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		private pageEntityService: PageEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.pagesRepository.createQueryBuilder('page')
 				.where('page.visibility = \'public\'')
 				.andWhere('page.likedCount > 0')
@@ -53,7 +53,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const pages = await query.limit(10).getMany();
 
-			return await this.pageEntityService.packMany(pages, me);
+			return await this.pageEntityService.packMany(pages, me, token);
 		});
 	}
 }

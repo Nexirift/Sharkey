@@ -62,7 +62,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private clipEntityService: ClipEntityService,
 		private getterService: GetterService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const note = await this.getterService.getNote(ps.noteId).catch(err => {
 				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') throw new ApiError(meta.errors.noSuchNote);
 				throw err;
@@ -77,7 +77,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				isPublic: true,
 			});
 
-			return await this.clipEntityService.packMany(clips, me);
+			return await this.clipEntityService.packMany(clips, me, token);
 		});
 	}
 }

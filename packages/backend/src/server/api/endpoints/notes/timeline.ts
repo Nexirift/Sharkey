@@ -76,7 +76,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private userFollowingService: UserFollowingService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const untilId = ps.untilId ?? (ps.untilDate ? this.idService.gen(ps.untilDate!) : null);
 			const sinceId = ps.sinceId ?? (ps.sinceDate ? this.idService.gen(ps.sinceDate!) : null);
 
@@ -94,7 +94,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					this.activeUsersChart.read(me);
 				});
 
-				return await this.noteEntityService.packMany(timeline, me);
+				return await this.noteEntityService.packMany(timeline, me, token);
 			}
 
 			const timeline = this.fanoutTimelineEndpointService.timeline({

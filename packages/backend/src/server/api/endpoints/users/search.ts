@@ -51,14 +51,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private userEntityService: UserEntityService,
 		private userSearchService: UserSearchService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const users = await this.userSearchService.search(ps.query.trim(), me?.id ?? null, {
 				offset: ps.offset,
 				limit: ps.limit,
 				origin: ps.origin,
 			});
 
-			return await this.userEntityService.packMany(users, me, { schema: ps.detail ? 'UserDetailed' : 'UserLite' });
+			return await this.userEntityService.packMany(users, me, { schema: ps.detail ? 'UserDetailed' : 'UserLite', token });
 		});
 	}
 }

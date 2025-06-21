@@ -59,14 +59,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private moderationLogService: ModerationLogService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const flash = await this.flashsRepository.findOneBy({ id: ps.flashId });
 
 			if (flash == null) {
 				throw new ApiError(meta.errors.noSuchFlash);
 			}
 
-			if (!await this.roleService.isModerator(me) && flash.userId !== me.id) {
+			if (!await this.roleService.isModerator(me, token) && flash.userId !== me.id) {
 				throw new ApiError(meta.errors.accessDenied);
 			}
 

@@ -52,7 +52,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		private channelEntityService: ChannelEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const channel = await this.channelsRepository.findOneBy({
 				id: ps.channelId,
 			});
@@ -61,7 +61,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				throw new ApiError(meta.errors.noSuchChannel);
 			}
 
-			return await this.channelEntityService.pack(channel, me, true);
+			return await this.channelEntityService.pack(channel, me, token, true);
 		});
 	}
 }

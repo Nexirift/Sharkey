@@ -46,7 +46,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		private inviteCodeEntityService: InviteCodeEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.registrationTicketsRepository.createQueryBuilder('ticket')
 				.leftJoinAndSelect('ticket.createdBy', 'createdBy')
 				.leftJoinAndSelect('ticket.usedBy', 'usedBy');
@@ -70,7 +70,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const tickets = await query.getMany();
 
-			return await this.inviteCodeEntityService.packMany(tickets, me);
+			return await this.inviteCodeEntityService.packMany(tickets, me, token);
 		});
 	}
 }

@@ -60,14 +60,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private roleService: RoleService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const file = await this.driveFilesRepository.findOneBy({ id: ps.fileId });
 
 			if (file == null) {
 				throw new ApiError(meta.errors.noSuchFile);
 			}
 
-			if (!await this.roleService.isModerator(me) && (file.userId !== me.id)) {
+			if (!await this.roleService.isModerator(me, token) && (file.userId !== me.id)) {
 				throw new ApiError(meta.errors.accessDenied);
 			}
 

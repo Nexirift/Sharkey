@@ -254,7 +254,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private idService: IdService,
 		private readonly cacheService: CacheService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const [user, profile] = await Promise.all([
 				this.usersRepository.findOneBy({ id: ps.userId }),
 				this.userProfilesRepository.findOneBy({ userId: ps.userId }),
@@ -269,7 +269,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			const isSilenced = user.isSilenced || !(await this.roleService.getUserPolicies(user.id)).canPublicNote;
 
 			const _me = await this.usersRepository.findOneByOrFail({ id: me.id });
-			if (!await this.roleService.isAdministrator(_me) && await this.roleService.isAdministrator(user)) {
+			if (!await this.roleService.isAdministrator(_me, token) && await this.roleService.isAdministrator(user)) {
 				throw new Error('cannot show info of admin');
 			}
 

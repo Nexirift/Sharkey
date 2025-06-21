@@ -479,7 +479,7 @@ export class UserEntityService implements OnModuleInit {
 		const isDetailed = opts.schema !== 'UserLite';
 		const meId = me ? me.id : null;
 		const isMe = meId === user.id;
-		const iAmModerator = opts.iAmModerator ?? (me ? await this.roleService.isModerator(me as MiUser) : false);
+		const iAmModerator = opts.iAmModerator ?? (me ? await this.roleService.isModerator(me as MiUser, opts.token) : false);
 
 		const profile = isDetailed
 			? (opts.userProfile ?? user.userProfile ?? await this.userProfilesRepository.findOneByOrFail({ userId: user.id }))
@@ -531,8 +531,7 @@ export class UserEntityService implements OnModuleInit {
 			(profile.followersVisibility === 'followers') && (relation && relation.isFollowing) ? user.followersCount :
 			null;
 
-		const isModerator = isMe && isDetailed && (opts.token?.rank == null || opts.token.rank === 'mod') ? this.roleService.isModerator(user) : null;
-		const isAdmin = isMe && isDetailed && (opts.token?.rank == null || opts.token.rank === 'admin') ? this.roleService.isAdministrator(user) : null;
+		const isAdmin = isMe && isDetailed ? this.roleService.isAdministrator(user, opts.token) : null;
 		const unreadAnnouncements = isMe && isDetailed ?
 			(await this.announcementService.getUnreadAnnouncements(user)).map((announcement) => ({
 				createdAt: this.idService.parse(announcement.id).date.toISOString(),
@@ -628,11 +627,11 @@ export class UserEntityService implements OnModuleInit {
 				fields: profile!.fields,
 				verifiedLinks: profile!.verifiedLinks,
 				pinnedNoteIds: pins.map(pin => pin.noteId),
-				pinnedNotes: this.noteEntityService.packMany(pins.map(pin => pin.note!), me, {
+				pinnedNotes: this.noteEntityService.packMany(pins.map(pin => pin.note!), me, opts.token, {
 					detail: true,
 				}),
 				pinnedPageId: profile!.pinnedPageId,
-				pinnedPage: profile!.pinnedPageId ? this.pageEntityService.pack(profile!.pinnedPageId, me) : null,
+				pinnedPage: profile!.pinnedPageId ? this.pageEntityService.pack(profile!.pinnedPageId, me, opts.token) : null,
 				publicReactions: this.isLocalUser(user) ? profile!.publicReactions : false, // https://github.com/misskey-dev/misskey/issues/12964
 				followersVisibility: profile!.followersVisibility,
 				followingVisibility: profile!.followingVisibility,
@@ -665,7 +664,7 @@ export class UserEntityService implements OnModuleInit {
 				bannerId: user.bannerId,
 				backgroundId: user.backgroundId,
 				followedMessage: profile!.followedMessage,
-				isModerator: isModerator,
+				isModerator: iAmModerator,
 				isAdmin: isAdmin,
 				isSystem: isSystemAccount(user),
 				injectFeaturedNote: profile!.injectFeaturedNote,
@@ -742,12 +741,15 @@ export class UserEntityService implements OnModuleInit {
 		return await awaitAll(packed);
 	}
 
+	// TODO pass token
+
 	public async packMany<S extends 'MeDetailed' | 'UserDetailedNotMe' | 'UserDetailed' | 'UserLite' = 'UserLite'>(
 		users: (MiUser['id'] | MiUser)[],
 		me?: { id: MiUser['id'] } | null | undefined,
 		options?: {
 			schema?: S,
 			includeSecrets?: boolean,
+			token?: MiAccessToken | null,
 		},
 	): Promise<Packed<S>[]> {
 		if (users.length === 0) return [];
@@ -769,7 +771,7 @@ export class UserEntityService implements OnModuleInit {
 		}
 		const _userIds = _users.map(u => u.id);
 
-		const iAmModerator = await this.roleService.isModerator(me as MiUser);
+		const iAmModerator = await this.roleService.isModerator(me as MiUser, options?.token);
 		const meId = me ? me.id : null;
 		const isDetailed = options && options.schema !== 'UserLite';
 		const isDetailedAndMod = isDetailed && iAmModerator;

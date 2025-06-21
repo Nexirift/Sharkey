@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { DriveFilesRepository, PagesRepository, PageLikesRepository } from '@/models/_.js';
+import type { DriveFilesRepository, PagesRepository, PageLikesRepository, MiAccessToken } from '@/models/_.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { Packed } from '@/misc/json-schema.js';
 import type { } from '@/models/Blocking.js';
@@ -39,6 +39,7 @@ export class PageEntityService {
 	public async pack(
 		src: MiPage['id'] | MiPage,
 		me?: { id: MiUser['id'] } | null | undefined,
+		token?: MiAccessToken | null,
 		hint?: {
 			packedUser?: Packed<'UserLite'>
 		},
@@ -93,7 +94,7 @@ export class PageEntityService {
 			createdAt: this.idService.parse(page.id).date.toISOString(),
 			updatedAt: page.updatedAt.toISOString(),
 			userId: page.userId,
-			user: hint?.packedUser ?? this.userEntityService.pack(page.user ?? page.userId, me), // { schema: 'UserDetailed' } すると無限ループするので注意
+			user: hint?.packedUser ?? this.userEntityService.pack(page.user ?? page.userId, me, { token }), // { schema: 'UserDetailed' } すると無限ループするので注意
 			content: page.content,
 			variables: page.variables,
 			title: page.title,
@@ -115,11 +116,12 @@ export class PageEntityService {
 	public async packMany(
 		pages: MiPage[],
 		me?: { id: MiUser['id'] } | null | undefined,
+		token?: MiAccessToken | null,
 	) {
 		const _users = pages.map(({ user, userId }) => user ?? userId);
-		const _userMap = await this.userEntityService.packMany(_users, me)
+		const _userMap = await this.userEntityService.packMany(_users, me, { token })
 			.then(users => new Map(users.map(u => [u.id, u])));
-		return Promise.all(pages.map(page => this.pack(page, me, { packedUser: _userMap.get(page.userId) })));
+		return Promise.all(pages.map(page => this.pack(page, me, token, { packedUser: _userMap.get(page.userId) })));
 	}
 }
 

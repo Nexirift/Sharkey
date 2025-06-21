@@ -119,7 +119,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private abuseUserReportEntityService: AbuseUserReportEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.queryService.makePaginationQuery(this.abuseUserReportsRepository.createQueryBuilder('report'), ps.sinceId, ps.untilId)
 				.leftJoinAndSelect('report.targetUser', 'targetUser')
 				.leftJoinAndSelect('targetUser.userProfile', 'targetUserProfile')
@@ -147,7 +147,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const reports = await query.limit(ps.limit).getMany();
 
-			return await this.abuseUserReportEntityService.packMany(reports, me);
+			return await this.abuseUserReportEntityService.packMany(reports, me, token);
 		});
 	}
 }

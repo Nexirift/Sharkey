@@ -629,6 +629,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			const iObj = await this.userEntityService.pack(user.id, user, {
 				schema: 'MeDetailed',
 				includeSecrets: isSecure,
+				token,
 			});
 
 			const updatedProfile = await this.userProfilesRepository.findOneByOrFail({ userId: user.id });

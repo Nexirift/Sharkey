@@ -53,7 +53,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private galleryPostEntityService: GalleryPostEntityService,
 		private featuredService: FeaturedService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			let postIds: string[];
 			if (this.galleryPostsRankingCacheLastFetchedAt !== 0 && (Date.now() - this.galleryPostsRankingCacheLastFetchedAt < 1000 * 60 * 30)) {
 				postIds = this.galleryPostsRankingCache;
@@ -78,7 +78,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const posts = await query.getMany();
 
-			return await this.galleryPostEntityService.packMany(posts, me);
+			return await this.galleryPostEntityService.packMany(posts, me, token);
 		});
 	}
 }

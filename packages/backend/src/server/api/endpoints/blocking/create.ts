@@ -78,7 +78,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private userBlockingService: UserBlockingService,
 		private userMutingService: UserMutingService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const blocker = await this.usersRepository.findOneByOrFail({ id: me.id });
 
 			// 自分自身
@@ -120,6 +120,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			return await this.userEntityService.pack(blockee.id, blocker, {
 				schema: 'UserDetailedNotMe',
+				token,
 			});
 		});
 	}

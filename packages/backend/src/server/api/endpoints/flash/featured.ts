@@ -47,12 +47,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private flashService: FlashService,
 		private flashEntityService: FlashEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const result = await this.flashService.featured({
 				offset: ps.offset,
 				limit: ps.limit,
 			});
-			return await this.flashEntityService.packMany(result, me);
+			return await this.flashEntityService.packMany(result, me, token);
 		});
 	}
 }

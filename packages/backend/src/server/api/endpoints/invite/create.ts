@@ -58,7 +58,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private idService: IdService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const policies = await this.roleService.getUserPolicies(me.id);
 
 			if (policies.inviteLimit) {
@@ -80,7 +80,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				code: generateInviteCode(),
 			});
 
-			return await this.inviteCodeEntityService.pack(ticket, me);
+			return await this.inviteCodeEntityService.pack(ticket, me, token);
 		});
 	}
 }

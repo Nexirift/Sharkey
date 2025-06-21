@@ -55,7 +55,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private noteEntityService: NoteEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'), ps.sinceId, ps.untilId)
 				.andWhere(new Brackets(qb => {
 					qb.orWhere('note.replyId = :noteId');
@@ -85,7 +85,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const notes = await query.getMany();
 
-			return await this.noteEntityService.packMany(notes, me);
+			return await this.noteEntityService.packMany(notes, me, token);
 		});
 	}
 }

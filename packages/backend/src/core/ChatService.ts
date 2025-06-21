@@ -16,7 +16,7 @@ import { ChatEntityService } from '@/core/entities/ChatEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { PushNotificationService } from '@/core/PushNotificationService.js';
 import { bindThis } from '@/decorators.js';
-import type { ChatApprovalsRepository, ChatMessagesRepository, ChatRoomInvitationsRepository, ChatRoomMembershipsRepository, ChatRoomsRepository, MiChatMessage, MiChatRoom, MiChatRoomMembership, MiDriveFile, MiUser, MutingsRepository, UsersRepository } from '@/models/_.js';
+import type { ChatApprovalsRepository, ChatMessagesRepository, ChatRoomInvitationsRepository, ChatRoomMembershipsRepository, ChatRoomsRepository, MiAccessToken, MiChatMessage, MiChatRoom, MiChatRoomMembership, MiDriveFile, MiUser, MutingsRepository, UsersRepository } from '@/models/_.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { QueryService } from '@/core/QueryService.js';
 import { RoleService } from '@/core/RoleService.js';
@@ -342,11 +342,11 @@ export class ChatService {
 	}
 
 	@bindThis
-	public async hasPermissionToViewRoomTimeline(meId: MiUser['id'], room: MiChatRoom) {
+	public async hasPermissionToViewRoomTimeline(meId: MiUser['id'], room: MiChatRoom, token?: MiAccessToken | null) {
 		if (await this.isRoomMember(room, meId)) {
 			return true;
 		} else {
-			const iAmModerator = await this.roleService.isModerator({ id: meId });
+			const iAmModerator = await this.roleService.isModerator({ id: meId }, token);
 			if (iAmModerator) {
 				return true;
 			}
@@ -563,12 +563,12 @@ export class ChatService {
 	}
 
 	@bindThis
-	public async hasPermissionToDeleteRoom(meId: MiUser['id'], room: MiChatRoom) {
+	public async hasPermissionToDeleteRoom(meId: MiUser['id'], room: MiChatRoom, token?: MiAccessToken | null) {
 		if (room.ownerId === meId) {
 			return true;
 		}
 
-		const iAmModerator = await this.roleService.isModerator({ id: meId });
+		const iAmModerator = await this.roleService.isModerator({ id: meId }, token);
 		if (iAmModerator) {
 			return true;
 		}

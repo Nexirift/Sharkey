@@ -52,7 +52,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private clipEntityService: ClipEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.queryService.makePaginationQuery(this.clipsRepository.createQueryBuilder('clip'), ps.sinceId, ps.untilId)
 				.andWhere('clip.userId = :userId', { userId: ps.userId })
 				.andWhere('clip.isPublic = true');
@@ -61,7 +61,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				.limit(ps.limit)
 				.getMany();
 
-			return await this.clipEntityService.packMany(clips, me);
+			return await this.clipEntityService.packMany(clips, me, token);
 		});
 	}
 }

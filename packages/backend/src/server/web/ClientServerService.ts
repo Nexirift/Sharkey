@@ -842,7 +842,7 @@ export class ClientServerService {
 			if (['specified', 'followers'].includes(note.visibility)) return;
 			if (note.userHost != null) return;
 
-			const _note = await this.noteEntityService.pack(note, null, { detail: true });
+			const _note = await this.noteEntityService.pack(note, null, null, { detail: true });
 
 			reply.header('Cache-Control', 'public, max-age=3600');
 			return await reply.view('base-embed', {

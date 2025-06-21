@@ -49,14 +49,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private roleService: RoleService,
 		private chatEntityService: ChatEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			await this.chatService.checkChatAvailability(me.id, 'read');
 
 			const message = await this.chatService.findMessageById(ps.messageId);
 			if (message == null) {
 				throw new ApiError(meta.errors.noSuchMessage);
 			}
-			if (message.fromUserId !== me.id && message.toUserId !== me.id && !(await this.roleService.isModerator(me))) {
+			if (message.fromUserId !== me.id && message.toUserId !== me.id && !(await this.roleService.isModerator(me, token))) {
 				throw new ApiError(meta.errors.noSuchMessage);
 			}
 			return this.chatEntityService.packMessageDetailed(message, me);

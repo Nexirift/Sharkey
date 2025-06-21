@@ -52,14 +52,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		private flashEntityService: FlashEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const flash = await this.flashsRepository.findOneBy({ id: ps.flashId });
 
 			if (flash == null) {
 				throw new ApiError(meta.errors.noSuchFlash);
 			}
 
-			return await this.flashEntityService.pack(flash, me);
+			return await this.flashEntityService.pack(flash, me, token);
 		});
 	}
 }

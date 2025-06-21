@@ -61,7 +61,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private queryService: QueryService,
 		private readonly activeUsersChart: ActiveUsersChart,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'), ps.sinceId, ps.untilId)
 				.innerJoin(qb => {
 					qb
@@ -114,7 +114,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				this.activeUsersChart.read(me);
 			});
 
-			return await this.noteEntityService.packMany(mentions, me);
+			return await this.noteEntityService.packMany(mentions, me, token);
 		});
 	}
 }

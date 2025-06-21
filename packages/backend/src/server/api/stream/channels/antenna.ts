@@ -39,7 +39,7 @@ class AntennaChannel extends Channel {
 	@bindThis
 	private async onEvent(data: GlobalEvents['antenna']['payload']) {
 		if (data.type === 'note') {
-			const note = await this.noteEntityService.pack(data.body.id, this.user, { detail: true });
+			const note = await this.noteEntityService.pack(data.body.id, this.user, this.token, { detail: true });
 
 			const { accessible, silence } = await this.checkNoteVisibility(note, { includeReplies: true });
 			if (!accessible || silence) return;

@@ -38,7 +38,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 	constructor(
 		private chatService: ChatService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			await this.chatService.checkChatAvailability(me.id, 'write');
 
 			const room = await this.chatService.findRoomById(ps.roomId);
@@ -46,7 +46,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				throw new ApiError(meta.errors.noSuchRoom);
 			}
 
-			if (!await this.chatService.hasPermissionToDeleteRoom(me.id, room)) {
+			if (!await this.chatService.hasPermissionToDeleteRoom(me.id, room, token)) {
 				throw new ApiError(meta.errors.noSuchRoom);
 			}
 

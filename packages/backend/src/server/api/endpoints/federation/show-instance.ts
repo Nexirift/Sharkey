@@ -46,11 +46,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private utilityService: UtilityService,
 		private instanceEntityService: InstanceEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const instance = await this.instancesRepository
 				.findOneBy({ host: this.utilityService.toPuny(ps.host) });
 
-			return instance ? await this.instanceEntityService.pack(instance, me) : null;
+			return instance ? await this.instanceEntityService.pack(instance, me, token) : null;
 		});
 	}
 }

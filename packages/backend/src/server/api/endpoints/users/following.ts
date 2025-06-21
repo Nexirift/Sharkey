@@ -101,7 +101,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private roleService: RoleService,
 		private readonly cacheService: CacheService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const user = await this.usersRepository.findOneBy(ps.userId != null
 				? { id: ps.userId }
 				: { usernameLower: ps.username!.toLowerCase(), host: this.utilityService.toPunyNullable(ps.host) ?? IsNull() });
@@ -112,7 +112,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const profile = await this.userProfilesRepository.findOneByOrFail({ userId: user.id });
 
-			if (profile.followingVisibility !== 'public' && !await this.roleService.isModerator(me)) {
+			if (profile.followingVisibility !== 'public' && !await this.roleService.isModerator(me, token)) {
 				if (profile.followingVisibility === 'private') {
 					if (me == null || (me.id !== user.id)) {
 						throw new ApiError(meta.errors.forbidden);
@@ -150,7 +150,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				.limit(ps.limit)
 				.getMany();
 
-			return await this.followingEntityService.packMany(followings, me, { populateFollowee: true });
+			return await this.followingEntityService.packMany(followings, me, token, { populateFollowee: true });
 		});
 	}
 }

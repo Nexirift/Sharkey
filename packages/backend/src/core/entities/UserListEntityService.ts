@@ -5,12 +5,13 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { MiUserListMembership, UserListMembershipsRepository, UserListsRepository } from '@/models/_.js';
+import type { MiAccessToken, MiUserListMembership, UserListMembershipsRepository, UserListsRepository } from '@/models/_.js';
 import type { Packed } from '@/misc/json-schema.js';
 import type { } from '@/models/Blocking.js';
 import type { MiUserList } from '@/models/UserList.js';
 import { bindThis } from '@/decorators.js';
 import { IdService } from '@/core/IdService.js';
+import type { MiLocalUser } from '@/models/User.js';
 import { UserEntityService } from './UserEntityService.js';
 
 @Injectable()
@@ -49,15 +50,17 @@ export class UserListEntityService {
 	@bindThis
 	public async packMembershipsMany(
 		memberships: MiUserListMembership[],
+		me?: MiLocalUser | null,
+		token?: MiAccessToken | null,
 	) {
 		const _users = memberships.map(({ user, userId }) => user ?? userId);
-		const _userMap = await this.userEntityService.packMany(_users)
+		const _userMap = await this.userEntityService.packMany(_users, me, { token })
 			.then(users => new Map(users.map(u => [u.id, u])));
 		return Promise.all(memberships.map(async x => ({
 			id: x.id,
 			createdAt: this.idService.parse(x.id).date.toISOString(),
 			userId: x.userId,
-			user: _userMap.get(x.userId) ?? await this.userEntityService.pack(x.userId),
+			user: _userMap.get(x.userId) ?? await this.userEntityService.pack(x.userId, me, { token }),
 			withReplies: x.withReplies,
 		})));
 	}

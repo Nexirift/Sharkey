@@ -71,7 +71,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private notificationEntityService: NotificationEntityService,
 		private notificationService: NotificationService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const EXTRA_LIMIT = 100;
 
 			// includeTypes が空の場合はクエリしない
@@ -191,7 +191,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			// this matches the logic in NotificationService and it's what MkPagination expects
 			if (ps.sinceId && !ps.untilId) groupedNotifications.reverse();
 
-			return await this.notificationEntityService.packGroupedMany(groupedNotifications, me.id);
+			return await this.notificationEntityService.packGroupedMany(groupedNotifications, me.id, token);
 		});
 	}
 }

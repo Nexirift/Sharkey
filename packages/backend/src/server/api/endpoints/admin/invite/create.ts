@@ -58,7 +58,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private idService: IdService,
 		private moderationLogService: ModerationLogService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			if (ps.expiresAt && isNaN(Date.parse(ps.expiresAt))) {
 				throw new ApiError(meta.errors.invalidDateTime);
 			}
@@ -81,7 +81,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				invitations: tickets,
 			});
 
-			return await this.inviteCodeEntityService.packMany(tickets, me);
+			return await this.inviteCodeEntityService.packMany(tickets, me, token);
 		});
 	}
 }

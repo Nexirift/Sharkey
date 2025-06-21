@@ -67,7 +67,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private roleService: RoleService,
 		private activeUsersChart: ActiveUsersChart,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const policies = await this.roleService.getUserPolicies(me ? me.id : null);
 			if (!policies.btlAvailable) {
 				throw new ApiError(meta.errors.btlDisabled);
@@ -126,7 +126,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				});
 			}
 
-			return await this.noteEntityService.packMany(timeline, me);
+			return await this.noteEntityService.packMany(timeline, me, token);
 		});
 	}
 }

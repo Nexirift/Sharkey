@@ -66,7 +66,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private noteReactionEntityService: NoteReactionEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const query = this.queryService.makePaginationQuery(this.noteReactionsRepository.createQueryBuilder('reaction'), ps.sinceId, ps.untilId)
 				.andWhere('reaction.noteId = :noteId', { noteId: ps.noteId })
 				.leftJoinAndSelect('reaction.user', 'user')
@@ -85,7 +85,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const reactions = await query.limit(ps.limit).getMany();
 
-			return await this.noteReactionEntityService.packMany(reactions, me);
+			return await this.noteReactionEntityService.packMany(reactions, me, token);
 		});
 	}
 }

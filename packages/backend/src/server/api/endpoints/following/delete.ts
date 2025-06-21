@@ -11,8 +11,8 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
 import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
-import { ApiError } from '../../error.js';
 import { CacheService } from '@/core/CacheService.js';
+import { ApiError } from '../../error.js';
 
 export const meta = {
 	tags: ['following', 'users'],
@@ -72,7 +72,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private userFollowingService: UserFollowingService,
 		private readonly cacheService: CacheService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps, me, token) => {
 			const follower = me;
 
 			// Check if the followee is yourself
@@ -95,7 +95,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			await this.userFollowingService.unfollow(follower, followee);
 
-			return await this.userEntityService.pack(followee.id, me);
+			return await this.userEntityService.pack(followee.id, me, { token });
 		});
 	}
 }

@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { RenoteMutingsRepository } from '@/models/_.js';
+import type { MiAccessToken, RenoteMutingsRepository } from '@/models/_.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { Packed } from '@/misc/json-schema.js';
 import type { } from '@/models/Blocking.js';
@@ -30,6 +30,7 @@ export class RenoteMutingEntityService {
 	public async pack(
 		src: MiRenoteMuting['id'] | MiRenoteMuting,
 		me?: { id: MiUser['id'] } | null | undefined,
+		token?: MiAccessToken | null,
 		hints?: {
 			packedMutee?: Packed<'UserDetailedNotMe'>
 		},
@@ -42,6 +43,7 @@ export class RenoteMutingEntityService {
 			muteeId: muting.muteeId,
 			mutee: hints?.packedMutee ?? this.userEntityService.pack(muting.muteeId, me, {
 				schema: 'UserDetailedNotMe',
+				token,
 			}),
 		});
 	}
@@ -50,11 +52,12 @@ export class RenoteMutingEntityService {
 	public async packMany(
 		mutings: MiRenoteMuting[],
 		me: { id: MiUser['id'] },
+		token?: MiAccessToken | null,
 	) {
 		const _users = mutings.map(({ mutee, muteeId }) => mutee ?? muteeId);
-		const _userMap = await this.userEntityService.packMany(_users, me, { schema: 'UserDetailedNotMe' })
+		const _userMap = await this.userEntityService.packMany(_users, me, { schema: 'UserDetailedNotMe', token })
 			.then(users => new Map(users.map(u => [u.id, u])));
-		return Promise.all(mutings.map(muting => this.pack(muting, me, { packedMutee: _userMap.get(muting.muteeId) })));
+		return Promise.all(mutings.map(muting => this.pack(muting, me, token, { packedMutee: _userMap.get(muting.muteeId) })));
 	}
 }
 
