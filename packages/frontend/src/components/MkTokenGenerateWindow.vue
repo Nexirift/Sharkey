@@ -31,6 +31,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<MkFolder v-if="$i?.isAdmin || $i?.isModerator">
 				<template #label>{{ i18n.ts.overrideRank }}</template>
 				<template #caption>{{ i18n.ts.overrideRankDescription }}</template>
+				<template #suffix>{{ i18n.ts._ranks[rank] }}</template>
 
 				<MkSelect v-if="$i?.isAdmin" v-model="rank">
 					<option value="admin">{{ i18n.ts._ranks.admin }}</option>
@@ -47,6 +48,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<MkFolder>
 				<template #label>{{ i18n.ts.permission }}</template>
 				<template #caption>{{ i18n.ts.permissionsDescription }}</template>
+				<template #suffix>{{ permsCount || i18n.ts.none }}</template>
 
 				<div class="_buttons">
 					<MkButton inline @click="disableAll">{{ i18n.ts.disableAll }}</MkButton>
@@ -60,6 +62,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<MkFolder v-if="iAmAdmin">
 				<template #label>{{ i18n.ts.adminPermission }}</template>
 				<template #caption>{{ i18n.ts.adminPermissionsDescription }}</template>
+				<template #suffix>{{ adminPermsCount || i18n.ts.none }}</template>
 
 				<div class="_buttons">
 					<MkButton inline @click="disableAllAdmin">{{ i18n.ts.disableAll }}</MkButton>
@@ -74,6 +77,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<MkFolder>
 				<template #label>{{ i18n.ts.sharedAccess }}</template>
 				<template #caption>{{ i18n.ts.sharedAccessDescription }}</template>
+				<template #suffix>{{ grantees.length || i18n.ts.none }}</template>
 
 				<MkButton primary @click="addGrantee">
 					<i class="ti ti-plus"></i> {{ i18n.ts.addGrantee }}
@@ -90,7 +94,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { useTemplateRef, ref } from 'vue';
+import { useTemplateRef, ref, computed } from 'vue';
 import * as Misskey from 'misskey-js';
 import MkInput from './MkInput.vue';
 import MkSwitch from './MkSwitch.vue';
@@ -138,6 +142,8 @@ const rank = ref<'admin' | 'mod' | 'user'>(
 		: $i?.isModerator
 			? 'mod'
 			: 'user');
+const permsCount = computed(() => Object.values(permissionSwitches).reduce((sum, active) => active ? sum + 1 : sum, 0));
+const adminPermsCount = computed(() => Object.values(permissionSwitchesForAdmin).reduce((sum, active) => active ? sum + 1 : sum, 0));
 
 if (props.initialPermissions) {
 	for (const kind of props.initialPermissions) {
