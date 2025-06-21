@@ -739,6 +739,13 @@ export const packedMeDetailedOnlySchema = {
 			nullable: false, optional: false,
 			ref: 'RolePolicies',
 		},
+		permissions: {
+			type: 'array',
+			nullable: false, optional: false,
+			items: {
+				type: 'string',
+			},
+		},
 		twoFactorEnabled: {
 			type: 'boolean',
 			nullable: false, optional: false,

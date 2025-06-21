@@ -4596,6 +4596,7 @@ export type components = {
       achievements: components['schemas']['Achievement'][];
       loggedInDays: number;
       policies: components['schemas']['RolePolicies'];
+      permissions: string[];
       /** @default false */
       twoFactorEnabled: boolean;
       /** @default false */

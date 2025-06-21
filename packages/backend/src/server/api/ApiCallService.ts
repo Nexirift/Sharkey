@@ -379,6 +379,7 @@ export class ApiCallService implements OnApplicationShutdown {
 		}
 
 		if ((ep.meta.requireModerator || ep.meta.requireAdmin) && (this.meta.rootUserId !== user?.id)) {
+			// Sync with UserEntityService
 			const myRoles = user ? await this.roleService.getUserRoles(user) : [];
 			const isAdmin = myRoles.some(r => r.isAdministrator) && (token?.rank == null || token.rank === 'admin');
 			const isModerator = myRoles.some(r => r.isAdministrator || r.isModerator) && (token?.rank == null || token.rank === 'admin' || token.rank === 'mod');

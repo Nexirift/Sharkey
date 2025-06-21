@@ -5,6 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
+import * as Misskey from 'misskey-js';
 import _Ajv from 'ajv';
 import { ModuleRef } from '@nestjs/core';
 import { In } from 'typeorm';
@@ -433,6 +434,7 @@ export class UserEntityService implements OnModuleInit {
 			userMemos?: Map<MiUser['id'], string | null>,
 			pinNotes?: Map<MiUser['id'], MiUserNotePining[]>,
 			iAmModerator?: boolean,
+			iAmAdmin?: boolean,
 			userIdsByUri?: Map<string, string>,
 			instances?: Map<string, MiInstance | null>,
 			securityKeyCounts?: Map<string, number>,
@@ -480,6 +482,7 @@ export class UserEntityService implements OnModuleInit {
 		const meId = me ? me.id : null;
 		const isMe = meId === user.id;
 		const iAmModerator = opts.iAmModerator ?? (me ? await this.roleService.isModerator(me as MiUser, opts.token) : false);
+		const iAmAdmin = opts.iAmAdmin ?? (me ? await this.roleService.isAdministrator(user, opts.token) : false);
 
 		const profile = isDetailed
 			? (opts.userProfile ?? user.userProfile ?? await this.userProfilesRepository.findOneByOrFail({ userId: user.id }))
@@ -531,7 +534,6 @@ export class UserEntityService implements OnModuleInit {
 			(profile.followersVisibility === 'followers') && (relation && relation.isFollowing) ? user.followersCount :
 			null;
 
-		const isAdmin = isMe && isDetailed ? this.roleService.isAdministrator(user, opts.token) : null;
 		const unreadAnnouncements = isMe && isDetailed ?
 			(await this.announcementService.getUnreadAnnouncements(user)).map((announcement) => ({
 				createdAt: this.idService.parse(announcement.id).date.toISOString(),
@@ -665,7 +667,7 @@ export class UserEntityService implements OnModuleInit {
 				backgroundId: user.backgroundId,
 				followedMessage: profile!.followedMessage,
 				isModerator: iAmModerator,
-				isAdmin: isAdmin,
+				isAdmin: iAmAdmin,
 				isSystem: isSystemAccount(user),
 				injectFeaturedNote: profile!.injectFeaturedNote,
 				receiveAnnouncementEmail: profile!.receiveAnnouncementEmail,
@@ -700,6 +702,7 @@ export class UserEntityService implements OnModuleInit {
 				achievements: profile!.achievements,
 				loggedInDays: profile!.loggedInDates.length,
 				policies: fetchPolicies(),
+				permissions: this.getPermissions(opts.token, iAmModerator, iAmAdmin),
 				defaultCW: profile!.defaultCW,
 				defaultCWPriority: profile!.defaultCWPriority,
 				allowUnsignedFetch: user.allowUnsignedFetch,
@@ -771,7 +774,11 @@ export class UserEntityService implements OnModuleInit {
 		}
 		const _userIds = _users.map(u => u.id);
 
-		const iAmModerator = await this.roleService.isModerator(me as MiUser, options?.token);
+		// Sync with ApiCallService
+		const roles = me ? await this.roleService.getUserRoles(me.id) : [];
+		const iAmAdmin = roles.some(r => r.isAdministrator) && (options?.token?.rank == null || options?.token.rank === 'admin');
+		const iAmModerator = roles.some(r => r.isAdministrator || r.isModerator) && (options?.token?.rank == null || options?.token.rank === 'admin' || options?.token.rank === 'mod');
+
 		const meId = me ? me.id : null;
 		const isDetailed = options && options.schema !== 'UserLite';
 		const isDetailedAndMod = isDetailed && iAmModerator;
@@ -868,6 +875,7 @@ export class UserEntityService implements OnModuleInit {
 					userMemos: userMemos,
 					pinNotes: pinNotes,
 					iAmModerator,
+					iAmAdmin,
 					userIdsByUri,
 					instances,
 					securityKeyCounts,
@@ -875,5 +883,21 @@ export class UserEntityService implements OnModuleInit {
 				},
 			)),
 		);
+	}
+
+	@bindThis
+	private getPermissions(token: MiAccessToken | null | undefined, isModerator: boolean, isAdmin: boolean): readonly string[] {
+		let permissions = token?.permission ?? Misskey.permissions;
+
+		if (!isAdmin) {
+			permissions = permissions.filter(perm => !perm.startsWith('read:admin') && !perm.startsWith('write:admin'));
+		}
+
+		// TODO support for moderator perms
+		// if (!isModerator) {
+		//
+		// }
+
+		return permissions;
 	}
 }
