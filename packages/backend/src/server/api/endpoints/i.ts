@@ -84,6 +84,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				schema: 'MeDetailed',
 				includeSecrets: isSecure,
 				userProfile,
+				token,
 			});
 		});
 	}

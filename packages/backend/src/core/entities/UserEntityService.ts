@@ -29,6 +29,7 @@ import type {
 	DriveFilesRepository,
 	FollowingsRepository,
 	FollowRequestsRepository,
+	MiAccessToken,
 	MiFollowing,
 	MiInstance,
 	MiMeta,
@@ -436,6 +437,7 @@ export class UserEntityService implements OnModuleInit {
 			instances?: Map<string, MiInstance | null>,
 			securityKeyCounts?: Map<string, number>,
 			myFollowings?: Map<string, Omit<MiFollowing, 'isFollowerHibernated'>>,
+			token?: MiAccessToken | null,
 		},
 	): Promise<Packed<S>> {
 		const opts = Object.assign({
@@ -529,8 +531,8 @@ export class UserEntityService implements OnModuleInit {
 			(profile.followersVisibility === 'followers') && (relation && relation.isFollowing) ? user.followersCount :
 			null;
 
-		const isModerator = isMe && isDetailed ? this.roleService.isModerator(user) : null;
-		const isAdmin = isMe && isDetailed ? this.roleService.isAdministrator(user) : null;
+		const isModerator = isMe && isDetailed && (opts.token?.rank == null || opts.token.rank === 'mod') ? this.roleService.isModerator(user) : null;
+		const isAdmin = isMe && isDetailed && (opts.token?.rank == null || opts.token.rank === 'admin') ? this.roleService.isAdministrator(user) : null;
 		const unreadAnnouncements = isMe && isDetailed ?
 			(await this.announcementService.getUnreadAnnouncements(user)).map((announcement) => ({
 				createdAt: this.idService.parse(announcement.id).date.toISOString(),
