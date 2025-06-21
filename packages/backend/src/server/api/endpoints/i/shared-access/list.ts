@@ -80,11 +80,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			const packedUsers: Packed<'UserLite'>[] = await this.userEntityService.packMany(users, me);
 			const packedUserMap = new Map<string, Packed<'UserLite'>>(packedUsers.map(u => [u.id, u]));
 
-			return await Promise.all(tokens.map(async token => ({
+			return tokens.map(token => ({
 				id: token.accessTokenId,
 				permissions: token.accessToken!.permission,
 				user: packedUserMap.get(token.accessToken!.userId) as Packed<'UserLite'>,
-			})));
+			}));
 		});
 	}
 }
