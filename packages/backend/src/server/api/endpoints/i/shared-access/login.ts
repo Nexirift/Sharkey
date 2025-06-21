@@ -47,7 +47,7 @@ export const meta = {
 export const paramDef = {
 	type: 'object',
 	properties: {
-		tokenId: { type: 'string' },
+		grantId: { type: 'string' },
 	},
 	required: ['grantId'],
 } as const;
@@ -59,7 +59,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private readonly accessTokensRepository: AccessTokensRepository,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const token = await this.accessTokensRepository.findOneBy({ id: ps.tokenId });
+			const token = await this.accessTokensRepository.findOneBy({ id: ps.grantId });
 
 			if (!token) {
 				throw new ApiError(meta.errors.noSuchAccess);
