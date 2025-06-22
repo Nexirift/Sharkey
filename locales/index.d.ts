@@ -13492,6 +13492,10 @@ export interface Locale extends ILocale {
      */
     "sharedAccessDescription": string;
     /**
+     * Shared access allows another user to access your account without using your password. You may select exactly which features and data are available to guest users.
+     */
+    "sharedAccessDescription2": string;
+    /**
      * Share access
      */
     "addGrantee": string;
@@ -13581,6 +13585,30 @@ export interface Locale extends ILocale {
      * Are you sure you want to revoke this token? {num} shared other users will lose shared access.
      */
     "confirmRevokeSharedToken": ParameterizedString<"num">;
+    /**
+     * Grant shared access
+     */
+    "grantSharedAccessButton": string;
+    /**
+     * No shared access listed
+     */
+    "grantSharedAccessNoSelection": string;
+    /**
+     * No shared access users were selected. Please add at least one user in the "shared access" section.
+     */
+    "grantSharedAccessNoSelection2": string;
+    /**
+     * Shared access granted
+     */
+    "grantSharedAccessSuccess": string;
+    /**
+     * Shared access has been granted to {num} users.
+     */
+    "grantSharedAccessSuccess2": ParameterizedString<"num">;
+    /**
+     * Are you sure you want to create a token with no permissions?
+     */
+    "tokenHasNoPermissionsConfirm": string;
 }
 declare const locales: {
     [lang: string]: Locale;
