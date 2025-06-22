@@ -119,7 +119,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			if (ps.grantees) {
 				for (const granteeId of ps.grantees) {
-					this.notificationService.createNotification(granteeId, 'sharedAccessGranted', { tokenId: accessTokenId }, me.id);
+					this.notificationService.createNotification(granteeId, 'sharedAccessGranted', { permCount: ps.permission.length, rank: ps.rank ?? null }, me.id);
 				}
 			}
 

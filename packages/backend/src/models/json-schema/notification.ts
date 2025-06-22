@@ -479,27 +479,14 @@ export const packedNotificationSchema = {
 				optional: false, nullable: false,
 				format: 'id',
 			},
-			token: {
-				type: 'object',
-				optional: false, nullable: true,
-				properties: {
-					id: {
-						type: 'string',
-						optional: false, nullable: false,
-					},
-					permission: {
-						type: 'array',
-						optional: false, nullable: false,
-						items: {
-							type: 'string',
-						},
-					},
-					rank: {
-						type: 'string',
-						enum: ['admin', 'mod', 'user'],
-						optional: false, nullable: true,
-					},
-				},
+			permCount: {
+				type: 'number',
+				optional: true, nullable: false,
+			},
+			rank: {
+				type: 'string',
+				enum: ['admin', 'mod', 'user'],
+				optional: true, nullable: true,
 			},
 		},
 	}, {

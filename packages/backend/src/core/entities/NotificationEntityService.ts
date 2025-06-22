@@ -165,9 +165,6 @@ export class NotificationEntityService implements OnModuleInit {
 			return null;
 		}
 
-		const needsAccessToken = notification.type === 'sharedAccessGranted';
-		const accessToken = (needsAccessToken && notification.tokenId) ? await this.accessTokensRepository.findOneBy({ id: notification.tokenId }) : null;
-
 		return await awaitAll({
 			id: notification.id,
 			createdAt: new Date(notification.createdAt).toISOString(),
@@ -208,11 +205,8 @@ export class NotificationEntityService implements OnModuleInit {
 			} : {}),
 			...(notification.type === 'sharedAccessGranted' ? {
 				tokenId: notification.tokenId,
-				token: accessToken ? {
-					id: accessToken.id,
-					permission: accessToken.permission,
-					rank: accessToken.rank,
-				} : null,
+				permCount: notification.permCount,
+				rank: notification.rank,
 			} : {}),
 		});
 	}
