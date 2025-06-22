@@ -342,11 +342,11 @@ export class ChatService {
 	}
 
 	@bindThis
-	public async hasPermissionToViewRoomTimeline(meId: MiUser['id'], room: MiChatRoom) {
-		if (await this.isRoomMember(room, meId)) {
+	public async hasPermissionToViewRoomTimeline(me: MiUser, room: MiChatRoom) {
+		if (await this.isRoomMember(room, me.id)) {
 			return true;
 		} else {
-			const iAmModerator = await this.roleService.isModerator({ id: meId });
+			const iAmModerator = await this.roleService.isModerator(me);
 			if (iAmModerator) {
 				return true;
 			}
@@ -563,12 +563,12 @@ export class ChatService {
 	}
 
 	@bindThis
-	public async hasPermissionToDeleteRoom(meId: MiUser['id'], room: MiChatRoom) {
-		if (room.ownerId === meId) {
+	public async hasPermissionToDeleteRoom(me: MiUser, room: MiChatRoom) {
+		if (room.ownerId === me.id) {
 			return true;
 		}
 
-		const iAmModerator = await this.roleService.isModerator({ id: meId });
+		const iAmModerator = await this.roleService.isModerator(me);
 		if (iAmModerator) {
 			return true;
 		}

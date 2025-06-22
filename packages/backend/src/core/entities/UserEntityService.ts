@@ -481,8 +481,8 @@ export class UserEntityService implements OnModuleInit {
 		const isDetailed = opts.schema !== 'UserLite';
 		const meId = me ? me.id : null;
 		const isMe = meId === user.id;
-		const iAmModerator = opts.iAmModerator ?? (me ? await this.roleService.isModerator(me as MiUser) : false);
-		const iAmAdmin = opts.iAmAdmin ?? (me ? await this.roleService.isAdministrator(user) : false);
+		const iAmModerator = opts.iAmModerator ?? (me ? await this.roleService.isModerator(me) : false);
+		const iAmAdmin = opts.iAmAdmin ?? (me ? await this.roleService.isAdministrator(me) : false);
 
 		const profile = isDetailed
 			? (opts.userProfile ?? user.userProfile ?? await this.userProfilesRepository.findOneByOrFail({ userId: user.id }))

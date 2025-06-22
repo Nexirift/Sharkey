@@ -31,6 +31,7 @@ import type { Packed } from '@/misc/json-schema.js';
 import { FanoutTimelineService } from '@/core/FanoutTimelineService.js';
 import { NotificationService } from '@/core/NotificationService.js';
 import type { OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
+import { getCallerId } from '@/misc/attach-caller-id.js';
 
 export type RolePolicies = {
 	gtlAvailable: boolean;
@@ -414,7 +415,21 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 		const assignedRoles = roles.filter(r => assigns.map(x => x.roleId).includes(r.id));
 		const user = typeof(userOrId) === 'object' ? userOrId : roles.some(r => r.target === 'conditional') ? await this.cacheService.findUserById(userOrId) : null;
 		const matchedCondRoles = roles.filter(r => r.target === 'conditional' && this.evalCond(user!, assignedRoles, r.condFormula, followStats));
-		return [...assignedRoles, ...matchedCondRoles];
+
+		let allRoles = [...assignedRoles, ...matchedCondRoles];
+
+		// Check for dropped token permissions
+		const rank = user ? getCallerId(user)?.accessToken?.rank : null;
+		if (rank != null) {
+			// Copy roles, since they come from a cache
+			allRoles = allRoles.map(role => ({
+				...role,
+				isModerator: role.isModerator && (rank === 'admin' || rank === 'mod'),
+				isAdministrator: role.isAdministrator && rank === 'admin',
+			}));
+		}
+
+		return allRoles;
 	}
 
 	/**
@@ -514,12 +529,22 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 	@bindThis
 	public async isModerator(user: { id: MiUser['id'] } | null): Promise<boolean> {
 		if (user == null) return false;
+
+		// Check for dropped token permissions
+		const callerId = getCallerId(user);
+		if (callerId?.accessToken?.rank != null && callerId.accessToken.rank !== 'admin' && callerId.accessToken.rank !== 'mod') return false;
+
 		return (this.meta.rootUserId === user.id) || (await this.getUserRoles(user.id)).some(r => r.isModerator || r.isAdministrator);
 	}
 
 	@bindThis
 	public async isAdministrator(user: { id: MiUser['id'] } | null): Promise<boolean> {
 		if (user == null) return false;
+
+		// Check for dropped token permissions
+		const callerId = getCallerId(user);
+		if (callerId?.accessToken?.rank != null && callerId.accessToken.rank !== 'admin') return false;
+
 		return (this.meta.rootUserId === user.id) || (await this.getUserRoles(user.id)).some(r => r.isAdministrator);
 	}
 
