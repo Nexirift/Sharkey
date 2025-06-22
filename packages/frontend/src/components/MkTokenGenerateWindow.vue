@@ -46,6 +46,24 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<option value="user">{{ i18n.ts._ranks.user }}</option>
 			</MkSelect>
 
+			<MkFolder v-if="enableSharedAccess !== false" :defaultOpen="enableSharedAccess === true">
+				<template #label>{{ i18n.ts.sharedAccess }}</template>
+				<template #suffix>{{ grantees.length || i18n.ts.none }}</template>
+
+				<div class="_gaps_s">
+					<div>{{ i18n.ts.sharedAccessDescription }}</div>
+
+					<MkButton primary @click="addGrantee">
+						<i class="ti ti-plus"></i> {{ i18n.ts.addGrantee }}
+					</MkButton>
+
+					<div v-for="(grantee, i) of grantees" :key="grantee.id" :class="$style.grantee">
+						<MkUserCardMini :user="grantee" :withChart="false"/>
+						<button v-tooltip="i18n.ts.removeGrantee" class="_textButton" @click="() => removeGrantee(i)"><i class="ti ti-x"></i></button>
+					</div>
+				</div>
+			</MkFolder>
+
 			<MkFolder>
 				<template #label>{{ i18n.ts.permission }}</template>
 				<template #suffix>{{ permsCount || i18n.ts.none }}</template>
@@ -82,24 +100,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 					>
 						{{ i18n.ts._permissions[kind] }}
 					</MkSwitch>
-				</div>
-			</MkFolder>
-
-			<MkFolder v-if="enableSharedAccess !== false" :defaultOpen="enableSharedAccess === true">
-				<template #label>{{ i18n.ts.sharedAccess }}</template>
-				<template #suffix>{{ grantees.length || i18n.ts.none }}</template>
-
-				<div class="_gaps_s">
-					<div>{{ i18n.ts.sharedAccessDescription }}</div>
-
-					<MkButton primary @click="addGrantee">
-						<i class="ti ti-plus"></i> {{ i18n.ts.addGrantee }}
-					</MkButton>
-
-					<div v-for="(grantee, i) of grantees" :key="grantee.id" :class="$style.grantee">
-						<MkUserCardMini :user="grantee" :withChart="false"/>
-						<button v-tooltip="i18n.ts.removeGrantee" class="_textButton" @click="() => removeGrantee(i)"><i class="ti ti-x"></i></button>
-					</div>
 				</div>
 			</MkFolder>
 		</div>
