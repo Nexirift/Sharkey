@@ -80,7 +80,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</div>
 			</MkFolder>
 
-			<MkFolder v-if="iAmAdmin">
+			<MkFolder v-if="iAmAdmin || iAmModerator">
 				<template #label>{{ i18n.ts.adminPermission }}</template>
 				<template #suffix>{{ adminPermsCount || i18n.ts.none }}</template>
 
@@ -88,15 +88,15 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<div>{{ i18n.ts.adminPermissionsDescription }}</div>
 
 					<div class="_buttons">
-						<MkButton inline :disabled="rank !== 'admin'" @click="disableAllAdmin">{{ i18n.ts.disableAll }}</MkButton>
-						<MkButton inline :disabled="rank !== 'admin'" @click="enableAllAdmin">{{ i18n.ts.enableAll }}</MkButton>
+						<MkButton inline :disabled="rank === 'user'" @click="disableAllAdmin">{{ i18n.ts.disableAll }}</MkButton>
+						<MkButton inline :disabled="rank === 'user'" @click="enableAllAdmin">{{ i18n.ts.enableAll }}</MkButton>
 					</div>
 
 					<MkSwitch
 						v-for="kind in Object.keys(permissionSwitchesForAdmin)"
 						:key="kind"
 						v-model="permissionSwitchesForAdmin[kind]"
-						:disabled="rank !== 'admin'"
+						:disabled="rank === 'user'"
 					>
 						{{ i18n.ts._permissions[kind] }}
 					</MkSwitch>
@@ -116,7 +116,7 @@ import MkButton from './MkButton.vue';
 import MkInfo from './MkInfo.vue';
 import MkModalWindow from '@/components/MkModalWindow.vue';
 import { i18n } from '@/i18n.js';
-import { $i, iAmAdmin } from '@/i.js';
+import { $i, iAmAdmin, iAmModerator } from '@/i.js';
 import MkFolder from '@/components/MkFolder.vue';
 import MkUserCardMini from '@/components/MkUserCardMini.vue';
 import MkSelect from '@/components/MkSelect.vue';
