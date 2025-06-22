@@ -204,7 +204,6 @@ export class NotificationEntityService implements OnModuleInit {
 				icon: notification.customIcon,
 			} : {}),
 			...(notification.type === 'sharedAccessGranted' ? {
-				tokenId: notification.tokenId,
 				permCount: notification.permCount,
 				rank: notification.rank,
 			} : {}),
