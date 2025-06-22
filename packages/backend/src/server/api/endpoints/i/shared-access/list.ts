@@ -70,7 +70,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		super(meta, paramDef, async (ps, me, token) => {
 			const tokens = await this.accessTokensRepository
 				.createQueryBuilder('token')
-				.where(':meIdAsList <@ token.granteeIds')
+				.where(':meIdAsList <@ token.granteeIds', { meIdAsList: [me.id] })
 				.getMany();
 
 			const userIds = tokens.map(token => token.userId);
