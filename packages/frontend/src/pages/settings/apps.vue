@@ -34,7 +34,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 							</MkKeyValue>
 							<MkKeyValue v-if="token.rank" oneline>
 								<template #key>{{ i18n.ts.rank }}</template>
-								<template #value>{{ i18n.ts._ranks[token.rank] ?? token.rank }}</template>
+								<template #value>{{ i18n.ts._ranks[token.rank ?? 'default'] ?? token.rank }}</template>
 							</MkKeyValue>
 						</div>
 						<MkFolder v-if="token.grantees.length > 0" :defaultOpen="onlySharedAccess">
