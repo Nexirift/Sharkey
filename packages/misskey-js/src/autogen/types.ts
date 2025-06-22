@@ -22700,6 +22700,7 @@ export type operations = {
         'application/json': {
           /** @enum {string} */
           sort?: '+createdAt' | '-createdAt' | '+lastUsedAt' | '-lastUsedAt';
+          onlySharedAccess?: boolean;
         };
       };
     };

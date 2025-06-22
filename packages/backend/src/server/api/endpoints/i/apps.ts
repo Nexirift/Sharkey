@@ -76,6 +76,7 @@ export const paramDef = {
 	type: 'object',
 	properties: {
 		sort: { type: 'string', enum: ['+createdAt', '-createdAt', '+lastUsedAt', '-lastUsedAt'] },
+		onlySharedAccess: { type: 'boolean' },
 	},
 	required: [],
 } as const;
@@ -101,6 +102,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				case '+lastUsedAt': query.orderBy('token.lastUsedAt', 'DESC'); break;
 				case '-lastUsedAt': query.orderBy('token.lastUsedAt', 'ASC'); break;
 				default: query.orderBy('token.id', 'ASC'); break;
+			}
+
+			if (ps.onlySharedAccess) {
+				query.andWhere('token.granteeIds != \'{}\'');
 			}
 
 			const tokens = await query.getMany();
