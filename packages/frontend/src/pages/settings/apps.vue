@@ -37,18 +37,18 @@ SPDX-License-Identifier: AGPL-3.0-only
 								<template #value>{{ i18n.ts._ranks[token.rank] ?? token.rank }}</template>
 							</MkKeyValue>
 						</div>
-						<MkFolder v-if="standardPerms(token.permissions).length > 0">
+						<MkFolder v-if="standardPerms(token.permission).length > 0">
 							<template #label>{{ i18n.ts.permission }}</template>
-							<template #suffix>{{ standardPerms(token.permissions).length }}</template>
+							<template #suffix>{{ standardPerms(token.permission).length }}</template>
 							<ul>
-								<li v-for="p of standardPerms(token.permissions)" :key="p">{{ i18n.ts._permissions[p] }}</li>
+								<li v-for="p of standardPerms(token.permission)" :key="p">{{ i18n.ts._permissions[p] }}</li>
 							</ul>
 						</MkFolder>
-						<MkFolder v-if="adminPerms(token.permissions).length > 0">
+						<MkFolder v-if="adminPerms(token.permission).length > 0">
 							<template #label>{{ i18n.ts.adminPermission }}</template>
-							<template #suffix>{{ adminPerms(token.permissions).length }}</template>
+							<template #suffix>{{ adminPerms(token.permission).length }}</template>
 							<ul>
-								<li v-for="p of adminPerms(token.permissions)" :key="p">{{ i18n.ts._permissions[p] }}</li>
+								<li v-for="p of adminPerms(token.permission)" :key="p">{{ i18n.ts._permissions[p] }}</li>
 							</ul>
 						</MkFolder>
 						<MkFolder v-if="token.grantees.length > 0">
