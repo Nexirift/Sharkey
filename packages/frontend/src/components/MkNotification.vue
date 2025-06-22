@@ -462,8 +462,8 @@ function getActualReactedUsersCount(notification: Misskey.entities.Notification)
 .headerName {
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	overflow: hidden;
 	min-width: 0;
+	overflow: hidden;
 }
 
 .headerTime {
