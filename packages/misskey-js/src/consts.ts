@@ -71,6 +71,8 @@ export const permissions = [
 	'read:admin:meta',
 	'write:admin:reset-password',
 	'write:admin:resolve-abuse-user-report',
+	'read:admin:abuse-report:notification-recipient',
+	'write:admin:abuse-report:notification-recipient',
 	'write:admin:send-email',
 	'read:admin:server-info',
 	'read:admin:show-moderation-log',

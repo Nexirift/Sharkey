@@ -522,6 +522,8 @@ _permissions:
   "write:admin:reject-quotes": "Allow/Prohibit quote posts from a user"
   "read:notes-schedule": "View your list of scheduled notes"
   "write:notes-schedule": "Compose or delete scheduled notes"
+  "read:admin:abuse-report:notification-recipient": "Read abuse report notification recipients"
+  "write:admin:abuse-report:notification-recipient": "Edit abuse report notification recipients"
 
 robotsTxt: "Custom robots.txt"
 robotsTxtDescription: "Adding entries here will override the default robots.txt packaged with Sharkey."

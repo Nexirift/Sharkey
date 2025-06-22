@@ -9244,6 +9244,14 @@ export interface Locale extends ILocale {
          * Compose or delete scheduled notes
          */
         "write:notes-schedule": string;
+        /**
+         * Read abuse report notification recipients
+         */
+        "read:admin:abuse-report:notification-recipient": string;
+        /**
+         * Edit abuse report notification recipients
+         */
+        "write:admin:abuse-report:notification-recipient": string;
     };
     "_auth": {
         /**
