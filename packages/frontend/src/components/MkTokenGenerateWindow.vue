@@ -246,6 +246,11 @@ function removeGrantee(index: number) {
 .grantee {
 	display: flex;
 	flex-direction: row;
+	align-items: flex-start;
 	gap: var(--MI-marginHalf);
+}
+
+.grantee > :first-child {
+	flex: 1;
 }
 </style>
