@@ -68,7 +68,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private activeUsersChart: ActiveUsersChart,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const policies = await this.roleService.getUserPolicies(me ? me.id : null);
+			const policies = await this.roleService.getUserPolicies(me);
 			if (!policies.btlAvailable) {
 				throw new ApiError(meta.errors.btlDisabled);
 			}
