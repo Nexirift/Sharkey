@@ -110,7 +110,7 @@ export default defineComponent({
 		});
 
 		const renderChildren = () => {
-			const shouldHideAds = prefer.s.hideAds && $i != null && $i.policies.canHideAds;
+			const shouldHideAds = (!prefer.s.forceShowAds && $i && $i.policies.canHideAds) ?? false;
 
 			const children = renderChildrenImpl(shouldHideAds);
 			if (isDebuggerEnabled(6864)) {

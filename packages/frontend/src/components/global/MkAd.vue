@@ -107,7 +107,7 @@ const chosen = ref(choseAd());
 
 const self = computed(() => chosen.value?.url.startsWith(local));
 
-const shouldHide = computed(() => prefer.s.hideAds && $i != null && $i.policies.canHideAds && (props.specify == null));
+const shouldHide = ref(!prefer.s.forceShowAds && $i && $i.policies.canHideAds && (props.specify == null));
 
 function reduceFrequency(): void {
 	if (chosen.value == null) return;

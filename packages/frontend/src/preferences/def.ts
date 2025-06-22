@@ -480,9 +480,6 @@ export const PREF_DEF = {
 	warnMissingAltText: {
 		default: true,
 	},
-	hideAds: {
-		default: false,
-	},
 	//#endregion
 
 	//#region hybrid options
