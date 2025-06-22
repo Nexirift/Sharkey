@@ -6,7 +6,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 <template>
 <div :class="$style.root">
 	<div :class="$style.head">
-		<MkAvatar v-if="['pollEnded', 'note', 'edited', 'scheduledNotePosted', 'sharedAccessGranted', 'sharedAccessRevoked', 'sharedAccessLogin'].includes(notification.type) && 'note' in notification" :class="$style.icon" :user="notification.note.user" link preview/>
+		<MkAvatar v-if="['pollEnded', 'note', 'edited', 'scheduledNotePosted'].includes(notification.type) && 'note' in notification" :class="$style.icon" :user="notification.note.user" link preview/>
 		<MkAvatar v-else-if="['roleAssigned', 'achievementEarned', 'exportCompleted', 'importCompleted', 'login', 'createToken', 'scheduledNoteFailed'].includes(notification.type)" :class="$style.icon" :user="$i" link preview/>
 		<div v-else-if="notification.type === 'reaction:grouped' && notification.note.reactionAcceptance === 'likeOnly'" :class="[$style.icon, $style.icon_reactionGroupHeart]"><i class="ph-smiley ph-bold ph-lg" style="line-height: 1;"></i></div>
 		<div v-else-if="notification.type === 'reaction:grouped'" :class="[$style.icon, $style.icon_reactionGroup]"><i class="ph-smiley ph-bold ph-lg" style="line-height: 1;"></i></div>
@@ -203,8 +203,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<MkA :to="userPage(notification.user)">
 					<I18n :src="i18n.ts.sharedAccessGranted" tag="span">
 						<template #target><MkAcct :user="notification.user"/></template>
-						<template #rank>{{ i18n.ts._ranks[notification.token?.rank ?? 'default'] }}</template>
-						<template #perms>{{ notification.token?.permission.length ?? 0 }}</template>
+						<template #rank>{{ i18n.ts._ranks[notification.rank ?? 'default'] }}</template>
+						<template #perms>{{ notification.permCount ?? 0 }}</template>
 					</I18n>
 				</MkA>
 			</div>
