@@ -72,8 +72,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<div>{{ i18n.ts.permissionsDescription }}</div>
 
 					<div class="_buttons">
-						<MkButton inline @click="disableAll">{{ i18n.ts.disableAll }}</MkButton>
 						<MkButton inline @click="enableAll">{{ i18n.ts.enableAll }}</MkButton>
+						<MkButton inline @click="disableAll">{{ i18n.ts.disableAll }}</MkButton>
 					</div>
 
 					<MkSwitch v-for="kind in Object.keys(permissionSwitches)" :key="kind" v-model="permissionSwitches[kind]">{{ i18n.ts._permissions[kind] }}</MkSwitch>
@@ -88,8 +88,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<div>{{ i18n.ts.adminPermissionsDescription }}</div>
 
 					<div class="_buttons">
-						<MkButton inline :disabled="rank === 'user'" @click="disableAllAdmin">{{ i18n.ts.disableAll }}</MkButton>
 						<MkButton inline :disabled="rank === 'user'" @click="enableAllAdmin">{{ i18n.ts.enableAll }}</MkButton>
+						<MkButton inline :disabled="rank === 'user'" @click="disableAllAdmin">{{ i18n.ts.disableAll }}</MkButton>
 					</div>
 
 					<MkSwitch
