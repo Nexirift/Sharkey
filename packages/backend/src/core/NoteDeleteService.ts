@@ -79,16 +79,30 @@ export class NoteDeleteService {
 
 		if (note.replyId) {
 			promises.push(this.notesRepository.decrement({ id: note.replyId }, 'repliesCount', 1));
+		} else if (isPureRenote(note)) {
+			promises.push(this.notesRepository.decrement({ id: note.renoteId }, 'renoteCount', 1));
 		}
 
-		if (isPureRenote(note)) {
-			promises.push(this.notesRepository.decrement({ id: note.renoteId }, 'renoteCount', 1));
+		const cascadeReplies = cascadingNotes.filter(cascade => cascade.replyId != null);
+		const cascadeRenotes = cascadingNotes.filter(cascade => cascade.renoteId != null);
+
+		if (cascadeReplies.length > 0) {
+			promises.push(this.notesRepository.decrement({ id: In(cascadeReplies.map(cascade => cascade.replyId)) }, 'repliesCount', 1));
+		}
+		if (cascadeRenotes.length > 0) {
+			promises.push(this.notesRepository.decrement({ id: In(cascadeRenotes.map(cascade => cascade.renoteId)) }, 'renoteCount', 1));
 		}
 
 		if (!quiet) {
 			promises.push(this.globalEventService.publishNoteStream(note.id, 'deleted', {
 				deletedAt: deletedAt,
 			}));
+
+			for (const cascade of cascadingNotes) {
+				promises.push(this.globalEventService.publishNoteStream(cascade.id, 'deleted', {
+					deletedAt: deletedAt,
+				}));
+			}
 
 			//#region ローカルの投稿なら削除アクティビティを配送
 			if (isLocalUser(user) && !note.localOnly) {
@@ -118,11 +132,25 @@ export class NoteDeleteService {
 				this.perUserNotesChart.update(user, note, false);
 			}
 
+			for (const cascade of cascadingNotes) {
+				this.notesChart.update(cascade, false);
+				if (this.meta.enableChartsForRemoteUser || (cascade.user.host == null)) {
+					this.perUserNotesChart.update(cascade.user, cascade, false);
+				}
+			}
+
 			if (!isPureRenote(note)) {
 				// Decrement notes count (user)
 				promises.push(this.decNotesCountOfUser(user));
 			} else {
 				promises.push(this.queueService.createMarkUserUpdatedJob(user.id));
+			}
+
+			for (const cascade of cascadingNotes) {
+				if (!isPureRenote(cascade)) {
+					promises.push(this.decNotesCountOfUser(cascade.user));
+				}
+				// Don't mark cascaded user as updated (active)
 			}
 
 			if (this.meta.enableStatsForFederatedInstances) {
@@ -133,6 +161,18 @@ export class NoteDeleteService {
 					}
 					if (this.meta.enableChartsForFederatedInstances) {
 						this.instanceChart.updateNote(user.host, note, false);
+					}
+				}
+
+				for (const cascade of cascadingNotes) {
+					if (this.userEntityService.isRemoteUser(cascade.user)) {
+						if (!isPureRenote(cascade)) {
+							const i = await this.federatedInstanceService.fetchOrRegister(cascade.user.host);
+							promises.push(this.instancesRepository.decrement({ id: i.id }, 'notesCount', 1));
+						}
+						if (this.meta.enableChartsForFederatedInstances) {
+							this.instanceChart.updateNote(cascade.user.host, cascade, false);
+						}
 					}
 				}
 			}
@@ -189,26 +229,42 @@ export class NoteDeleteService {
 	}
 
 	@bindThis
-	private async findCascadingNotes(note: MiNote): Promise<MiNote[]> {
-		const recursive = async (noteId: string): Promise<MiNote[]> => {
-			const query = this.notesRepository.createQueryBuilder('note')
-				.where('note.replyId = :noteId', { noteId })
-				.orWhere(new Brackets(q => {
-					q.where('note.renoteId = :noteId', { noteId })
-						.andWhere('note.text IS NOT NULL');
-				}))
-				.leftJoinAndSelect('note.user', 'user');
-			const replies = await query.getMany();
+	private async findCascadingNotes(note: MiNote): Promise<(MiNote & { user: MiUser })[]> {
+		const cascadingNotes: MiNote[] = [];
 
-			return [
-				replies,
-				...await Promise.all(replies.map(reply => recursive(reply.id))),
-			].flat();
+		/**
+		 * Finds all replies, quotes, and renotes of the given list of notes.
+		 * These are the notes that will be CASCADE deleted when the origin note is deleted.
+		 *
+		 * This works by operating in "layers" that radiate out from the origin note like a web.
+		 * The process is roughly like this:
+		 *   1. Find all immediate replies and renotes of the origin.
+		 *   2. Find all immediate replies and renotes of the results from step one.
+		 *   3. Repeat until step 2 returns no new results.
+		 *   4. Collect all the step 2 results; those are the set of all cascading notes.
+		 */
+		const cascade = async (layer: MiNote[]): Promise<void> => {
+			const layerIds = layer.map(layer => layer.id);
+			const refs = await this.notesRepository.find({
+				where: [
+					{ replyId: In(layerIds) },
+					{ renoteId: In(layerIds) },
+				],
+				relations: { user: true },
+			});
+
+			// Stop when we reach the end of all threads
+			if (refs.length === 0) return;
+
+			cascadingNotes.push(...refs);
+			await cascade(refs);
 		};
 
-		const cascadingNotes: MiNote[] = await recursive(note.id);
+		// Start with the origin, which should *not* be in the result set!
+		await cascade([note]);
 
-		return cascadingNotes;
+		// Type cast is safe - we load the relation above.
+		return cascadingNotes as (MiNote & { user: MiUser })[];
 	}
 
 	@bindThis
