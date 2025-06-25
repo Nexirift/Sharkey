@@ -49,6 +49,7 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 		this.logger = loggerService.getLogger('collapsed-queue');
 
 		const fiveMinuteInterval = this.envService.env.NODE_ENV !== 'test' ? 60 * 1000 * 5 : 0;
+		const oneMinuteInterval = this.envService.env.NODE_ENV !== 'test' ? 60 * 1000 : 0;
 
 		this.updateInstanceQueue = new CollapsedQueue(
 			'updateInstance',
@@ -72,7 +73,7 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 
 		this.updateUserQueue = new CollapsedQueue(
 			'updateUser',
-			fiveMinuteInterval,
+			oneMinuteInterval,
 			(oldJob, newJob) => ({
 				updatedAt: maxDate(oldJob.updatedAt, newJob.updatedAt),
 				additionalNotes: (oldJob.additionalNotes ?? 0) + (newJob.additionalNotes ?? 0),
