@@ -50,7 +50,6 @@ import { trackTask } from '@/misc/promise-tracker.js';
 import { isUserRelated } from '@/misc/is-user-related.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { LatestNoteService } from '@/core/LatestNoteService.js';
-import { CollapsedQueue } from '@/misc/collapsed-queue.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
 import { TimeService } from '@/global/TimeService.js';
 import { NoteVisibilityService } from '@/core/NoteVisibilityService.js';
@@ -151,7 +150,6 @@ export type Option = {
 @Injectable()
 export class NoteEditService implements OnApplicationShutdown {
 	#shutdownController = new AbortController();
-	private updateNotesCountQueue: CollapsedQueue<MiNote['id'], number>;
 
 	constructor(
 		@Inject(DI.config)
@@ -226,9 +224,7 @@ export class NoteEditService implements OnApplicationShutdown {
 		private readonly timeService: TimeService,
 		private readonly noteVisibilityService: NoteVisibilityService,
 		private readonly collapsedQueueService: CollapsedQueueService,
-	) {
-		this.updateNotesCountQueue = new CollapsedQueue(this.timeService, process.env.NODE_ENV !== 'test' ? 60 * 1000 * 5 : 0, this.collapseNotesCount, this.performUpdateNotesCount);
-	}
+	) {}
 
 	@bindThis
 	public async edit(user: MiUser, editid: MiNote['id'], data: Option, silent = false): Promise<MiNote> {
@@ -620,7 +616,7 @@ export class NoteEditService implements OnApplicationShutdown {
 			if (isRemoteUser(user)) {
 				this.federatedInstanceService.fetchOrRegister(user.host).then(async i => {
 					if (note.renote && note.text || !note.renote) {
-						this.updateNotesCountQueue.enqueue(i.id, 1);
+						this.collapsedQueueService.updateInstanceQueue.enqueue(i.id, { additionalNotes: 1 });
 					}
 					if (this.meta.enableChartsForFederatedInstances) {
 						this.instanceChart.updateNote(i.host, note, true);
@@ -926,19 +922,8 @@ export class NoteEditService implements OnApplicationShutdown {
 	// checkHibernation moved to HibernateUsersProcessorService
 
 	@bindThis
-	private collapseNotesCount(oldValue: number, newValue: number) {
-		return oldValue + newValue;
-	}
-
-	@bindThis
-	private async performUpdateNotesCount(id: MiNote['id'], incrBy: number) {
-		await this.instancesRepository.increment({ id: id }, 'notesCount', incrBy);
-	}
-
-	@bindThis
 	public async dispose(): Promise<void> {
 		this.#shutdownController.abort();
-		await this.updateNotesCountQueue.performAllNow();
 	}
 
 	@bindThis

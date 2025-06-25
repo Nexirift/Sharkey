@@ -18,8 +18,9 @@ import type { UsersRepository } from '@/models/_.js';
 import { DI } from '@/di-symbols.js';
 
 export type UpdateInstanceJob = {
-	latestRequestReceivedAt: Date,
-	shouldUnsuspend: boolean,
+	latestRequestReceivedAt?: Date,
+	shouldUnsuspend?: boolean,
+	additionalNotes?: number,
 };
 
 export type UpdateUserJob = {
@@ -52,13 +53,15 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 			'updateInstance',
 			fiveMinuteInterval,
 			(oldJob, newJob) => ({
-				latestRequestReceivedAt: new Date(Math.max(oldJob.latestRequestReceivedAt.getTime(), newJob.latestRequestReceivedAt.getTime())),
+				latestRequestReceivedAt: maxDate(oldJob.latestRequestReceivedAt, newJob.latestRequestReceivedAt),
 				shouldUnsuspend: oldJob.shouldUnsuspend || newJob.shouldUnsuspend,
+				additionalNotes: (oldJob.additionalNotes ?? 0) + (newJob.additionalNotes ?? 0),
 			}),
 			(id, job) => this.federatedInstanceService.update(id, {
 				latestRequestReceivedAt: job.latestRequestReceivedAt,
-				isNotResponding: false,
+				isNotResponding: job.latestRequestReceivedAt ? false : undefined,
 				suspensionState: job.shouldUnsuspend ? 'none' : undefined,
+				notesCount: job.additionalNotes ? () => `"notesCount" + ${job.additionalNotes}` : undefined,
 			}),
 			{
 				onError: this.onQueueError,
@@ -70,7 +73,7 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 			'updateUser',
 			fiveMinuteInterval,
 			(oldJob, newJob) => ({
-				updatedAt: new Date(Math.max(oldJob.updatedAt.getTime(), newJob.updatedAt.getTime())),
+				updatedAt: maxDate(oldJob.updatedAt, newJob.updatedAt),
 			}),
 			(id, job) => this.usersRepository.update({ id }, { updatedAt: job.updatedAt }),
 			{
@@ -124,5 +127,26 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 		this.internalEventService.off('remoteUserUpdated', this.onUserUpdated);
 
 		await this.performAllNow();
+	}
+}
+
+function maxDate(first: Date, second: Date | undefined): Date;
+function maxDate(first: Date | undefined, second: Date): Date;
+function maxDate(first: Date | undefined, second: Date | undefined): Date | undefined;
+// eslint requires a space here -_-
+
+function maxDate(first: Date | undefined, second: Date | undefined): Date | undefined {
+	if (first && second) {
+		if (first.getTime() > second.getTime()) {
+			return first;
+		} else {
+			return second;
+		}
+	} else if (first) {
+		return first;
+	} else if (second) {
+		return second;
+	} else {
+		return undefined;
 	}
 }

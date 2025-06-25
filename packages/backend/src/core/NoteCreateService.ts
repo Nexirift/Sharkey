@@ -155,7 +155,7 @@ export type PureRenoteOption = Option & { renote: MiNote } & ({ text?: null } | 
 @Injectable()
 export class NoteCreateService implements OnApplicationShutdown {
 	#shutdownController = new AbortController();
-	private updateNotesCountQueue: CollapsedQueue<MiNote['id'], number>;
+	// private updateNotesCountQueue: CollapsedQueue<MiNote['id'], number>;
 
 	constructor(
 		@Inject(DI.config)
@@ -229,7 +229,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		private readonly noteVisibilityService: NoteVisibilityService,
 		private readonly collapsedQueueService: CollapsedQueueService,
 	) {
-		this.updateNotesCountQueue = new CollapsedQueue(this.timeService, process.env.NODE_ENV !== 'test' ? 60 * 1000 * 5 : 0, this.collapseNotesCount, this.performUpdateNotesCount);
+		//this.updateNotesCountQueue = new CollapsedQueue(this.timeService, process.env.NODE_ENV !== 'test' ? 60 * 1000 * 5 : 0, this.collapseNotesCount, this.performUpdateNotesCount);
 	}
 
 	@bindThis
@@ -587,7 +587,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 			if (isRemoteUser(user)) {
 				this.federatedInstanceService.fetchOrRegister(user.host).then(async i => {
 					if (!this.isRenote(note) || this.isQuote(note)) {
-						this.updateNotesCountQueue.enqueue(i.id, 1);
+						this.collapsedQueueService.updateInstanceQueue.enqueue(i.id, { additionalNotes: 1 });
 					}
 					if (this.meta.enableChartsForFederatedInstances) {
 						this.instanceChart.updateNote(i.host, note, true);
@@ -1050,6 +1050,8 @@ export class NoteCreateService implements OnApplicationShutdown {
 		return false;
 	}
 
+	// Moved to CollapsedQueueService
+	/*
 	@bindThis
 	private collapseNotesCount(oldValue: number, newValue: number) {
 		return oldValue + newValue;
@@ -1059,11 +1061,12 @@ export class NoteCreateService implements OnApplicationShutdown {
 	private async performUpdateNotesCount(id: MiNote['id'], incrBy: number) {
 		await this.instancesRepository.increment({ id: id }, 'notesCount', incrBy);
 	}
+	*/
 
 	@bindThis
 	public async dispose(): Promise<void> {
 		this.#shutdownController.abort();
-		await this.updateNotesCountQueue.performAllNow();
+		// await this.updateNotesCountQueue.performAllNow();
 	}
 
 	@bindThis
