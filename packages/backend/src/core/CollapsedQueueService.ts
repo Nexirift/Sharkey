@@ -132,6 +132,8 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 				concurrency: 4, // High concurrency - this queue gets a lot of activity
 			},
 		);
+
+		this.internalEventService.on('userChangeDeletedState', this.onUserDeleted);
 	}
 
 	@bindThis
@@ -166,17 +168,19 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 		this.logger.error(`Error persisting ${queue.name}: ${renderInlineError(error)}`);
 	}
 
+	@bindThis
+	private onUserDeleted(data: { id: string, isDeleted: boolean }) {
+		if (data.isDeleted) {
+			this.updateUserQueue.delete(data.id);
+		}
+	}
+
 	async onApplicationShutdown() {
-		// TODO note/user delete events
+		this.internalEventService.off('userChangeDeletedState', this.onUserDeleted);
 
 		await this.performAllNow();
 	}
 }
-
-function maxDate(first: Date, second: Date | undefined): Date;
-function maxDate(first: Date | undefined, second: Date): Date;
-function maxDate(first: Date | undefined, second: Date | undefined): Date | undefined;
-// eslint requires a space here -_-
 
 function maxDate(first: Date | undefined, second: Date | undefined): Date | undefined {
 	if (first && second) {
