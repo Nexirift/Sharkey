@@ -30,8 +30,9 @@ import { UtilityService } from '@/core/UtilityService.js';
 import type { ThinUser } from '@/queue/types.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { InternalEventService } from '@/global/InternalEventService.js';
-import type Logger from '../logger.js';
 import { trackPromise } from '@/misc/promise-tracker.js';
+import { CollapsedQueueService } from '@/core/CollapsedQueueService.js';
+import type Logger from '../logger.js';
 
 type Local = MiLocalUser | {
 	id: MiLocalUser['id'];
@@ -89,6 +90,7 @@ export class UserFollowingService implements OnModuleInit {
 		private perUserFollowingChart: PerUserFollowingChart,
 		private instanceChart: InstanceChart,
 		private readonly internalEventService: InternalEventService,
+		private readonly collapsedQueueService: CollapsedQueueService,
 
 		loggerService: LoggerService,
 	) {
@@ -296,14 +298,14 @@ export class UserFollowingService implements OnModuleInit {
 			if (this.meta.enableStatsForFederatedInstances) {
 				if (this.userEntityService.isRemoteUser(follower) && this.userEntityService.isLocalUser(followee)) {
 					this.federatedInstanceService.fetchOrRegister(follower.host).then(async i => {
-						this.instancesRepository.increment({ id: i.id }, 'followingCount', 1);
+						this.collapsedQueueService.updateInstanceQueue.enqueue(i.id, { followingCountDelta: 1 });
 						if (this.meta.enableChartsForFederatedInstances) {
 							this.instanceChart.updateFollowing(i.host, true);
 						}
 					});
 				} else if (this.userEntityService.isLocalUser(follower) && this.userEntityService.isRemoteUser(followee)) {
 					this.federatedInstanceService.fetchOrRegister(followee.host).then(async i => {
-						this.instancesRepository.increment({ id: i.id }, 'followersCount', 1);
+						this.collapsedQueueService.updateInstanceQueue.enqueue(i.id, { followersCountDelta: 1 });
 						if (this.meta.enableChartsForFederatedInstances) {
 							this.instanceChart.updateFollowers(i.host, true);
 						}
@@ -408,14 +410,14 @@ export class UserFollowingService implements OnModuleInit {
 			if (this.meta.enableStatsForFederatedInstances) {
 				if (this.userEntityService.isRemoteUser(follower) && this.userEntityService.isLocalUser(followee)) {
 					this.federatedInstanceService.fetchOrRegister(follower.host).then(async i => {
-						this.instancesRepository.decrement({ id: i.id }, 'followingCount', 1);
+						this.collapsedQueueService.updateInstanceQueue.enqueue(i.id, { followingCountDelta: -1 });
 						if (this.meta.enableChartsForFederatedInstances) {
 							this.instanceChart.updateFollowing(i.host, false);
 						}
 					});
 				} else if (this.userEntityService.isLocalUser(follower) && this.userEntityService.isRemoteUser(followee)) {
 					this.federatedInstanceService.fetchOrRegister(followee.host).then(async i => {
-						this.instancesRepository.decrement({ id: i.id }, 'followersCount', 1);
+						this.collapsedQueueService.updateInstanceQueue.enqueue(i.id, { followersCountDelta: -1 });
 						if (this.meta.enableChartsForFederatedInstances) {
 							this.instanceChart.updateFollowers(i.host, false);
 						}

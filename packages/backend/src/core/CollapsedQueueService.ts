@@ -22,6 +22,8 @@ export type UpdateInstanceJob = {
 	shouldUnsuspend?: boolean,
 	notesCountDelta?: number,
 	usersCountDelta?: number,
+	followingCountDelta?: number,
+	followersCountDelta?: number,
 };
 
 export type UpdateUserJob = {
@@ -71,6 +73,8 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 				shouldUnsuspend: oldJob.shouldUnsuspend || newJob.shouldUnsuspend,
 				notesCountDelta: (oldJob.notesCountDelta ?? 0) + (newJob.notesCountDelta ?? 0),
 				usersCountDelta: (oldJob.usersCountDelta ?? 0) + (newJob.usersCountDelta ?? 0),
+				followingCountDelta: (oldJob.followingCountDelta ?? 0) + (newJob.followingCountDelta ?? 0),
+				followersCountDelta: (oldJob.followersCountDelta ?? 0) + (newJob.followersCountDelta ?? 0),
 			}),
 			(id, job) => this.federatedInstanceService.update(id, {
 				latestRequestReceivedAt: job.latestRequestReceivedAt,
@@ -78,6 +82,8 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 				suspensionState: job.shouldUnsuspend ? 'none' : undefined,
 				notesCount: job.notesCountDelta ? () => `"notesCount" + ${job.notesCountDelta}` : undefined,
 				usersCount: job.usersCountDelta ? () => `"usersCount" + ${job.usersCountDelta}` : undefined,
+				followingCount: job.followingCountDelta ? () => `"followingCount" + ${job.followingCountDelta}` : undefined,
+				followersCount: job.followersCountDelta ? () => `"followersCount" + ${job.followersCountDelta}` : undefined,
 			}),
 			{
 				onError: this.onQueueError,
