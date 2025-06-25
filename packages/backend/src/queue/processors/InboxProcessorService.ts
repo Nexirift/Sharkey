@@ -38,14 +38,18 @@ import { trackPromise } from '@/misc/promise-tracker.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type { InboxJobData } from '../types.js';
 
+// Moved to CollapsedQueueService
+/*
 type UpdateInstanceJob = {
 	latestRequestReceivedAt: Date,
 	shouldUnsuspend: boolean,
 };
+ */
 
 @Injectable()
 export class InboxProcessorService implements OnApplicationShutdown {
 	private logger: Logger;
+	// Moved to CollapsedQueueService
 	//private updateInstanceQueue: CollapsedQueue<MiNote['id'], UpdateInstanceJob>;
 
 	constructor(
@@ -295,6 +299,8 @@ export class InboxProcessorService implements OnApplicationShutdown {
 		return 'ok';
 	}
 
+	// Moved to CollapsedQueueService
+	/*
 	@bindThis
 	public collapseUpdateInstanceJobs(oldJob: UpdateInstanceJob, newJob: UpdateInstanceJob) {
 		const latestRequestReceivedAt = oldJob.latestRequestReceivedAt < newJob.latestRequestReceivedAt
@@ -316,6 +322,7 @@ export class InboxProcessorService implements OnApplicationShutdown {
 			suspensionState: job.shouldUnsuspend ? 'none' : undefined,
 		});
 	}
+	*/
 
 	@bindThis
 	public async dispose(): Promise<void> {}

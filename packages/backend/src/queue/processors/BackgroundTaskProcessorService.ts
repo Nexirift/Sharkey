@@ -17,7 +17,6 @@ import { MiMeta } from '@/models/Meta.js';
 import InstanceChart from '@/core/chart/charts/instance.js';
 import ApRequestChart from '@/core/chart/charts/ap-request.js';
 import FederationChart from '@/core/chart/charts/federation.js';
-import { UpdateInstanceQueue } from '@/core/UpdateInstanceQueue.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
 import type { DriveFilesRepository, NoteEditsRepository, NotesRepository, PollsRepository, UsersRepository } from '@/models/_.js';
 import { MiUser } from '@/models/_.js';
@@ -29,6 +28,7 @@ import { trackTask } from '@/misc/promise-tracker.js';
 import { UserSuspendService } from '@/core/UserSuspendService.js';
 import { ApLogService } from '@/core/ApLogService.js';
 import { InternalEventService } from '@/core/InternalEventService.js';
+import { CollapsedQueueService } from '@/core/CollapsedQueueService.js';
 
 @Injectable()
 export class BackgroundTaskProcessorService {
@@ -60,7 +60,7 @@ export class BackgroundTaskProcessorService {
 		private readonly instanceChart: InstanceChart,
 		private readonly apRequestChart: ApRequestChart,
 		private readonly federationChart: FederationChart,
-		private readonly updateInstanceQueue: UpdateInstanceQueue,
+		private readonly collapsedQueueService: CollapsedQueueService,
 		private readonly noteCreateService: NoteCreateService,
 		private readonly noteEditService: NoteEditService,
 		private readonly hashtagService: HashtagService,
@@ -240,7 +240,7 @@ export class BackgroundTaskProcessorService {
 		await this.fetchInstanceMetadataService.fetchInstanceMetadataLazy(instance);
 
 		// Unsuspend instance (deferred)
-		this.updateInstanceQueue.enqueue(instance.id, {
+		this.collapsedQueueService.updateInstanceQueue.enqueue(instance.id, {
 			latestRequestReceivedAt: new Date(),
 			shouldUnsuspend: instance.suspensionState === 'autoSuspendedForNotResponding',
 		});
