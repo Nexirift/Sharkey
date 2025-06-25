@@ -60,7 +60,10 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 				isNotResponding: false,
 				suspensionState: job.shouldUnsuspend ? 'none' : undefined,
 			}),
-			this.onQueueError,
+			{
+				onError: this.onQueueError,
+				concurrency: 2, // Low concurrency, this table is slow for some reason
+			},
 		);
 
 		this.updateUserQueue = new CollapsedQueue(
@@ -70,7 +73,10 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 				updatedAt: new Date(Math.max(oldJob.updatedAt.getTime(), newJob.updatedAt.getTime())),
 			}),
 			(id, job) => this.usersRepository.update({ id }, { updatedAt: job.updatedAt }),
-			this.onQueueError,
+			{
+				onError: this.onQueueError,
+				concurrency: 4,
+			},
 		);
 
 		this.internalEventService.on('localUserUpdated', this.onUserUpdated);
