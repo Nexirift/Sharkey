@@ -915,7 +915,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 						<SearchMarker :keywords="['ad', 'show', 'hide']">
 							<MkPreferenceContainer k="forceShowAds">
-								<MkSwitch v-model="hideAds" :disabled="$i.policies.canHideAds">
+								<MkSwitch v-model="hideAds" :disabled="!$i.policies.canHideAds">
 									<template #label><SearchLabel>{{ i18n.ts.hideAds }}</SearchLabel></template>
 								</MkSwitch>
 							</MkPreferenceContainer>
