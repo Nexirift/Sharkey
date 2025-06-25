@@ -605,7 +605,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 		if (!this.isRenote(note) || this.isQuote(note)) {
 			// Increment notes count (user)
-			await this.incNotesCountOfUser(user);
+			this.collapsedQueueService.updateUserQueue.enqueue(user.id, { additionalNotes: 1 });
 		}
 
 		this.collapsedQueueService.updateUserQueue.enqueue(user.id, { updatedAt: new Date() });
@@ -888,17 +888,6 @@ export class NoteCreateService implements OnApplicationShutdown {
 		if (note.text == null && note.cw == null) return;
 
 		await this.searchService.indexNote(note);
-	}
-
-	@bindThis
-	private async incNotesCountOfUser(user: { id: MiUser['id']; }) {
-		await this.usersRepository.createQueryBuilder().update()
-			.set({
-				updatedAt: this.timeService.date,
-				notesCount: () => '"notesCount" + 1',
-			})
-			.where('id = :id', { id: user.id })
-			.execute();
 	}
 
 	@bindThis

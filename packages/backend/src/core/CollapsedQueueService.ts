@@ -24,7 +24,8 @@ export type UpdateInstanceJob = {
 };
 
 export type UpdateUserJob = {
-	updatedAt: Date,
+	updatedAt?: Date,
+	additionalNotes?: number,
 };
 
 @Injectable()
@@ -74,8 +75,12 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 			fiveMinuteInterval,
 			(oldJob, newJob) => ({
 				updatedAt: maxDate(oldJob.updatedAt, newJob.updatedAt),
+				additionalNotes: (oldJob.additionalNotes ?? 0) + (newJob.additionalNotes ?? 0),
 			}),
-			(id, job) => this.usersRepository.update({ id }, { updatedAt: job.updatedAt }),
+			(id, job) => this.usersRepository.update({ id }, {
+				updatedAt: job.updatedAt,
+				notesCount: job.additionalNotes ? () => `"notesCount" + ${job.additionalNotes}` : undefined,
+			}),
 			{
 				onError: this.onQueueError,
 				concurrency: 4,

@@ -141,14 +141,14 @@ export class NoteDeleteService {
 
 			if (!isPureRenote(note)) {
 				// Decrement notes count (user)
-				promises.push(this.decNotesCountOfUser(user));
+				this.collapsedQueueService.updateUserQueue.enqueue(user.id, { additionalNotes: -1 });
 			}
 
 			this.collapsedQueueService.updateUserQueue.enqueue(user.id, { updatedAt: new Date() });
 
 			for (const cascade of cascadingNotes) {
 				if (!isPureRenote(cascade)) {
-					promises.push(this.decNotesCountOfUser(cascade.user));
+					this.collapsedQueueService.updateUserQueue.enqueue(cascade.user.id, { additionalNotes: -1 });
 				}
 				// Don't mark cascaded user as updated (active)
 			}
@@ -215,17 +215,6 @@ export class NoteDeleteService {
 		await trackTask(async () => {
 			await Promise.allSettled(promises);
 		});
-	}
-
-	@bindThis
-	private async decNotesCountOfUser(user: { id: MiUser['id']; }) {
-		await this.usersRepository.createQueryBuilder().update()
-			.set({
-				updatedAt: this.timeService.date,
-				notesCount: () => '"notesCount" - 1',
-			})
-			.where('id = :id', { id: user.id })
-			.execute();
 	}
 
 	@bindThis
