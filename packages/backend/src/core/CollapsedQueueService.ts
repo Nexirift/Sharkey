@@ -14,24 +14,25 @@ import { bindThis } from '@/decorators.js';
 import type { MiInstance } from '@/models/Instance.js';
 import { InternalEventService } from '@/core/InternalEventService.js';
 import { MiUser } from '@/models/User.js';
-import type { UsersRepository } from '@/models/_.js';
+import type { MiNote, UsersRepository } from '@/models/_.js';
 import { DI } from '@/di-symbols.js';
 
 export type UpdateInstanceJob = {
 	latestRequestReceivedAt?: Date,
 	shouldUnsuspend?: boolean,
-	additionalNotes?: number,
+	notesCountDelta?: number,
 };
 
 export type UpdateUserJob = {
 	updatedAt?: Date,
-	additionalNotes?: number,
+	notesCountDelta?: number,
 };
 
 @Injectable()
 export class CollapsedQueueService implements OnApplicationShutdown {
-	// Moved from InboxProcessorService to allow access from ApInboxService
+	// Moved from InboxProcessorService
 	public readonly updateInstanceQueue: CollapsedQueue<MiInstance['id'], UpdateInstanceJob>;
+	// Moved from NoteCreateService, NoteEditService, and NoteDeleteService
 	public readonly updateUserQueue: CollapsedQueue<MiUser['id'], UpdateUserJob>;
 
 	private readonly logger: Logger;
@@ -57,13 +58,13 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 			(oldJob, newJob) => ({
 				latestRequestReceivedAt: maxDate(oldJob.latestRequestReceivedAt, newJob.latestRequestReceivedAt),
 				shouldUnsuspend: oldJob.shouldUnsuspend || newJob.shouldUnsuspend,
-				additionalNotes: (oldJob.additionalNotes ?? 0) + (newJob.additionalNotes ?? 0),
+				notesCountDelta: (oldJob.notesCountDelta ?? 0) + (newJob.notesCountDelta ?? 0),
 			}),
 			(id, job) => this.federatedInstanceService.update(id, {
 				latestRequestReceivedAt: job.latestRequestReceivedAt,
 				isNotResponding: job.latestRequestReceivedAt ? false : undefined,
 				suspensionState: job.shouldUnsuspend ? 'none' : undefined,
-				notesCount: job.additionalNotes ? () => `"notesCount" + ${job.additionalNotes}` : undefined,
+				notesCount: job.notesCountDelta ? () => `"notesCount" + ${job.notesCountDelta}` : undefined,
 			}),
 			{
 				onError: this.onQueueError,
@@ -76,11 +77,11 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 			oneMinuteInterval,
 			(oldJob, newJob) => ({
 				updatedAt: maxDate(oldJob.updatedAt, newJob.updatedAt),
-				additionalNotes: (oldJob.additionalNotes ?? 0) + (newJob.additionalNotes ?? 0),
+				notesCountDelta: (oldJob.notesCountDelta ?? 0) + (newJob.notesCountDelta ?? 0),
 			}),
 			(id, job) => this.usersRepository.update({ id }, {
 				updatedAt: job.updatedAt,
-				notesCount: job.additionalNotes ? () => `"notesCount" + ${job.additionalNotes}` : undefined,
+				notesCount: job.notesCountDelta ? () => `"notesCount" + ${job.notesCountDelta}` : undefined,
 			}),
 			{
 				onError: this.onQueueError,

@@ -616,7 +616,7 @@ export class NoteEditService implements OnApplicationShutdown {
 			if (isRemoteUser(user)) {
 				this.federatedInstanceService.fetchOrRegister(user.host).then(async i => {
 					if (note.renote && note.text || !note.renote) {
-						this.collapsedQueueService.updateInstanceQueue.enqueue(i.id, { additionalNotes: 1 });
+						this.collapsedQueueService.updateInstanceQueue.enqueue(i.id, { notesCountDelta: 1 });
 					}
 					if (this.meta.enableChartsForFederatedInstances) {
 						this.instanceChart.updateNote(i.host, note, true);

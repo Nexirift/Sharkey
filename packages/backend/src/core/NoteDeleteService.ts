@@ -141,14 +141,14 @@ export class NoteDeleteService {
 
 			if (!isPureRenote(note)) {
 				// Decrement notes count (user)
-				this.collapsedQueueService.updateUserQueue.enqueue(user.id, { additionalNotes: -1 });
+				this.collapsedQueueService.updateUserQueue.enqueue(user.id, { notesCountDelta: -1 });
 			}
 
 			this.collapsedQueueService.updateUserQueue.enqueue(user.id, { updatedAt: new Date() });
 
 			for (const cascade of cascadingNotes) {
 				if (!isPureRenote(cascade)) {
-					this.collapsedQueueService.updateUserQueue.enqueue(cascade.user.id, { additionalNotes: -1 });
+					this.collapsedQueueService.updateUserQueue.enqueue(cascade.user.id, { notesCountDelta: -1 });
 				}
 				// Don't mark cascaded user as updated (active)
 			}
