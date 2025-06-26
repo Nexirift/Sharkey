@@ -80,7 +80,7 @@ export class QueueService implements OnModuleInit {
 	public async onModuleInit() {
 		await this.systemQueue.upsertJobScheduler(
 			'tickCharts-scheduler',
-			{ pattern: '55 * * * *' },
+			{ pattern: '0 * * * *' },
 			{
 				name: 'tickCharts',
 				opts: {
@@ -91,7 +91,7 @@ export class QueueService implements OnModuleInit {
 
 		await this.systemQueue.upsertJobScheduler(
 			'resyncCharts-scheduler',
-			{ pattern: '0 0 * * *' },
+			{ pattern: '10 0 * * *' },
 			{
 				name: 'resyncCharts',
 				opts: {
@@ -102,7 +102,7 @@ export class QueueService implements OnModuleInit {
 
 		await this.systemQueue.upsertJobScheduler(
 			'cleanCharts-scheduler',
-			{ pattern: '0 0 * * *' },
+			{ pattern: '30 0 * * *' },
 			{
 				name: 'cleanCharts',
 				opts: {
@@ -113,7 +113,7 @@ export class QueueService implements OnModuleInit {
 
 		await this.systemQueue.upsertJobScheduler(
 			'aggregateRetention-scheduler',
-			{ pattern: '0 0 * * *' },
+			{ pattern: '0 1 * * *' },
 			{
 				name: 'aggregateRetention',
 				opts: {
@@ -124,7 +124,7 @@ export class QueueService implements OnModuleInit {
 
 		await this.systemQueue.upsertJobScheduler(
 			'clean-scheduler',
-			{ pattern: '0 0 * * *' },
+			{ pattern: '15 1 * * *' },
 			{
 				name: 'clean',
 				opts: {
@@ -146,7 +146,7 @@ export class QueueService implements OnModuleInit {
 
 		await this.systemQueue.upsertJobScheduler(
 			'backBufferedReactions-scheduler',
-			{ pattern: '0 0 * * *' },
+			{ pattern: '30 1 * * *' },
 			{
 				name: 'backBufferedReactions',
 				opts: {
@@ -158,7 +158,7 @@ export class QueueService implements OnModuleInit {
 		await this.systemQueue.upsertJobScheduler(
 			'checkModeratorsActivity-scheduler',
 			// 毎時30分に起動
-			{ pattern: '30 * * * *' },
+			{ pattern: '45 1 * * *' },
 			{
 				name: 'checkModeratorsActivity',
 				opts: {

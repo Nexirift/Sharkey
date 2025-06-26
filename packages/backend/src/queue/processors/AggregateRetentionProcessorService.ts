@@ -83,7 +83,7 @@ export class AggregateRetentionProcessorService {
 			const data = deepClone(record.data);
 			data[dateKey] = retention;
 
-			this.retentionAggregationsRepository.update(record.id, {
+			await this.retentionAggregationsRepository.update(record.id, {
 				updatedAt: now,
 				data,
 			});
