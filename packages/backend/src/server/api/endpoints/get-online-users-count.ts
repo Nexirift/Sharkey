@@ -10,6 +10,7 @@ import type { UsersRepository } from '@/models/_.js';
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import { DI } from '@/di-symbols.js';
 import { TimeService } from '@/global/TimeService.js';
+import { CacheManagementService, type ManagedMemorySingleCache } from '@/global/CacheManagementService.js';
 
 export const meta = {
 	tags: ['meta'],
@@ -48,24 +49,32 @@ export const paramDef = {
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
+	private readonly cache: ManagedMemorySingleCache<{ count: number, countAcrossNetwork: number }>;
+
 	constructor(
 		@Inject(DI.usersRepository)
 		private usersRepository: UsersRepository,
 		private readonly timeService: TimeService,
+
+		cacheManagementService: CacheManagementService,
 	) {
 		super(meta, paramDef, async () => {
-			const countAcrossNetwork = await this.usersRepository.countBy({
-				lastActiveDate: MoreThan(new Date(Date.now() - USER_ONLINE_THRESHOLD)),
-			});
-			const count = await this.usersRepository.countBy({
-				lastActiveDate: MoreThan(new Date(this.timeService.now - USER_ONLINE_THRESHOLD)),
-				host: IsNull(),
-			});
+			return this.cache.fetch(async () => {
+				const countAcrossNetwork = await this.usersRepository.countBy({
+					lastActiveDate: MoreThan(new Date(this.timeService.now - USER_ONLINE_THRESHOLD)),
+				});
+				const count = await this.usersRepository.countBy({
+					lastActiveDate: MoreThan(new Date(this.timeService.now - USER_ONLINE_THRESHOLD)),
+					host: IsNull(),
+				});
 
-			return {
-				count,
-				countAcrossNetwork,
-			};
+				return {
+					count,
+					countAcrossNetwork,
+				};
+			});
 		});
+
+		this.cache = cacheManagementService.createMemorySingleCache<{ count: number, countAcrossNetwork: number }>(1000 * 60); // 1 minute
 	}
 }
