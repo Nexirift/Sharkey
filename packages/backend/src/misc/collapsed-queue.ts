@@ -7,6 +7,7 @@ import { TimeService, type TimerHandle } from '@/global/TimeService.js';
 import promiseLimit from 'promise-limit';
 import { InternalEventService } from '@/core/InternalEventService.js';
 import { bindThis } from '@/decorators.js';
+import { Serialized } from '@/types.js';
 
 type Job<V> = {
 	value: V;
@@ -39,6 +40,7 @@ export class CollapsedQueue<V> {
 		private readonly opts?: {
 			onError?: (queue: CollapsedQueue<V>, error: unknown) => void | Promise<void>,
 			concurrency?: number,
+			redisParser?: (data: Serialized<V>) => V,
 		},
 	) {
 		if (opts?.concurrency) {
@@ -149,7 +151,11 @@ export class CollapsedQueue<V> {
 
 		// Only enqueue if not deferred
 		if (!this.deferredKeys.has(data.key)) {
-			await this.enqueue(data.key, data.value as V);
+			const value = this.opts?.redisParser
+				? this.opts.redisParser(data.value as Serialized<V>)
+				: data.value as V;
+
+			await this.enqueue(data.key, value);
 		}
 	}
 	//#endregion

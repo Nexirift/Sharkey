@@ -136,6 +136,15 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 			{
 				onError: this.onQueueError,
 				concurrency: 2, // Low concurrency, this table is slow for some reason
+				redisParser: data => ({
+					...data,
+					latestRequestReceivedAt: data.latestRequestReceivedAt != null
+						? new Date(data.latestRequestReceivedAt)
+						: data.latestRequestReceivedAt,
+					notRespondingSince: data.notRespondingSince != null
+						? new Date(data.notRespondingSince)
+						: data.notRespondingSince,
+				}),
 			},
 		);
 
@@ -161,6 +170,12 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 			{
 				onError: this.onQueueError,
 				concurrency: 4, // High concurrency - this queue gets a lot of activity
+				redisParser: data => ({
+					...data,
+					updatedAt: data.updatedAt != null
+						? new Date(data.updatedAt)
+						: data.updatedAt,
+				}),
 			},
 		);
 
@@ -197,6 +212,10 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 			{
 				onError: this.onQueueError,
 				concurrency: 2,
+				redisParser: data => ({
+					...data,
+					lastUsedAt: new Date(data.lastUsedAt),
+				}),
 			},
 		);
 
@@ -215,6 +234,12 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 			{
 				onError: this.onQueueError,
 				concurrency: 4,
+				redisParser: data => ({
+					...data,
+					lastUsedAt: data.lastUsedAt != null
+						? new Date(data.lastUsedAt)
+						: data.lastUsedAt,
+				}),
 			},
 		);
 
@@ -245,15 +270,15 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private onUserDeleted(data: { id: string, isDeleted: boolean }) {
+	private async onUserDeleted(data: { id: string, isDeleted: boolean }) {
 		if (data.isDeleted) {
-			this.updateUserQueue.delete(data.id);
+			await this.updateUserQueue.delete(data.id);
 		}
 	}
 
 	@bindThis
-	private onAntennaDeleted(data: MiAntenna) {
-		this.updateAntennaQueue.delete(data.id);
+	private async onAntennaDeleted(data: MiAntenna) {
+		await this.updateAntennaQueue.delete(data.id);
 	}
 
 	@bindThis
