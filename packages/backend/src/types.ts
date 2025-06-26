@@ -551,13 +551,17 @@ export type Serialized<T> = {
 		? string
 		: T[K] extends (Date | null)
 			? (string | null)
-			: T[K] extends Record<string, any>
-				? Serialized<T[K]>
-				: T[K] extends (Record<string, any> | null)
-					? (Serialized<T[K]> | null)
-					: T[K] extends (Record<string, any> | undefined)
-						? (Serialized<T[K]> | undefined)
-						: T[K];
+			: T[K] extends (Date | undefined)
+				? (string | undefined)
+				: T[K] extends (Date | null | undefined)
+					? (string | null | undefined)
+					: T[K] extends Record<string, any>
+						? Serialized<T[K]>
+						: T[K] extends (Record<string, any> | null)
+							? (Serialized<T[K]> | null)
+							: T[K] extends (Record<string, any> | undefined)
+								? (Serialized<T[K]> | undefined)
+								: T[K];
 };
 
 export type FilterUnionByProperty<
