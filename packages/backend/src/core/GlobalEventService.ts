@@ -396,18 +396,18 @@ export class GlobalEventService {
 	}
 
 	@bindThis
-	public publishMainStream<K extends keyof MainEventTypes>(userId: MiUser['id'], type: K, value?: MainEventTypes[K]): void {
-		this.publish(`mainStream:${userId}`, type, typeof value === 'undefined' ? null : value);
+	public async publishMainStream<K extends keyof MainEventTypes>(userId: MiUser['id'], type: K, value?: MainEventTypes[K]): Promise<void> {
+		await this.publish(`mainStream:${userId}`, type, typeof value === 'undefined' ? null : value);
 	}
 
 	@bindThis
-	public publishDriveStream<K extends keyof DriveEventTypes>(userId: MiUser['id'], type: K, value?: DriveEventTypes[K]): void {
-		this.publish(`driveStream:${userId}`, type, typeof value === 'undefined' ? null : value);
+	public async publishDriveStream<K extends keyof DriveEventTypes>(userId: MiUser['id'], type: K, value?: DriveEventTypes[K]): Promise<void> {
+		await this.publish(`driveStream:${userId}`, type, typeof value === 'undefined' ? null : value);
 	}
 
 	@bindThis
-	public publishNoteStream<K extends keyof NoteEventTypes>(noteId: MiNote['id'], type: K, value?: NoteEventTypes[K]): void {
-		this.publish(`noteStream:${noteId}`, type, {
+	public async publishNoteStream<K extends keyof NoteEventTypes>(noteId: MiNote['id'], type: K, value?: NoteEventTypes[K]): Promise<void> {
+		await this.publish(`noteStream:${noteId}`, type, {
 			id: noteId,
 			body: value,
 		});
@@ -419,42 +419,42 @@ export class GlobalEventService {
 	}
 
 	@bindThis
-	public publishAntennaStream<K extends keyof AntennaEventTypes>(antennaId: MiAntenna['id'], type: K, value?: AntennaEventTypes[K]): void {
-		this.publish(`antennaStream:${antennaId}`, type, typeof value === 'undefined' ? null : value);
+	public async publishAntennaStream<K extends keyof AntennaEventTypes>(antennaId: MiAntenna['id'], type: K, value?: AntennaEventTypes[K]): Promise<void> {
+		await this.publish(`antennaStream:${antennaId}`, type, typeof value === 'undefined' ? null : value);
 	}
 
 	@bindThis
-	public publishRoleTimelineStream<K extends keyof RoleTimelineEventTypes>(roleId: MiRole['id'], type: K, value?: RoleTimelineEventTypes[K]): void {
-		this.publish(`roleTimelineStream:${roleId}`, type, typeof value === 'undefined' ? null : value);
+	public async publishRoleTimelineStream<K extends keyof RoleTimelineEventTypes>(roleId: MiRole['id'], type: K, value?: RoleTimelineEventTypes[K]): Promise<void> {
+		await this.publish(`roleTimelineStream:${roleId}`, type, typeof value === 'undefined' ? null : value);
 	}
 
 	@bindThis
-	public publishNotesStream(note: Packed<'Note'>): void {
-		this.publish('notesStream', null, note);
+	public async publishNotesStream(note: Packed<'Note'>): Promise<void> {
+		await this.publish('notesStream', null, note);
 	}
 
 	@bindThis
-	public publishAdminStream<K extends keyof AdminEventTypes>(userId: MiUser['id'], type: K, value?: AdminEventTypes[K]): void {
-		this.publish(`adminStream:${userId}`, type, typeof value === 'undefined' ? null : value);
+	public async publishAdminStream<K extends keyof AdminEventTypes>(userId: MiUser['id'], type: K, value?: AdminEventTypes[K]): Promise<void> {
+		await this.publish(`adminStream:${userId}`, type, typeof value === 'undefined' ? null : value);
 	}
 
 	@bindThis
-	public publishChatUserStream<K extends keyof ChatEventTypes>(fromUserId: MiUser['id'], toUserId: MiUser['id'], type: K, value?: ChatEventTypes[K]): void {
-		this.publish(`chatUserStream:${fromUserId}-${toUserId}`, type, typeof value === 'undefined' ? null : value);
+	public async publishChatUserStream<K extends keyof ChatEventTypes>(fromUserId: MiUser['id'], toUserId: MiUser['id'], type: K, value?: ChatEventTypes[K]): Promise<void> {
+		await this.publish(`chatUserStream:${fromUserId}-${toUserId}`, type, typeof value === 'undefined' ? null : value);
 	}
 
 	@bindThis
-	public publishChatRoomStream<K extends keyof ChatEventTypes>(toRoomId: MiChatRoom['id'], type: K, value?: ChatEventTypes[K]): void {
-		this.publish(`chatRoomStream:${toRoomId}`, type, typeof value === 'undefined' ? null : value);
+	public async publishChatRoomStream<K extends keyof ChatEventTypes>(toRoomId: MiChatRoom['id'], type: K, value?: ChatEventTypes[K]): Promise<void> {
+		await this.publish(`chatRoomStream:${toRoomId}`, type, typeof value === 'undefined' ? null : value);
 	}
 
 	@bindThis
-	public publishReversiStream<K extends keyof ReversiEventTypes>(userId: MiUser['id'], type: K, value?: ReversiEventTypes[K]): void {
-		this.publish(`reversiStream:${userId}`, type, typeof value === 'undefined' ? null : value);
+	public async publishReversiStream<K extends keyof ReversiEventTypes>(userId: MiUser['id'], type: K, value?: ReversiEventTypes[K]): Promise<void> {
+		await this.publish(`reversiStream:${userId}`, type, typeof value === 'undefined' ? null : value);
 	}
 
 	@bindThis
-	public publishReversiGameStream<K extends keyof ReversiGameEventTypes>(gameId: MiReversiGame['id'], type: K, value?: ReversiGameEventTypes[K]): void {
-		this.publish(`reversiGameStream:${gameId}`, type, typeof value === 'undefined' ? null : value);
+	public async publishReversiGameStream<K extends keyof ReversiGameEventTypes>(gameId: MiReversiGame['id'], type: K, value?: ReversiGameEventTypes[K]): Promise<void> {
+		await this.publish(`reversiGameStream:${gameId}`, type, typeof value === 'undefined' ? null : value);
 	}
 }
