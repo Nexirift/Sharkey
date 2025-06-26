@@ -254,7 +254,7 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 			const results = await queue.performAllNow();
 
 			const [succeeded, failed] = results.reduce((counts, result) => {
-				counts[result.status === 'fulfilled' ? 0 : 1]++;
+				counts[result ? 0 : 1]++;
 				return counts;
 			}, [0, 0]);
 

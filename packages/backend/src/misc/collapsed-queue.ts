@@ -99,7 +99,7 @@ export class CollapsedQueue<V> {
 		const entries = Array.from(this.jobs.entries());
 		this.jobs.clear();
 
-		return await Promise.allSettled(entries.map(([key, job]) => this._perform(key, job.value)));
+		return await Promise.all(entries.map(([key, job]) => this._perform(key, job.value)));
 	}
 
 	private async _perform(key: string, value: V) {
@@ -113,9 +113,11 @@ export class CollapsedQueue<V> {
 			} else {
 				await this.perform(key, value);
 			}
+
+			return true;
 		} catch (err) {
 			await this.opts?.onError?.(this, err);
-			throw err;
+			return false;
 		}
 	}
 
