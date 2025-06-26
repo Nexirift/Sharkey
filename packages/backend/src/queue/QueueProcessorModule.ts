@@ -45,6 +45,7 @@ import { ExportFavoritesProcessorService } from './processors/ExportFavoritesPro
 import { RelationshipProcessorService } from './processors/RelationshipProcessorService.js';
 import { ScheduleNotePostProcessorService } from './processors/ScheduleNotePostProcessorService.js';
 import { CleanupApLogsProcessorService } from './processors/CleanupApLogsProcessorService.js';
+import { HibernateUsersProcessorService } from './processors/HibernateUsersProcessorService.js';
 
 @Module({
 	imports: [
@@ -91,6 +92,7 @@ import { CleanupApLogsProcessorService } from './processors/CleanupApLogsProcess
 		QueueProcessorService,
 		ScheduleNotePostProcessorService,
 		CleanupApLogsProcessorService,
+		HibernateUsersProcessorService,
 	],
 	exports: [
 		QueueProcessorService,

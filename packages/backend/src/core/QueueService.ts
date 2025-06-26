@@ -177,6 +177,19 @@ export class QueueService implements OnModuleInit {
 					removeOnFail: 30,
 				},
 			});
+
+		await this.systemQueue.upsertJobScheduler(
+				'hibernateUsers-scheduler',
+				{ pattern: '40 1 * * *' },
+				{
+					name: 'hibernateUsers',
+					opts: {
+						removeOnComplete: 10,
+						removeOnFail: 30,
+					},
+				});
+
+			// Slot '50 1 * * *' is available for future work
 	}
 
 	@bindThis
