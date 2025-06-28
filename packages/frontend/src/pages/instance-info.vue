@@ -123,6 +123,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 						<MkInfo v-if="isBaseMediaSilenced" warn>{{ i18n.ts.mediaSilencedByBase }}</MkInfo>
 						<MkSwitch v-model="isMediaSilenced" :disabled="!meta || !instance || isBaseMediaSilenced" @update:modelValue="toggleMediaSilenced">{{ i18n.ts.mediaSilenceThisInstance }}</MkSwitch>
 
+						<MkInput v-model="mandatoryCW" type="text" manualSave @update:modelValue="onMandatoryCWChanged">
+							<template #label>{{ i18n.ts.mandatoryCW }}</template>
+							<template #caption>{{ i18n.ts.mandatoryCWDescription }}</template>
+						</MkInput>
+
 						<div :class="$style.buttonStrip">
 							<MkButton inline :disabled="!instance" @click="refreshMetadata"><i class="ph-cloud-arrow-down ph-bold ph-lg"></i> {{ i18n.ts.updateRemoteUser }}</MkButton>
 							<MkButton inline :disabled="!instance" danger @click="deleteAllFiles"><i class="ph-trash ph-bold ph-lg"></i> {{ i18n.ts.deleteAllFiles }}</MkButton>
@@ -234,6 +239,7 @@ import { copyToClipboard } from '@/utility/copy-to-clipboard';
 import MkFolder from '@/components/MkFolder.vue';
 import MkNumber from '@/components/MkNumber.vue';
 import SkBadgeStrip from '@/components/SkBadgeStrip.vue';
+import MkInput from '@/components/MkInput.vue';
 
 const props = withDefaults(defineProps<{
 	host: string;
@@ -259,6 +265,7 @@ const rejectReports = ref(false);
 const isMediaSilenced = ref(false);
 const faviconUrl = ref<string | null>(null);
 const moderationNote = ref('');
+const mandatoryCW = ref<string | null>(null);
 
 const baseDomains = computed(() => {
 	const domains: string[] = [];
@@ -303,6 +310,13 @@ const badges = computed(() => {
 			arr.push({
 				key: 'media_silenced',
 				label: i18n.ts.mediaSilenced,
+				style: 'warning',
+			});
+		}
+		if (instance.value.mandatoryCW) {
+			arr.push({
+				key: 'cw',
+				label: i18n.ts.cw,
 				style: 'warning',
 			});
 		}
@@ -365,6 +379,13 @@ async function saveModerationNote() {
 	}
 }
 
+async function onMandatoryCWChanged(value: string | number) {
+	await os.promiseDialog(async () => {
+		await misskeyApi('admin/cw-instance', { host: props.host, cw: String(value) || null });
+		await fetch();
+	});
+}
+
 async function fetch(withHint = false): Promise<void> {
 	const [m, i] = await Promise.all([
 		(withHint && props.metaHint)
@@ -389,6 +410,7 @@ async function fetch(withHint = false): Promise<void> {
 	isMediaSilenced.value = instance.value?.isMediaSilenced ?? false;
 	faviconUrl.value = getProxiedImageUrlNullable(instance.value?.faviconUrl, 'preview') ?? getProxiedImageUrlNullable(instance.value?.iconUrl, 'preview');
 	moderationNote.value = instance.value?.moderationNote ?? '';
+	mandatoryCW.value = instance.value?.mandatoryCW ?? '';
 }
 
 async function toggleBlock(): Promise<void> {

@@ -233,6 +233,15 @@ export type paths = {
      */
     post: operations['admin___captcha___save'];
   };
+  '/admin/cw-instance': {
+    /**
+     * admin/cw-instance
+     * @description No description provided.
+     *
+     * **Credential required**: *Yes* / **Permission**: *write:admin:cw-instance*
+     */
+    post: operations['admin___cw-instance'];
+  };
   '/admin/cw-note': {
     /**
      * admin/cw-note
@@ -4309,6 +4318,7 @@ export type components = {
         faviconUrl: string | null;
         themeColor: string | null;
         isSilenced: boolean;
+        mandatoryCW: string | null;
       };
       followersCount: number;
       followingCount: number;
@@ -5341,6 +5351,7 @@ export type components = {
       rejectQuotes: boolean;
       moderationNote?: string | null;
       isBubbled: boolean;
+      mandatoryCW: string | null;
     };
     GalleryPost: {
       /**
@@ -7359,6 +7370,58 @@ export type operations = {
           sitekey?: string | null;
           secret?: string | null;
           instanceUrl?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description OK (without any results) */
+      204: {
+        content: never;
+      };
+      /** @description Client error */
+      400: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Authentication error */
+      401: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden error */
+      403: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description I'm Ai */
+      418: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  /**
+   * admin/cw-instance
+   * @description No description provided.
+   *
+   * **Credential required**: *Yes* / **Permission**: *write:admin:cw-instance*
+   */
+  'admin___cw-instance': {
+    requestBody: {
+      content: {
+        'application/json': {
+          host: string;
+          cw: string | null;
         };
       };
     };

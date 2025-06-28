@@ -107,6 +107,7 @@ export const moderationLogTypes = [
 	'resetPassword',
 	'setMandatoryCW',
 	'setMandatoryCWForNote',
+	'setMandatoryCWForInstance',
 	'setRemoteInstanceNSFW',
 	'unsetRemoteInstanceNSFW',
 	'suspendRemoteInstance',
@@ -302,6 +303,11 @@ export type ModerationLogPayloads = {
 		noteUserId: string;
 		noteUserUsername: string;
 		noteUserHost: string | null;
+	};
+	setMandatoryCWForInstance: {
+		newCW: string | null;
+		oldCW: string | null;
+		host: string;
 	};
 	setRemoteInstanceNSFW: {
 		id: string;

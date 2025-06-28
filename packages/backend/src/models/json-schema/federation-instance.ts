@@ -139,5 +139,9 @@ export const packedFederationInstanceSchema = {
 			type: 'boolean',
 			optional: false, nullable: false,
 		},
+		mandatoryCW: {
+			type: 'string',
+			optional: false, nullable: true,
+		},
 	},
 } as const;

@@ -41,6 +41,7 @@ export type AdminAvatarDecorationsListResponse = operations['admin___avatar-deco
 export type AdminAvatarDecorationsUpdateRequest = operations['admin___avatar-decorations___update']['requestBody']['content']['application/json'];
 export type AdminCaptchaCurrentResponse = operations['admin___captcha___current']['responses']['200']['content']['application/json'];
 export type AdminCaptchaSaveRequest = operations['admin___captcha___save']['requestBody']['content']['application/json'];
+export type AdminCwInstanceRequest = operations['admin___cw-instance']['requestBody']['content']['application/json'];
 export type AdminCwNoteRequest = operations['admin___cw-note']['requestBody']['content']['application/json'];
 export type AdminCwUserRequest = operations['admin___cw-user']['requestBody']['content']['application/json'];
 export type AdminDeclineUserRequest = operations['admin___decline-user']['requestBody']['content']['application/json'];

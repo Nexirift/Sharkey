@@ -29,6 +29,9 @@ export const getNoteSummary = (note: Packed<'Note'>): string => {
 	if (note.user.mandatoryCW) {
 		cw = appendContentWarning(cw, note.user.mandatoryCW);
 	}
+	if (note.user.instance?.mandatoryCW) {
+		cw = appendContentWarning(cw, note.user.instance.mandatoryCW);
+	}
 
 	// 本文
 	if (cw != null) {

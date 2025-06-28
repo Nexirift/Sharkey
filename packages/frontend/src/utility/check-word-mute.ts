@@ -21,6 +21,7 @@ export interface Mute {
 	noteMandatoryCW?: string | null;
 	// TODO show this as a single block on user timelines
 	userMandatoryCW?: string | null;
+	instanceMandatoryCW?: string | null;
 }
 
 export function checkMute(note: Misskey.entities.Note, withHardMute?: boolean): Mute {
@@ -35,20 +36,21 @@ export function checkMute(note: Misskey.entities.Note, withHardMute?: boolean): 
 	const noteMuted = note.isMutingNote;
 	const noteMandatoryCW = note.mandatoryCW;
 	const userMandatoryCW = note.user.mandatoryCW;
+	const instanceMandatoryCW = note.user.instance?.mandatoryCW;
 
 	// Hard mute
 	if (withHardMute && isHardMuted(note)) {
-		return { hardMuted: true, sensitiveMuted, threadMuted, noteMuted, noteMandatoryCW, userMandatoryCW };
+		return { hardMuted: true, sensitiveMuted, threadMuted, noteMuted, noteMandatoryCW, userMandatoryCW, instanceMandatoryCW };
 	}
 
 	// Soft mute
 	const softMutedWords = isSoftMuted(note);
 	if (softMutedWords.length > 0) {
-		return { softMutedWords, sensitiveMuted, threadMuted, noteMuted, noteMandatoryCW, userMandatoryCW };
+		return { softMutedWords, sensitiveMuted, threadMuted, noteMuted, noteMandatoryCW, userMandatoryCW, instanceMandatoryCW };
 	}
 
 	// Other / no mute
-	return { sensitiveMuted, threadMuted, noteMuted, noteMandatoryCW, userMandatoryCW };
+	return { sensitiveMuted, threadMuted, noteMuted, noteMandatoryCW, userMandatoryCW, instanceMandatoryCW };
 }
 
 function isHardMuted(note: Misskey.entities.Note): boolean {

@@ -28,6 +28,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 					'resetPassword',
 					'setMandatoryCW',
 					'setMandatoryCWForNote',
+					'setMandatoryCWForInstance',
 					'suspendRemoteInstance',
 					'setRemoteInstanceNSFW',
 					'unsetRemoteInstanceNSFW',
@@ -81,6 +82,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<span v-else-if="log.type === 'resetPassword'">: @{{ log.info.userUsername }}{{ log.info.userHost ? '@' + log.info.userHost : '' }}</span>
 		<span v-else-if="log.type === 'setMandatoryCW'">: @{{ log.info.userUsername }}{{ log.info.userHost ? '@' + log.info.userHost : '' }}</span>
 		<span v-else-if="log.type === 'setMandatoryCWForNote'">: @{{ log.info.noteUserUsername }}{{ log.info.noteUserHost ? '@' + log.info.noteUserHost : '' }}</span>
+		<span v-else-if="log.type === 'setMandatoryCWForInstance'">: {{ log.info.host }}</span>
 		<span v-else-if="log.type === 'assignRole'">: @{{ log.info.userUsername }}{{ log.info.userHost ? '@' + log.info.userHost : '' }} <i class="ti ti-arrow-right"></i> {{ log.info.roleName }}</span>
 		<span v-else-if="log.type === 'unassignRole'">: @{{ log.info.userUsername }}{{ log.info.userHost ? '@' + log.info.userHost : '' }} <i class="ti ti-equal-not"></i> {{ log.info.roleName }}</span>
 		<span v-else-if="log.type === 'createRole'">: {{ log.info.role.name }}</span>
@@ -213,6 +215,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<template v-else-if="log.type === 'setMandatoryCWForNote'">
 			<div>{{ i18n.ts.user }}: <MkA :to="`/admin/user/${log.info.noteUserId}`" class="_link">@{{ log.info.noteUserUsername }}{{ log.info.noteUserHost ? '@' + log.info.noteUserHost : '' }}</MkA></div>
 			<div>{{ i18n.ts.note }}: <MkA :to="`/notes/${log.info.noteId}`" class="_link">{{ log.info.noteId }}</MkA></div>
+			<div :class="$style.diff">
+				<CodeDiff :context="0" :hideHeader="true" :oldString="log.info.oldCW ?? ''" :newString="log.info.newCW ?? ''" maxHeight="150px"/>
+			</div>
+		</template>
+		<template v-else-if="log.type === 'setMandatoryCWForInstance'">
 			<div :class="$style.diff">
 				<CodeDiff :context="0" :hideHeader="true" :oldString="log.info.oldCW ?? ''" :newString="log.info.newCW ?? ''" maxHeight="150px"/>
 			</div>

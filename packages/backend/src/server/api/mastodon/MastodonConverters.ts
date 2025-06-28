@@ -23,6 +23,7 @@ import { MastodonDataService } from '@/server/api/mastodon/MastodonDataService.j
 import { GetterService } from '@/server/api/GetterService.js';
 import { appendContentWarning } from '@/misc/append-content-warning.js';
 import { isRenote } from '@/misc/is-renote.js';
+import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 
 // Missing from Megalodon apparently
 // https://docs.joinmastodon.org/entities/StatusEdit/
@@ -68,6 +69,7 @@ export class MastodonConverters {
 		private readonly idService: IdService,
 		private readonly driveFileEntityService: DriveFileEntityService,
 		private readonly mastodonDataService: MastodonDataService,
+		private readonly federatedInstanceService: FederatedInstanceService,
 	) {}
 
 	private encode(u: MiUser, m: IMentionedRemoteUsers): MastodonEntity.Mention {
@@ -210,6 +212,7 @@ export class MastodonConverters {
 		}
 
 		const noteUser = await this.getUser(note.userId);
+		const noteInstance = noteUser.instance ?? (noteUser.host ? await this.federatedInstanceService.fetch(noteUser.host) : null);
 		const account = await this.convertAccount(noteUser);
 		const edits = await this.noteEditRepository.find({ where: { noteId: note.id }, order: { id: 'ASC' } });
 		const history: StatusEdit[] = [];
@@ -230,6 +233,9 @@ export class MastodonConverters {
 			}
 			if (noteUser.mandatoryCW) {
 				cw = appendContentWarning(cw, noteUser.mandatoryCW);
+			}
+			if (noteInstance?.mandatoryCW) {
+				cw = appendContentWarning(cw, noteInstance.mandatoryCW);
 			}
 
 			const isQuote = renote && (edit.cw || edit.newText || edit.fileIds.length > 0 || note.replyId);

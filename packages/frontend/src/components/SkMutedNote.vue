@@ -26,6 +26,14 @@ Displays a placeholder for a muted note.
 				{{ mute.userMandatoryCW }}
 			</template>
 		</I18n>
+		<I18n v-if="mute.instanceMandatoryCW" :src="i18n.ts.instanceIsFlaggedAs" tag="small">
+			<template #name>
+				{{ note.user.instance?.name ?? note.user.host }}
+			</template>
+			<template #cw>
+				{{ mute.instanceMandatoryCW }}
+			</template>
+		</I18n>
 
 		<!-- Muted notes/threads -->
 		<I18n v-if="mute.noteMuted" :src="i18n.ts.userSaysSomethingInMutedNote" tag="small">
@@ -89,7 +97,7 @@ const expandNote = ref(false);
 
 const mute = computed(() => checkMute(props.note, props.withHardMute));
 const mutedWords = computed(() => mute.value.softMutedWords?.join(', '));
-const isMuted = computed(() => mute.value.hardMuted || mutedWords.value || mute.value.noteMandatoryCW || mute.value.userMandatoryCW || mute.value.noteMuted || mute.value.threadMuted || mute.value.sensitiveMuted);
+const isMuted = computed(() => mute.value.hardMuted || mutedWords.value || mute.value.noteMandatoryCW || mute.value.userMandatoryCW || mute.value.instanceMandatoryCW || mute.value.noteMuted || mute.value.threadMuted || mute.value.sensitiveMuted);
 const isExpanded = computed(() => expandNote.value || !isMuted.value);
 const rootClass = computed(() => isExpanded.value ? props.expandedClass : undefined);
 

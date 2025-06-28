@@ -15,6 +15,9 @@ export function computeMergedCw(note: Misskey.entities.Note): string | null {
 	if (note.user.mandatoryCW) {
 		cw = appendContentWarning(cw, note.user.mandatoryCW);
 	}
+	if (note.user.instance?.mandatoryCW) {
+		cw = appendContentWarning(cw, note.user.instance.mandatoryCW);
+	}
 
 	return cw ?? null;
 }

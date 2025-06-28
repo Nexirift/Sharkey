@@ -137,6 +137,9 @@ export type ModerationLog = {
 	type: 'setMandatoryCWForNote';
 	info: ModerationLogPayloads['setMandatoryCWForNote'];
 } | {
+	type: 'setMandatoryCWForInstance';
+	info: ModerationLogPayloads['setMandatoryCWForInstance'];
+} | {
 	type: 'setRemoteInstanceNSFW';
 	info: ModerationLogPayloads['setRemoteInstanceNSFW'];
 } | {

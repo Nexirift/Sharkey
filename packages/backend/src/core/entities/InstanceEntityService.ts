@@ -68,6 +68,7 @@ export class InstanceEntityService {
 			rejectQuotes: instance.rejectQuotes,
 			moderationNote: iAmModerator ? instance.moderationNote : null,
 			isBubbled: this.utilityService.isBubbledHost(instance.host),
+			mandatoryCW: instance.mandatoryCW,
 		};
 	}
 
