@@ -310,7 +310,34 @@ function onGridCellValueChange(event: GridCellValueChangeEvent) {
 	}
 }
 
-async function importEmojis(targets: GridItem[]) {
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+type ApiResponse = {
+	item: any;
+	success: boolean;
+	err?: unknown;
+};
+
+const executeWithRetries = async (item: any, retries: number = 3): Promise<ApiResponse> => {
+	for (let attempt = 0; attempt <= retries; attempt++) {
+		try {
+			await misskeyApi('admin/emoji/copy', {
+				emojiId: item.id,
+			});
+			return { item, success: true };
+		} catch (err) {
+			if (attempt < retries) {
+				console.warn(`Retrying ${item.id}, attempt ${attempt + 1}`);
+				await delay(1000 * (attempt + 1)); // Exponential backoff
+			} else {
+				return { item, success: false, err };
+			}
+		}
+	}
+	return { item, success: false, err: new Error('Unknown error') }; // Ensures all code paths return a value
+};
+
+const importEmojis = async (targets: any[]): Promise<void> => {
 	const confirm = await os.confirm({
 		type: 'info',
 		title: i18n.ts._customEmojisManager._remote.confirmImportEmojisTitle,
@@ -321,21 +348,12 @@ async function importEmojis(targets: GridItem[]) {
 		return;
 	}
 
-	const result = await os.promiseDialog(
-		Promise.all(
-			targets.map(item =>
-				misskeyApi(
-					'admin/emoji/copy',
-					{
-						emojiId: item.id!,
-					})
-					.then(() => ({ item, success: true, err: undefined }))
-					.catch(err => ({ item, success: false, err })),
-			),
-		),
-	);
-	const failedItems = result.filter(it => !it.success);
+	const results: ApiResponse[] = [];
+	for (const item of targets) {
+		results.push(await executeWithRetries(item));
+	}
 
+	const failedItems = results.filter(it => !it.success);
 	if (failedItems.length > 0) {
 		await os.alert({
 			type: 'error',
@@ -344,7 +362,7 @@ async function importEmojis(targets: GridItem[]) {
 		});
 	}
 
-	requestLogs.value = result.map(it => ({
+	requestLogs.value = results.map(it => ({
 		failed: !it.success,
 		url: it.item.url,
 		name: it.item.name,
@@ -352,7 +370,7 @@ async function importEmojis(targets: GridItem[]) {
 	}));
 
 	await refreshCustomEmojis();
-}
+};
 
 async function refreshCustomEmojis() {
 	const query: Misskey.entities.V2AdminEmojiListRequest['query'] = {

@@ -247,7 +247,67 @@ const registerButtonDisabled = ref<boolean>(false);
 const requestLogs = ref<RequestLogItem[]>([]);
 const isDragOver = ref<boolean>(false);
 
-async function onRegistryClicked() {
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+type ApiResponse = {
+	item: any;
+	success: boolean;
+	err?: unknown;
+};
+
+const executeWithRetries = async (item: any, apiEndpoint: string, payload: any, retries: number = 3): Promise<ApiResponse> => {
+	for (let attempt = 0; attempt <= retries; attempt++) {
+		try {
+			await misskeyApi(apiEndpoint, payload);
+			return { item, success: true };
+		} catch (err) {
+			if (attempt < retries) {
+				console.warn(`Retrying ${item.id || item.name}, attempt ${attempt + 1}`);
+				await delay(1000 * (attempt + 1)); // Exponential backoff
+			} else {
+				return { item, success: false, err };
+			}
+		}
+	}
+	return { item, success: false, err: new Error('Unknown error') }; // Ensures all code paths return a value
+};
+
+const importEmojis = async (targets: any[]): Promise<void> => {
+	const confirm = await os.confirm({
+		type: 'info',
+		title: i18n.ts._customEmojisManager._remote.confirmImportEmojisTitle,
+		text: i18n.tsx._customEmojisManager._remote.confirmImportEmojisDescription({ count: targets.length }),
+	});
+
+	if (confirm.canceled) {
+		return;
+	}
+
+	const results: ApiResponse[] = [];
+	for (const item of targets) {
+		results.push(await executeWithRetries(item, 'admin/emoji/copy', { emojiId: item.id }));
+	}
+
+	const failedItems = results.filter(it => !it.success);
+	if (failedItems.length > 0) {
+		await os.alert({
+			type: 'error',
+			title: i18n.ts.somethingHappened,
+			text: i18n.ts._customEmojisManager._gridCommon.alertEmojisRegisterFailedDescription,
+		});
+	}
+
+	requestLogs.value = results.map(it => ({
+		failed: !it.success,
+		url: it.item.url,
+		name: it.item.name,
+		error: it.err ? JSON.stringify(it.err) : undefined,
+	}));
+
+	await refreshCustomEmojis();
+};
+
+const onRegistryClicked = async (): Promise<void> => {
 	const dialogSelection = await os.confirm({
 		type: 'info',
 		text: i18n.tsx._customEmojisManager._local._register.confirmRegisterEmojisDescription({ count: MAXIMUM_EMOJI_REGISTER_COUNT }),
@@ -257,29 +317,24 @@ async function onRegistryClicked() {
 		return;
 	}
 
-	const items = gridItems.value;
-	const upload = () => {
-		return items.slice(0, MAXIMUM_EMOJI_REGISTER_COUNT)
-			.map(item =>
-				misskeyApi(
-					'admin/emoji/add', {
-						name: item.name,
-						category: emptyStrToNull(item.category),
-						aliases: emptyStrToEmptyArray(item.aliases),
-						license: emptyStrToNull(item.license),
-						isSensitive: item.isSensitive,
-						localOnly: item.localOnly,
-						roleIdsThatCanBeUsedThisEmojiAsReaction: item.roleIdsThatCanBeUsedThisEmojiAsReaction.map(it => it.id),
-						fileId: item.fileId!,
-					})
-					.then(() => ({ item, success: true, err: undefined }))
-					.catch(err => ({ item, success: false, err })),
-			);
-	};
+	const items = gridItems.value.slice(0, MAXIMUM_EMOJI_REGISTER_COUNT);
+	const results: ApiResponse[] = [];
+	for (const item of items) {
+		results.push(
+			await executeWithRetries(item, 'admin/emoji/add', {
+				name: item.name,
+				category: emptyStrToNull(item.category),
+				aliases: emptyStrToEmptyArray(item.aliases),
+				license: emptyStrToNull(item.license),
+				isSensitive: item.isSensitive,
+				localOnly: item.localOnly,
+				roleIdsThatCanBeUsedThisEmojiAsReaction: item.roleIdsThatCanBeUsedThisEmojiAsReaction.map((it: any) => it.id),
+				fileId: item.fileId!,
+			})
+		);
+	}
 
-	const result = await os.promiseDialog(Promise.all(upload()));
-	const failedItems = result.filter(it => !it.success);
-
+	const failedItems = results.filter(it => !it.success);
 	if (failedItems.length > 0) {
 		await os.alert({
 			type: 'error',
@@ -288,17 +343,17 @@ async function onRegistryClicked() {
 		});
 	}
 
-	requestLogs.value = result.map(it => ({
+	requestLogs.value = results.map(it => ({
 		failed: !it.success,
 		url: it.item.url,
 		name: it.item.name,
 		error: it.err ? JSON.stringify(it.err) : undefined,
 	}));
 
-	// 登録に成功したものは一覧から除く
-	const successItems = result.filter(it => it.success).map(it => it.item);
+	// Remove successfully registered items from the list
+	const successItems = results.filter(it => it.success).map(it => it.item);
 	gridItems.value = gridItems.value.filter(it => !successItems.includes(it));
-}
+};
 
 async function onClearClicked() {
 	const result = await os.confirm({

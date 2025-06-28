@@ -326,28 +326,50 @@ async function onUpdateButtonClicked() {
 		return;
 	}
 
-	const action = () => {
-		return updatedItems.map(item =>
-			misskeyApi(
-				'admin/emoji/update',
-				{
-					// eslint-disable-next-line
-					id: item.id!,
+	const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+	type ApiResponse = {
+		item: any;
+		success: boolean;
+		err?: unknown;
+	};
+
+	const executeWithRetries = async (item: any, retries: number = 3): Promise<ApiResponse> => {
+		for (let attempt = 0; attempt <= retries; attempt++) {
+			try {
+				await misskeyApi('admin/emoji/update', {
+					id: item.id,
 					name: item.name,
 					category: emptyStrToNull(item.category),
 					aliases: emptyStrToEmptyArray(item.aliases),
 					license: emptyStrToNull(item.license),
 					isSensitive: item.isSensitive,
 					localOnly: item.localOnly,
-					roleIdsThatCanBeUsedThisEmojiAsReaction: item.roleIdsThatCanBeUsedThisEmojiAsReaction.map(it => it.id),
+					roleIdsThatCanBeUsedThisEmojiAsReaction: item.roleIdsThatCanBeUsedThisEmojiAsReaction.map((it: any) => it.id),
 					fileId: item.fileId,
-				})
-				.then(() => ({ item, success: true, err: undefined }))
-				.catch(err => ({ item, success: false, err })),
-		);
+				});
+				return { item, success: true };
+			} catch (err) {
+				if (attempt < retries) {
+					console.warn(`Retrying ${item.name}, attempt ${attempt + 1}`);
+					await delay(1000 * (attempt + 1));
+				} else {
+					return { item, success: false, err };
+				}
+			}
+		}
+		return { item, success: false, err: new Error('Unknown error') };
 	};
 
-	const result = await os.promiseDialog(Promise.all(action()));
+	const action = async (): Promise<ApiResponse[]> => {
+		const results: ApiResponse[] = [];
+		for (const item of updatedItems) {
+			results.push(await executeWithRetries(item));
+		}
+		return results;
+	};
+
+	const result = await os.promiseDialog(action());
 	const failedItems = result.filter(it => !it.success);
 
 	if (failedItems.length > 0) {
