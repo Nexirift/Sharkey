@@ -75,7 +75,7 @@ const props = withDefaults(defineProps<{
 	mutedClass?: string | string[] | Record<string, boolean> | (string | string[] | Record<string, boolean>)[];
 	expandedClass?: string | string[] | Record<string, boolean> | (string | string[] | Record<string, boolean>)[];
 }>(), {
-	withHardMute: false, // TODO check default
+	withHardMute: true,
 	mutedClass: undefined,
 	expandedClass: undefined,
 });
