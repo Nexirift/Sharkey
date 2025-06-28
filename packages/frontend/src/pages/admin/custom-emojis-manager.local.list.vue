@@ -326,7 +326,7 @@ async function onUpdateButtonClicked() {
 		return;
 	}
 
-	const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+	const delay = (ms: number) => new Promise(resolve => window.setTimeout(resolve, ms));
 
 	type ApiResponse = {
 		item: any;

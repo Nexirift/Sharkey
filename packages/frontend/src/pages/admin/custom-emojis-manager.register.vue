@@ -247,7 +247,7 @@ const registerButtonDisabled = ref<boolean>(false);
 const requestLogs = ref<RequestLogItem[]>([]);
 const isDragOver = ref<boolean>(false);
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise(resolve => window.setTimeout(resolve, ms));
 
 type ApiResponse = {
 	item: any;
@@ -255,7 +255,7 @@ type ApiResponse = {
 	err?: unknown;
 };
 
-const executeWithRetries = async (item: any, apiEndpoint: string, payload: any, retries: number = 3): Promise<ApiResponse> => {
+const executeWithRetries = async (item: any, apiEndpoint: string, payload: any, retries = 3): Promise<ApiResponse> => {
 	for (let attempt = 0; attempt <= retries; attempt++) {
 		try {
 			await misskeyApi(apiEndpoint, payload);
@@ -283,12 +283,17 @@ const importEmojis = async (targets: any[]): Promise<void> => {
 		return;
 	}
 
-	const results: ApiResponse[] = [];
-	for (const item of targets) {
-		results.push(await executeWithRetries(item, 'admin/emoji/copy', { emojiId: item.id }));
+	async function action(): Promise<ApiResponse[]> {
+		const results: ApiResponse[] = [];
+		for (const item of targets) {
+			results.push(await executeWithRetries(item, 'admin/emoji/copy', { emojiId: item.id }));
+		}
+		
+		return results;
 	}
 
-	const failedItems = results.filter(it => !it.success);
+	const result = await os.promiseDialog(action());
+	const failedItems = result.filter(it => !it.success);
 	if (failedItems.length > 0) {
 		await os.alert({
 			type: 'error',
@@ -297,7 +302,7 @@ const importEmojis = async (targets: any[]): Promise<void> => {
 		});
 	}
 
-	requestLogs.value = results.map(it => ({
+	requestLogs.value = result.map(it => ({
 		failed: !it.success,
 		url: it.item.url,
 		name: it.item.name,
@@ -330,7 +335,7 @@ const onRegistryClicked = async (): Promise<void> => {
 				localOnly: item.localOnly,
 				roleIdsThatCanBeUsedThisEmojiAsReaction: item.roleIdsThatCanBeUsedThisEmojiAsReaction.map((it: any) => it.id),
 				fileId: item.fileId!,
-			})
+			}),
 		);
 	}
 
