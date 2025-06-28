@@ -11,7 +11,7 @@ Displays a placeholder for a muted note.
 	<slot v-if="isExpanded"></slot>
 
 	<!-- If hard muted, we want to hide *everything*, including the placeholders and controls to expand. -->
-	<div v-else-if="!mute.hardMuted" :class="[$style.muted, mutedClass]" class="_gaps_s" @click.stop="expandNote = true">
+	<div v-else-if="!mute.hardMuted" :class="[$style.muted, $style.muteContainer, mutedClass]" @click.stop="expandNote = true">
 		<!-- Mandatory CWs -->
 		<I18n v-if="mute.noteMandatoryCW" :src="i18n.ts.noteIsFlaggedAs" tag="small">
 			<template #cw>
@@ -109,5 +109,15 @@ defineExpose({
 
 .muted:hover {
 	background: var(--MI_THEME-buttonBg);
+}
+
+.muteContainer > :not(:first-child) {
+	margin-left: 0.75rem;
+
+	&:before {
+		content: "•";
+		margin-right: 0.75rem;
+		font-size: 1rem;
+	}
 }
 </style>
