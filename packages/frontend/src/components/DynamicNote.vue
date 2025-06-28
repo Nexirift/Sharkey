@@ -14,12 +14,13 @@ Displays a note with either Misskey or Sharkey style, based on user preference.
 	:withHardMute="withHardMute"
 	@reaction="emoji => emit('reaction', emoji)"
 	@removeReaction="emoji => emit('removeReaction', emoji)"
+	@expandCW="n => emit('expandCW', n)"
 />
 </template>
 
 <script setup lang="ts">
 import * as Misskey from 'misskey-js';
-import { computed, defineAsyncComponent, useTemplateRef } from 'vue';
+import { defineAsyncComponent, useTemplateRef } from 'vue';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type MkNote from '@/components/MkNote.vue';
 import type SkNote from '@/components/SkNote.vue';
@@ -27,9 +28,8 @@ import { prefer } from '@/preferences';
 
 const XNote = defineAsyncComponent(() =>
 	prefer.s.noteDesign === 'misskey'
-	? import('@/components/MkNote.vue')
-	: import('@/components/SkNote.vue')
-);
+		? import('@/components/MkNote.vue')
+		: import('@/components/SkNote.vue'));
 
 const rootEl = useTemplateRef<ComponentExposed<typeof MkNote | typeof SkNote>>('rootEl');
 
@@ -45,5 +45,6 @@ defineProps<{
 const emit = defineEmits<{
 	(ev: 'reaction', emoji: string): void;
 	(ev: 'removeReaction', emoji: string): void;
+	(ev: 'expandCW', note: Misskey.entities.Note): void;
 }>();
 </script>

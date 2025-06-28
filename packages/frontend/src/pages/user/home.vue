@@ -176,10 +176,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 								<MkResult type="empty" :text="i18n.ts.noNotes"/>
 							</div>
 							<div v-else class="_panel">
-								<DynamicNote v-for="note of user.pinnedNotes" :key="note.id" class="note" :class="$style.pinnedNote" :note="note" :pinned="true"/>
+								<DynamicNote v-for="note of user.pinnedNotes" :key="note.id" class="note" :class="$style.pinnedNote" :note="note" :pinned="true" @expandCW="onExpandCW"/>
 							</div>
 						</div>
-						<MkNotes v-else :class="$style.tl" :noGap="true" :pagination="AllPagination"/>
+						<MkNotes v-else :class="$style.tl" :noGap="true" :pagination="AllPagination" @expandCW="onExpandCW"/>
 					</MkLazy>
 				</MkStickyContainer>
 			</div>
@@ -198,6 +198,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 import { defineAsyncComponent, computed, onMounted, onUnmounted, nextTick, watch, ref } from 'vue';
 import * as Misskey from 'misskey-js';
 import { getScrollPosition } from '@@/js/scroll.js';
+import { patchMuteOverrides } from '@/utility/check-word-mute.js';
 import MkTab from '@/components/MkTab.vue';
 import MkNotes from '@/components/MkNotes.vue';
 import MkFollowButton from '@/components/MkFollowButton.vue';
@@ -254,6 +255,14 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
 	(ev: 'unfoldFiles'): void;
 }>();
+
+const cwOverrides = patchMuteOverrides();
+
+function onExpandCW() {
+	// This kills the user-level and instance-level CWs for all notes below this point
+	cwOverrides.userMandatoryCW = null;
+	cwOverrides.instanceMandatoryCW = null;
+}
 
 const router = useRouter();
 

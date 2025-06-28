@@ -19,7 +19,6 @@ export interface Mute {
 	noteMuted?: boolean;
 
 	noteMandatoryCW?: string | null;
-	// TODO show this as a single block on user timelines
 	userMandatoryCW?: string | null;
 	instanceMandatoryCW?: string | null;
 }

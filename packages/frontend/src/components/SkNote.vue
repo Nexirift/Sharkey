@@ -14,6 +14,7 @@ Displays a note in the Sharkey style. Used to show the "main" note in a given co
 	:withHardMute="withHardMute"
 	:class="[$style.root, { [$style.showActionsOnlyHover]: prefer.s.showNoteActionsOnlyHover, [$style.skipRender]: prefer.s.skipNoteRender }]"
 	:tabindex="isDeleted ? '-1' : '0'"
+	@expand="n => emit('expandCW', n)"
 >
 	<SkNoteSub v-if="appearNote.reply" v-show="!renoteCollapsed && !inReplyToCollapsed" :note="appearNote.reply" :class="$style.replyTo"/>
 	<div v-if="appearNote.reply && inReplyToCollapsed && !renoteCollapsed" :class="$style.collapsedInReplyTo">
@@ -245,6 +246,7 @@ provide(DI.mock, props.mock);
 const emit = defineEmits<{
 	(ev: 'reaction', emoji: string): void;
 	(ev: 'removeReaction', emoji: string): void;
+	(ev: 'expandCW', note: Misskey.entities.Note): void;
 }>();
 
 const router = useRouter();
