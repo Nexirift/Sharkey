@@ -4,9 +4,9 @@
  */
 
 import * as Misskey from 'misskey-js';
-import { inject } from 'vue';
-import type { Ref } from 'vue';
-import { $i } from '@/i';
+import { provide, inject, reactive } from 'vue';
+import type { Ref, Reactive } from 'vue';
+import { $i } from '@/i.js';
 
 export interface Mute {
 	hardMuted?: boolean;
@@ -24,7 +24,41 @@ export interface Mute {
 	instanceMandatoryCW?: string | null;
 }
 
+export const muteOverridesSymbol = Symbol('muteOverrides');
+
+export function injectMuteOverrides(): Reactive<Partial<Mute>> | null {
+	return inject(muteOverridesSymbol, null);
+}
+
+export function provideMuteOverrides(overrides: Reactive<Partial<Mute>> | null) {
+	provide(muteOverridesSymbol, overrides);
+}
+
+export function patchMuteOverrides(patch?: Partial<Mute>): Reactive<Partial<Mute>> {
+	// Inject and re-provide to merge with any overrides injected from above
+	const overrides = injectMuteOverrides() ?? reactive({});
+	provideMuteOverrides(overrides);
+
+	// Assign caller's changes, if any
+	if (patch) {
+		Object.assign(overrides, patch);
+	}
+
+	return overrides;
+}
+
 export function checkMute(note: Misskey.entities.Note, withHardMute?: boolean): Mute {
+	const mutes = getMutes(note, withHardMute);
+
+	const override = injectMuteOverrides();
+	if (override) {
+		Object.assign(mutes, override);
+	}
+
+	return mutes;
+}
+
+function getMutes(note: Misskey.entities.Note, withHardMute?: boolean): Mute {
 	const sensitiveMuted = isSensitiveMuted(note);
 
 	// My own note
