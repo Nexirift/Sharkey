@@ -8,7 +8,7 @@ For example, when viewing a reply on the timeline, SkNoteSub will be used to dis
 -->
 
 <template>
-<SkMutedNote v-show="!isDeleted" ref="rootComp" :note="appearNote" :mutedClass="$style.muted" :expandedClass="[$style.root, { [$style.children]: depth > 1, [$style.isReply]: props.isReply, [$style.detailed]: props.detailed }]">
+<SkMutedNote v-show="!isDeleted" ref="rootComp" :note="appearNote" :mutedClass="$style.muted" :expandedClass="[$style.root, { [$style.children]: depth > 1, [$style.isReply]: props.isReply, [$style.detailed]: props.detailed }]" @expandMute="n => emit('expandMute', n)">
 	<div v-if="!hideLine" :class="$style.line"></div>
 	<div :class="$style.main">
 		<div v-if="note.channel" :class="$style.colorBar" :style="{ background: note.channel.color }"></div>
@@ -84,7 +84,7 @@ For example, when viewing a reply on the timeline, SkNoteSub will be used to dis
 		</div>
 	</div>
 	<template v-if="depth < prefer.s.numberOfReplies">
-		<SkNoteSub v-for="reply in replies" :key="reply.id" :note="reply" :class="[$style.reply, { [$style.single]: replies.length === 1 }]" :detail="true" :depth="depth + 1" :expandAllCws="props.expandAllCws" :onDeleteCallback="removeReply" :isReply="props.isReply"/>
+		<SkNoteSub v-for="reply in replies" :key="reply.id" :note="reply" :class="[$style.reply, { [$style.single]: replies.length === 1 }]" :detail="true" :depth="depth + 1" :expandAllCws="props.expandAllCws" :onDeleteCallback="removeReply" :isReply="props.isReply" @expandMute="n => emit('expandMute', n)"/>
 	</template>
 	<div v-else :class="$style.more">
 		<MkA class="_link" :to="notePage(note)">{{ i18n.ts.continueThread }} <i class="ti ti-chevron-double-right"></i></MkA>
@@ -142,6 +142,10 @@ const props = withDefaults(defineProps<{
 	detailed: false,
 	onDeleteCallback: undefined,
 });
+
+const emit = defineEmits<{
+	(ev: 'expandMute', note: Misskey.entities.Note): void;
+}>();
 
 const note = ref(deepClone(props.note));
 

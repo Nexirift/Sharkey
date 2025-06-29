@@ -44,9 +44,9 @@ Detailed view of a note in the Sharkey style. Used when opening a note onto its 
 		</div>
 	</div>
 	<template v-if="appearNote.reply && appearNote.reply.replyId">
-		<SkNoteSub v-for="note in conversation" :key="note.id" :note="note" :expandAllCws="props.expandAllCws" detailed/>
+		<SkNoteSub v-for="note in conversation" :key="note.id" :note="note" :expandAllCws="props.expandAllCws" detailed @expandMute="n => emit('expandMute', n)"/>
 	</template>
-	<SkNoteSub v-if="appearNote.reply" :note="appearNote.reply" :class="$style.replyTo" :expandAllCws="props.expandAllCws" detailed/>
+	<SkNoteSub v-if="appearNote.reply" :note="appearNote.reply" :class="$style.replyTo" :expandAllCws="props.expandAllCws" detailed @expandMute="n => emit('expandMute', n)"/>
 	<article :id="appearNote.id" ref="noteEl" :class="$style.note" tabindex="-1" @contextmenu.stop="onContextmenu">
 		<header :class="$style.noteHeader">
 			<MkAvatar :class="$style.noteHeaderAvatar" :user="appearNote.user" indicator link preview/>
@@ -195,7 +195,7 @@ Detailed view of a note in the Sharkey style. Used when opening a note onto its 
 			<div v-if="!repliesLoaded" style="padding: 16px">
 				<MkButton style="margin: 0 auto;" primary rounded @click="loadReplies">{{ i18n.ts.loadReplies }}</MkButton>
 			</div>
-			<SkNoteSub v-for="note in replies" :key="note.id" :note="note" :class="$style.reply" :detail="true" :expandAllCws="props.expandAllCws" :onDeleteCallback="removeReply" :isReply="true"/>
+			<SkNoteSub v-for="note in replies" :key="note.id" :note="note" :class="$style.reply" :detail="true" :expandAllCws="props.expandAllCws" :onDeleteCallback="removeReply" :isReply="true" @expandMute="n => emit('expandMute', n)"/>
 		</div>
 		<div v-else-if="tab === 'renotes'" :class="$style.tab_renotes">
 			<MkPagination :pagination="renotesPagination" :disableAutoLoad="true">
@@ -212,7 +212,7 @@ Detailed view of a note in the Sharkey style. Used when opening a note onto its 
 			<div v-if="!quotesLoaded" style="padding: 16px">
 				<MkButton style="margin: 0 auto;" primary rounded @click="loadQuotes">{{ i18n.ts.loadReplies }}</MkButton>
 			</div>
-			<SkNoteSub v-for="note in quotes" :key="note.id" :note="note" :class="$style.reply" :detail="true" :expandAllCws="props.expandAllCws" :reply="true"/>
+			<SkNoteSub v-for="note in quotes" :key="note.id" :note="note" :class="$style.reply" :detail="true" :expandAllCws="props.expandAllCws" :reply="true" @expandMute="n => emit('expandMute', n)"/>
 		</div>
 		<div v-else-if="tab === 'reactions'" :class="$style.tab_reactions">
 			<div :class="$style.reactionTabs">
@@ -289,6 +289,7 @@ import SkMutedNote from '@/components/SkMutedNote.vue';
 import SkNoteTranslation from '@/components/SkNoteTranslation.vue';
 import { getSelfNoteIds } from '@/utility/get-self-note-ids.js';
 import SkUrlPreviewGroup from '@/components/SkUrlPreviewGroup.vue';
+import MkNoteSub from '@/components/MkNoteSub.vue';
 
 const props = withDefaults(defineProps<{
 	note: Misskey.entities.Note;

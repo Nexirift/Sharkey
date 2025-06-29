@@ -16,7 +16,7 @@ Displays a note in the Sharkey style. Used to show the "main" note in a given co
 	:tabindex="isDeleted ? '-1' : '0'"
 	@expandMute="n => emit('expandMute', n)"
 >
-	<SkNoteSub v-if="appearNote.reply" v-show="!renoteCollapsed && !inReplyToCollapsed" :note="appearNote.reply" :class="$style.replyTo"/>
+	<SkNoteSub v-if="appearNote.reply" v-show="!renoteCollapsed && !inReplyToCollapsed" :note="appearNote.reply" :class="$style.replyTo" @expandMute="n => emit('expandMute', n)"/>
 	<div v-if="appearNote.reply && inReplyToCollapsed && !renoteCollapsed" :class="$style.collapsedInReplyTo">
 		<div :class="$style.collapsedInReplyToLine"></div>
 		<MkAvatar :class="$style.collapsedInReplyToAvatar" :user="appearNote.reply.user" link preview/>
@@ -231,6 +231,7 @@ import SkNoteTranslation from '@/components/SkNoteTranslation.vue';
 import { getSelfNoteIds } from '@/utility/get-self-note-ids.js';
 import { extractPreviewUrls } from '@/utility/extract-preview-urls.js';
 import SkUrlPreviewGroup from '@/components/SkUrlPreviewGroup.vue';
+import MkNoteSub from '@/components/MkNoteSub.vue';
 
 const props = withDefaults(defineProps<{
 	note: Misskey.entities.Note;

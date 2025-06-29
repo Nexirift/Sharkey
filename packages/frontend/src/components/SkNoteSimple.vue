@@ -24,9 +24,8 @@ Simple view of a note in the Sharkey style. Used in quote renotes, link previews
 </template>
 
 <script lang="ts" setup>
-import { watch, ref, computed } from 'vue';
+import { watch, ref } from 'vue';
 import * as Misskey from 'misskey-js';
-import { computeMergedCw } from '@@/js/compute-merged-cw.js';
 import MkNoteHeader from '@/components/MkNoteHeader.vue';
 import MkSubNoteContent from '@/components/MkSubNoteContent.vue';
 import MkCwButton from '@/components/MkCwButton.vue';
@@ -35,9 +34,17 @@ import { setupNoteViewInterruptors } from '@/plugin.js';
 import { deepClone } from '@/utility/clone.js';
 
 const props = defineProps<{
-	note: Misskey.entities.Note;
+	note: Misskey.entities.Note & {
+		isSchedule?: boolean,
+		scheduledNoteId?: string
+	};
 	expandAllCws?: boolean;
 	hideFiles?: boolean;
+}>();
+
+defineEmits<{
+	(ev: 'editScheduleNote'): void;
+	(ev: 'expandMute', note: Misskey.entities.Note): void;
 }>();
 
 let showContent = ref(prefer.s.uncollapseCW);

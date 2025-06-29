@@ -26,9 +26,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import * as Misskey from 'misskey-js';
-import { computeMergedCw } from '@@/js/compute-merged-cw.js';
 import * as os from '@/os.js';
 import MkNoteHeader from '@/components/MkNoteHeader.vue';
 import MkSubNoteContent from '@/components/MkSubNoteContent.vue';
@@ -59,6 +58,7 @@ if (!note.value.isSchedule) {
 
 const emit = defineEmits<{
 	(ev: 'editScheduleNote'): void;
+	(ev: 'expandMute', note: Misskey.entities.Note): void;
 }>();
 
 async function deleteScheduleNote() {
