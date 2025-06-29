@@ -360,7 +360,7 @@ const onRegistryClicked = async (): Promise<void> => {
 	}));
 
 	// Remove successfully registered items from the list
-	const successItems = results.filter(it => it.success).map(it => it.item);
+	const successItems = result.filter(it => it.success).map(it => it.item);
 	gridItems.value = gridItems.value.filter(it => !successItems.includes(it));
 };
 
