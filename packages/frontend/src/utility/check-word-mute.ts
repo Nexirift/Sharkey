@@ -128,13 +128,15 @@ function getMutes(note: Misskey.entities.Note, withHardMute: boolean, overrides:
 function isHardMuted(note: Misskey.entities.Note): boolean {
 	if (!$i?.hardMutedWords.length) return false;
 
-	return containsMutedWord($i.hardMutedWords, note);
+	const inputs = expandNote(note);
+	return containsMutedWord($i.hardMutedWords, inputs);
 }
 
 function isSoftMuted(note: Misskey.entities.Note): string[] {
 	if (!$i?.mutedWords.length) return [];
 
-	return getMutedWords($i.mutedWords, note);
+	const inputs = expandNote(note);
+	return getMutedWords($i.mutedWords, inputs);
 }
 
 function isSensitiveMuted(note: Misskey.entities.Note): boolean {
@@ -151,7 +153,7 @@ function isSensitiveMuted(note: Misskey.entities.Note): boolean {
 	return tl_withSensitive?.value === false;
 }
 
-function getMutedWords(mutedWords: (string | string[])[], note: Misskey.entities.Note): string[] {
+export function getMutedWords(mutedWords: (string | string[])[], inputs: Iterable<string>): string[] {
 	// Parse mutes
 	const { regexMutes, patternMutes } = parseMutes(mutedWords);
 
@@ -163,7 +165,7 @@ function getMutedWords(mutedWords: (string | string[])[], note: Misskey.entities
 	const matches = new Set<string>();
 
 	// Expand notes into searchable test
-	for (const text of expandNote(note)) {
+	for (const text of inputs) {
 		for (const pattern of patternMutes) {
 			// Case-sensitive, non-boundary search for backwards compatibility
 			if (pattern.every(word => text.includes(word))) {
@@ -182,7 +184,7 @@ function getMutedWords(mutedWords: (string | string[])[], note: Misskey.entities
 	return Array.from(matches);
 }
 
-function containsMutedWord(mutedWords: (string | string[])[], note: Misskey.entities.Note): boolean {
+export function containsMutedWord(mutedWords: (string | string[])[], inputs: Iterable<string>): boolean {
 	// Parse mutes
 	const { regexMutes, patternMutes } = parseMutes(mutedWords);
 
@@ -192,7 +194,7 @@ function containsMutedWord(mutedWords: (string | string[])[], note: Misskey.enti
 	}
 
 	// Expand notes into searchable test
-	for (const text of expandNote(note)) {
+	for (const text of inputs) {
 		for (const pattern of patternMutes) {
 			// Case-sensitive, non-boundary search for backwards compatibility
 			if (pattern.every(word => text.includes(word))) {
@@ -208,7 +210,7 @@ function containsMutedWord(mutedWords: (string | string[])[], note: Misskey.enti
 	return false;
 }
 
-function *expandNote(note: Misskey.entities.Note): Generator<string> {
+export function *expandNote(note: Misskey.entities.Note): Generator<string> {
 	if (note.cw) yield note.cw;
 	if (note.text) yield note.text;
 	if (note.files) {

@@ -27,8 +27,8 @@ import { i18n } from '@/i18n';
 import MkFolder from '@/components/MkFolder.vue';
 import MkButton from '@/components/MkButton.vue';
 import MkTextarea from '@/components/MkTextarea.vue';
-import { parseMutes } from '@/utility/parse-mutes';
-import { checkWordMute } from '@/utility/check-word-mute';
+import { parseMutes } from '@/utility/parse-mutes.js';
+import { getMutedWords } from '@/utility/check-word-mute.js';
 
 const props = defineProps<{
 	mutedWords?: string | null,
@@ -45,8 +45,8 @@ function testWordMutes() {
 
 	try {
 		const mutes = parseMutes(props.mutedWords);
-		const matches = checkWordMute(testWords.value, null, mutes);
-		testMatches.value = matches ? matches.join(', ') : '';
+		const matches = getMutedWords(mutes, testWords.value);
+		testMatches.value = matches.join(', ');
 	} catch {
 		// Error is displayed by above function
 		testMatches.value = null;
