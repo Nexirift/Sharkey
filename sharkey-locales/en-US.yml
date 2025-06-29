@@ -348,8 +348,6 @@ _moderationLogTypes:
   setMandatoryCW: "Set content warning for user"
   setMandatoryCWForNote: "Set content warning for note"
   setMandatoryCWForInstance: "Set content warning for instance"
-  setRemoteInstanceNSFW: "Set remote instance as NSFW"
-  unsetRemoteInstanceNSFW: "Unset remote instance as NSFW"
   rejectRemoteInstanceReports: "Rejected reports from remote instance"
   acceptRemoteInstanceReports: "Accepted reports from remote instance"
   rejectQuotesUser: "Blocked/Stripped quote posts from user"

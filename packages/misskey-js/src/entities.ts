@@ -140,12 +140,6 @@ export type ModerationLog = {
 	type: 'setMandatoryCWForInstance';
 	info: ModerationLogPayloads['setMandatoryCWForInstance'];
 } | {
-	type: 'setRemoteInstanceNSFW';
-	info: ModerationLogPayloads['setRemoteInstanceNSFW'];
-} | {
-	type: 'unsetRemoteInstanceNSFW';
-	info: ModerationLogPayloads['unsetRemoteInstanceNSFW'];
-} | {
 	type: 'resetPassword';
 	info: ModerationLogPayloads['resetPassword'];
 } | {

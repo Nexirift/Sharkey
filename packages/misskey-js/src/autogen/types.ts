@@ -5346,7 +5346,6 @@ export type components = {
       infoUpdatedAt: string | null;
       /** Format: date-time */
       latestRequestReceivedAt: string | null;
-      isNSFW: boolean;
       rejectReports: boolean;
       rejectQuotes: boolean;
       moderationNote?: string | null;
@@ -8909,7 +8908,6 @@ export type operations = {
         'application/json': {
           host: string;
           isSuspended?: boolean;
-          isNSFW?: boolean;
           rejectReports?: boolean;
           moderationNote?: string;
           rejectQuotes?: boolean;

@@ -116,11 +116,6 @@ export const packedFederationInstanceSchema = {
 			optional: false, nullable: true,
 			format: 'date-time',
 		},
-		isNSFW: {
-			type: 'boolean',
-			optional: false,
-			nullable: false,
-		},
 		rejectReports: {
 			type: 'boolean',
 			optional: false,

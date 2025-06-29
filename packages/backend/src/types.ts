@@ -108,8 +108,6 @@ export const moderationLogTypes = [
 	'setMandatoryCW',
 	'setMandatoryCWForNote',
 	'setMandatoryCWForInstance',
-	'setRemoteInstanceNSFW',
-	'unsetRemoteInstanceNSFW',
 	'suspendRemoteInstance',
 	'unsuspendRemoteInstance',
 	'rejectRemoteInstanceReports',
@@ -307,14 +305,6 @@ export type ModerationLogPayloads = {
 	setMandatoryCWForInstance: {
 		newCW: string | null;
 		oldCW: string | null;
-		host: string;
-	};
-	setRemoteInstanceNSFW: {
-		id: string;
-		host: string;
-	};
-	unsetRemoteInstanceNSFW: {
-		id: string;
 		host: string;
 	};
 	suspendRemoteInstance: {

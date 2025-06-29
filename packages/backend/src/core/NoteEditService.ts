@@ -443,14 +443,6 @@ export class NoteEditService implements OnApplicationShutdown {
 			}
 		}
 
-		if (user.host && !data.cw) {
-			await this.federatedInstanceService.fetchOrRegister(user.host).then(async i => {
-				if (i.isNSFW && !this.noteCreateService.isPureRenote(data)) {
-					data.cw = 'Instance is marked as NSFW';
-				}
-			});
-		}
-
 		if (mentionedUsers.length > 0 && mentionedUsers.length > (await this.roleService.getUserPolicies(user.id)).mentionLimit) {
 			throw new IdentifiableError('9f466dab-c856-48cd-9e65-ff90ff750580', 'Note contains too many mentions');
 		}

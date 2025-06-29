@@ -10965,14 +10965,6 @@ export interface Locale extends ILocale {
          */
         "setMandatoryCWForInstance": string;
         /**
-         * Set remote instance as NSFW
-         */
-        "setRemoteInstanceNSFW": string;
-        /**
-         * Unset remote instance as NSFW
-         */
-        "unsetRemoteInstanceNSFW": string;
-        /**
          * Rejected reports from remote instance
          */
         "rejectRemoteInstanceReports": string;

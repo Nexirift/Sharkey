@@ -208,11 +208,6 @@ export class MiInstance {
 	@Column('boolean', {
 		default: false,
 	})
-	public isNSFW: boolean;
-
-	@Column('boolean', {
-		default: false,
-	})
 	public rejectReports: boolean;
 
 	/**
