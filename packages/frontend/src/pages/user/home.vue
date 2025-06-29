@@ -176,10 +176,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 								<MkResult type="empty" :text="i18n.ts.noNotes"/>
 							</div>
 							<div v-else class="_panel">
-								<DynamicNote v-for="note of user.pinnedNotes" :key="note.id" class="note" :class="$style.pinnedNote" :note="note" :pinned="true" @expandMute="n => onExpandCW(n)"/>
+								<DynamicNote v-for="note of user.pinnedNotes" :key="note.id" class="note" :class="$style.pinnedNote" :note="note" :pinned="true" @expandMute="n => onExpandMute(n)"/>
 							</div>
 						</div>
-						<MkNotes v-else :class="$style.tl" :noGap="true" :pagination="AllPagination" @expandMute="n => onExpandCW(n)"/>
+						<MkNotes v-else :class="$style.tl" :noGap="true" :pagination="AllPagination" @expandMute="n => onExpandMute(n)"/>
 					</MkLazy>
 				</MkStickyContainer>
 			</div>
@@ -259,7 +259,7 @@ const emit = defineEmits<{
 
 const muteOverrides = useMuteOverrides();
 
-function onExpandCW(note: Misskey.entities.Note) {
+function onExpandMute(note: Misskey.entities.Note) {
 	if (note.user.id === props.user.id) {
 		// This kills the mandatoryCW for this user below this point
 		deepAssign(muteOverrides, {
