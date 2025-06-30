@@ -58,9 +58,9 @@ import { isTouchUsing } from '@/utility/touch.js';
 import { prefer } from '@/preferences.js';
 
 const colours = {
-	background: '#ffffff',
+	background: '#000000',
 	foreground: {
-		default: '#000000',
+		default: '#ffffff',
 		quarter: '#ffff00',
 		instr: '#80e0ff',
 		volume: '#80ff80',
@@ -74,6 +74,11 @@ const CHAR_HEIGHT = 12;
 const ROW_OFFSET_Y = 10;
 const MAX_TIME_SPENT = 50;
 const MAX_TIME_PER_ROW = 15;
+const MAX_ROW_NUMBERS = 0xFF + 1;
+const ROW_BUFFER = 26;
+// It would be a great option for users to set themselves.
+const MAX_CHANNEL_LIMIT = 0xFF;
+const HALF_BUFFER = Math.floor(ROW_BUFFER / 2);
 
 const props = defineProps<{
 	module: Misskey.entities.DriveFile
@@ -110,17 +115,12 @@ let patternScrollSliderShow = ref(false);
 let patternScrollSliderPos = ref(0);
 const player = ref(new ChiptuneJsPlayer(new ChiptuneJsConfig()));
 
-const maxRowNumbers = 0xFF;
-const rowBuffer = 26;
-// It would be a great option for users to set themselves.
-const maxChannelLimit = 0xFF;
-const halfbuf = Math.floor(rowBuffer / 2);
 let buffer = null;
 let isSeeking = false;
 let firstFrame = true;
 let lastPattern = -1;
 let lastDrawnRow = -1;
-let numberRowCanvas = new OffscreenCanvas(2 * CHAR_WIDTH + 1, maxRowNumbers * CHAR_HEIGHT + 1);
+let numberRowCanvas = new OffscreenCanvas(2 * CHAR_WIDTH + 1, MAX_ROW_NUMBERS * CHAR_HEIGHT + 1);
 let alreadyHiddenOnce = false;
 let slices: CanvasDisplay[] = [];
 
@@ -156,7 +156,7 @@ function bakeNumberRow() {
 	ctx.fillStyle = colours.background;
 	ctx.fillRect( 0, 0, numberRowCanvas.width, numberRowCanvas.height );
 
-	for (let i = 0; i < maxRowNumbers; i++) {
+	for (let i = 0; i <= MAX_ROW_NUMBERS; i++) {
 		let rowText = i.toString(16);
 		if (rowText.length === 1) rowText = '0' + rowText;
 
@@ -191,10 +191,10 @@ function setupCanvas() {
 		let nbChannels = 0;
 		if (player.value.currentPlayingNode) {
 			nbChannels = player.value.currentPlayingNode.nbChannels;
-			nbChannels = nbChannels > maxChannelLimit ? maxChannelLimit : nbChannels;
+			nbChannels = nbChannels > MAX_CHANNEL_LIMIT ? MAX_CHANNEL_LIMIT : nbChannels;
 		}
-		sliceWidth = 12 + 84 * nbChannels + 2;
-		sliceHeight = halfbuf * CHAR_HEIGHT;
+		sliceWidth = numberRowCanvas.width + (14 * CHAR_WIDTH) * nbChannels + 2;
+		sliceHeight = HALF_BUFFER * CHAR_HEIGHT;
 		setupSlice(sliceCanvas1, nbChannels);
 		setupSlice(sliceCanvas2, nbChannels);
 		setupSlice(sliceCanvas3, nbChannels);
@@ -306,7 +306,7 @@ function togglePattern() {
 }
 
 function drawSlices(skipOptimizationChecks = false) {
-	if (rowBuffer <= 0) {
+	if (ROW_BUFFER <= 0) {
 		lastDrawnRow = player.value.getPattern();
 		lastPattern = player.value.getRow();
 		return;
@@ -314,10 +314,10 @@ function drawSlices(skipOptimizationChecks = false) {
 
 	const pattern = player.value.getPattern();
 	const row = player.value.getRow();
-	const lower = row + halfbuf;
-	const upper = row - halfbuf;
+	const lower = row + HALF_BUFFER;
+	const upper = row - HALF_BUFFER;
 	const newDisplayTanslalation = -row * CHAR_HEIGHT;
-	let curRow = row - halfbuf;
+	let curRow = row - HALF_BUFFER;
 
 	if (pattern === lastPattern && !skipOptimizationChecks && row !== lastDrawnRow) {
 		const rowDif = row - lastDrawnRow;
@@ -325,7 +325,7 @@ function drawSlices(skipOptimizationChecks = false) {
 		const rowDir = !isRowDirPos as unknown as number;
 		const rowDirInv = 1 - 1 * rowDir;
 		const norm = 1 - 2 * rowDir;
-		const oneAndHalfBuf = halfbuf * 3;
+		const oneAndHalfBuf = HALF_BUFFER * 3;
 
 		//debug('rowDif', rowDif, 'rowDir', rowDir, 'norm', norm, 'isRowDirPos', isRowDirPos);
 
@@ -349,7 +349,7 @@ function drawSlices(skipOptimizationChecks = false) {
 
 				//debug(sli);
 			}
-			for (let i = 0; i < halfbuf; i++) {
+			for (let i = 0; i < HALF_BUFFER; i++) {
 				const newRow = sli.drawStart + i;
 
 				if (sli.drawn.bottom >= newRow && sli.drawn.top <= newRow || newRow < upper || newRow < upper) continue;
@@ -363,7 +363,7 @@ function drawSlices(skipOptimizationChecks = false) {
 	} else {
 		slices.forEach((sli, i) => {
 			sli.drawStart = curRow;
-			sli.vPos = halfbuf * (i + 1);
+			sli.vPos = HALF_BUFFER * (i + 1);
 			sli.transform.y = -newDisplayTanslalation;
 			sli.html.style.transform = 'translateY(' + sli.transform.y + 'px)';
 			sli.drawn = {
@@ -377,7 +377,7 @@ function drawSlices(skipOptimizationChecks = false) {
 			sli.ctx.fillRect(0, 0, sliceWidth, sliceHeight);
 			sli.ctx.drawImage(numberRowCanvas, 0, -CHAR_HEIGHT * curRow);
 
-			for (let itter = 0; itter < halfbuf; itter++) {
+			for (let itter = 0; itter < HALF_BUFFER; itter++) {
 				if (sli.drawn.top > curRow) sli.drawn.top = curRow;
 				if (sli.drawn.bottom <= curRow) sli.drawn.bottom = curRow;
 				drawRow(sli, curRow, pattern, (2 * CHAR_WIDTH), itter * CHAR_HEIGHT + ROW_OFFSET_Y);
@@ -406,6 +406,7 @@ function drawRow(slice: CanvasDisplay, row: number, pattern: number, drawX = (2 
 	let fx = '';
 	let op = '';
 	for (let channel = 0; channel < slice.channels; channel++) {
+		if (channel > 9) break;
 		const part = player.value.getPatternRowChannel(pattern, row, channel);
 
 		seperators += '|' + space.repeat( spacer + 2 );
@@ -489,13 +490,8 @@ function handleScrollBarEnable() {
 	patternScrollSliderShow.value = (!patternHide.value && !isTouchUsing);
 	if (patternScrollSliderShow.value !== true) return;
 
-	if (!sliceDisplay.value) return;
-	if (!sliceDisplay.value.parentElement) return;
-	if (firstFrame) {
-		patternScrollSliderShow.value = (12 + 84 * player.value.getPatternNumRows(player.value.getPattern()) + 2 > sliceDisplay.value.parentElement.offsetWidth);
-	} else {
-		patternScrollSliderShow.value = (sliceWidth > sliceDisplay.value.parentElement.offsetWidth);
-	}
+	if (!sliceDisplay.value || !sliceDisplay.value.parentElement) return;
+	patternScrollSliderShow.value = (sliceWidth > sliceDisplay.value.parentElement.offsetWidth);
 }
 
 watch(patternScrollSliderPos, () => {
