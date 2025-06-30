@@ -4,7 +4,7 @@
  */
 
 import * as Misskey from 'misskey-js';
-import { provide, inject, reactive, computed } from 'vue';
+import { provide, inject, reactive, computed, unref } from 'vue';
 import type { Ref, ComputedRef, Reactive } from 'vue';
 import { $i } from '@/i.js';
 import { deepAssign } from '@/utility/merge';
@@ -84,14 +84,19 @@ function provideMuteOverrides(overrides: Reactive<MuteOverrides> | null) {
 	provide(muteOverridesSymbol, overrides);
 }
 
-export function checkMute(note: ComputedRef<Misskey.entities.Note>, withHardMute?: ComputedRef<boolean>): ComputedRef<Mute> {
+export function checkMute(note: Misskey.entities.Note | ComputedRef<Misskey.entities.Note>, withHardMute?: boolean | ComputedRef<boolean>, dive?: boolean | ComputedRef<boolean>): ComputedRef<Mute> {
 	// inject() can only be used inside script setup, so it MUST be outside the computed block!
 	const overrides = injectMuteOverrides();
 
-	return computed(() => getMutes(note.value, withHardMute?.value ?? true, overrides));
+	return computed(() => {
+		const _note = unref(note);
+		const _withHardMute = unref(withHardMute) ?? true;
+		const _dive = unref(dive) ?? false;
+		return getMutes(_note, _withHardMute, _dive, overrides);
+	});
 }
 
-function getMutes(note: Misskey.entities.Note, withHardMute: boolean, overrides: MuteOverrides | null): Mute {
+function getMutes(note: Misskey.entities.Note, withHardMute: boolean, dive: boolean, overrides: MuteOverrides | null): Mute {
 	const override: Partial<Mute> = overrides ? deepAssign(
 		{},
 		note.user.host ? overrides.instance[note.user.host] : undefined,
@@ -103,8 +108,8 @@ function getMutes(note: Misskey.entities.Note, withHardMute: boolean, overrides:
 
 	const isMe = $i != null && $i.id === note.userId;
 
-	const hardMuted = override.hardMuted ?? (!isMe && withHardMute && isHardMuted(note));
-	const softMutedWords = override.softMutedWords ?? (isMe ? [] : isSoftMuted(note));
+	const hardMuted = override.hardMuted ?? (!isMe && withHardMute && isHardMuted(note, dive));
+	const softMutedWords = override.softMutedWords ?? (isMe ? [] : isSoftMuted(note, dive));
 	const sensitiveMuted = override.sensitiveMuted ?? isSensitiveMuted(note);
 	const threadMuted = override.threadMuted ?? (!isMe && note.isMutingThread);
 	const noteMuted = override.noteMuted ?? (!isMe && note.isMutingNote);
@@ -125,17 +130,17 @@ function getMutes(note: Misskey.entities.Note, withHardMute: boolean, overrides:
 	return { hasMute, hardMuted, softMutedWords, sensitiveMuted, threadMuted, noteMuted, noteMandatoryCW, userMandatoryCW, instanceMandatoryCW };
 }
 
-function isHardMuted(note: Misskey.entities.Note): boolean {
+function isHardMuted(note: Misskey.entities.Note, dive: boolean): boolean {
 	if (!$i?.hardMutedWords.length) return false;
 
-	const inputs = expandNote(note);
+	const inputs = expandNote(note, dive);
 	return containsMutedWord($i.hardMutedWords, inputs);
 }
 
-function isSoftMuted(note: Misskey.entities.Note): string[] {
+function isSoftMuted(note: Misskey.entities.Note, dive: boolean): string[] {
 	if (!$i?.mutedWords.length) return [];
 
-	const inputs = expandNote(note);
+	const inputs = expandNote(note, dive);
 	return getMutedWords($i.mutedWords, inputs);
 }
 
@@ -210,7 +215,7 @@ export function containsMutedWord(mutedWords: (string | string[])[], inputs: Ite
 	return false;
 }
 
-export function *expandNote(note: Misskey.entities.Note): Generator<string> {
+export function *expandNote(note: Misskey.entities.Note, dive: boolean): Generator<string> {
 	if (note.cw) yield note.cw;
 	if (note.text) yield note.text;
 	if (note.files) {
@@ -223,11 +228,14 @@ export function *expandNote(note: Misskey.entities.Note): Generator<string> {
 			if (choice.text) yield choice.text;
 		}
 	}
-	if (note.reply) {
-		yield * expandNote(note.reply);
-	}
-	if (note.renote) {
-		yield * expandNote(note.renote);
+
+	if (dive) {
+		if (note.reply) {
+			yield* expandNote(note.reply, true);
+		}
+		if (note.renote) {
+			yield* expandNote(note.renote, true);
+		}
 	}
 }
 
