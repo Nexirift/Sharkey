@@ -6,7 +6,7 @@ Selectable entry on the "Following" feed, displaying a user with their most rece
 -->
 
 <template>
-<SkMutedNote :note="note" :mutedClass="$style.muted" :expandedClass="$style.root" @click="$emit('select', note.user)">
+<SkMutedNote :note="note" :dive="false" :mutedClass="$style.muted" :expandedClass="$style.root" @click="$emit('select', note.user)">
 	<div :class="$style.avatar">
 		<MkAvatar :class="$style.icon" :user="note.user" indictor/>
 	</div>

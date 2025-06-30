@@ -4,7 +4,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<SkMutedNote v-show="!isDeleted" ref="rootComp" :note="appearNote" :mutedClass="$style.muted" :expandedClass="[$style.root, { [$style.children]: depth > 1 }]" @expandMute="n => emit('expandMute', n)">
+<SkMutedNote v-show="!isDeleted" ref="rootComp" :note="appearNote" :dive="false" :mutedClass="$style.muted" :expandedClass="[$style.root, { [$style.children]: depth > 1 }]" @expandMute="n => emit('expandMute', n)">
 	<div :class="$style.main">
 		<div v-if="note.channel" :class="$style.colorBar" :style="{ background: note.channel.color }"></div>
 		<MkAvatar :class="$style.avatar" :user="note.user" link preview/>
