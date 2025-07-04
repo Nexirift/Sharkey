@@ -444,6 +444,7 @@ export class WebhookTestService {
 			...user,
 			createdAt: this.idService.parse(user.id).date.toISOString(),
 			updatedAt: null,
+			lastFetchedAt: null,
 			id: user.id,
 			name: user.name,
 			username: user.username,

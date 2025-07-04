@@ -74,6 +74,11 @@ export const packedUserLiteSchema = {
 			nullable: true, optional: false,
 			format: 'date-time',
 		},
+		lastFetchedAt: {
+			type: 'string',
+			nullable: true, optional: false,
+			format: 'date-time',
+		},
 		approved: {
 			type: 'boolean',
 			nullable: false, optional: false,
@@ -308,11 +313,6 @@ export const packedUserDetailedNotMeOnlySchema = {
 				format: 'id',
 				nullable: false, optional: false,
 			},
-		},
-		lastFetchedAt: {
-			type: 'string',
-			nullable: true, optional: false,
-			format: 'date-time',
 		},
 		bannerUrl: {
 			type: 'string',

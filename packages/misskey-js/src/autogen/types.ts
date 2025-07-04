@@ -4256,6 +4256,8 @@ export type components = {
       createdAt: string;
       /** Format: date-time */
       updatedAt: string | null;
+      /** Format: date-time */
+      lastFetchedAt: string | null;
       approved: boolean;
       /** @example Hi masters, I am Ai! */
       description: string | null;
@@ -4322,8 +4324,6 @@ export type components = {
       /** Format: uri */
       movedTo: string | null;
       alsoKnownAs: string[] | null;
-      /** Format: date-time */
-      lastFetchedAt: string | null;
       /** Format: url */
       bannerUrl: string | null;
       bannerBlurhash: string | null;
