@@ -494,7 +494,7 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 				user = u as MiRemoteUser;
 				publicKey = await this.userPublickeysRepository.findOneBy({ userId: user.id });
 			} else {
-				this.logger.error('Error creating Person:', e instanceof Error ? e : new Error(e as string));
+				this.logger.error(`Error creating Person: ${renderInlineError(e)}`);
 				throw e;
 			}
 		}
@@ -776,7 +776,7 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 					return result;
 				})
 				.catch(e => {
-					this.logger.info(`Processing Move Failed @${updated.username}@${updated.host} (${uri})`, { stack: e });
+					this.logger.info(`Processing Move Failed @${updated.username}@${updated.host} (${uri}): ${renderInlineError(e)}`);
 				});
 		}
 
