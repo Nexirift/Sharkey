@@ -443,6 +443,7 @@ export class WebhookTestService {
 		return {
 			...user,
 			createdAt: this.idService.parse(user.id).date.toISOString(),
+			updatedAt: null,
 			id: user.id,
 			name: user.name,
 			username: user.username,
