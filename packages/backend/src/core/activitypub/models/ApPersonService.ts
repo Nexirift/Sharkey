@@ -377,7 +377,8 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 
 		const url = this.apUtilityService.findBestObjectUrl(person);
 
-		const verifiedLinks = url ? await verifyFieldLinks(fields, url, this.httpRequestService) : [];
+		const profileUrls = url ? [url, person.id] : [person.id];
+		const verifiedLinks = await verifyFieldLinks(fields, profileUrls, this.httpRequestService);
 
 		// Create user
 		let user: MiRemoteUser | null = null;
@@ -626,7 +627,8 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 
 		const url = this.apUtilityService.findBestObjectUrl(person);
 
-		const verifiedLinks = url ? await verifyFieldLinks(fields, url, this.httpRequestService) : [];
+		const profileUrls = url ? [url, person.id] : [person.id];
+		const verifiedLinks = await verifyFieldLinks(fields, profileUrls, this.httpRequestService);
 
 		const updates = {
 			lastFetchedAt: new Date(),
