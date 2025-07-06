@@ -247,11 +247,9 @@ pnpm dev
 
 - Service Worker is watched by esbuild.
 
-- The frontend can be viewed by accessing `http://localhost:5173`.
-
-- The backend listens on the port configured with `port` in
+- Sharkey is served on the port configured with `port` in
 	`.config/default.yml`.  If you have not changed it from the default,
-	it will be `http://localhost:3000`.
+	you can access it at `http://localhost:3000`.
 
 ### Testing
 
