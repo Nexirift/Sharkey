@@ -16,8 +16,10 @@ Before creating an issue, please check the following:
 
   - Issues should only be used for feature requests, suggestions, and
     bug tracking.
-  - For questions and troubleshooting, join
-    [our Discord server](https://discord.gg/6VgKmEqHNk).
+  - For questions and troubleshooting, join [our Discord
+    server](https://discord.gg/6VgKmEqHNk) or tag the official Sharkey
+    fedi account,
+    [@sharkey@sharkey.team](https://sharkey.team/@sharkey).
 
 > [!WARNING]
 > Do not close issues that are about to be resolved. It
