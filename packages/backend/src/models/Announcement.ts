@@ -73,6 +73,12 @@ export class MiAnnouncement {
 	public silence: boolean;
 
 	@Index()
+	@Column('boolean', {
+		default: false,
+	})
+	public confetti: boolean;
+
+	@Index()
 	@Column({
 		...id(),
 		nullable: true,

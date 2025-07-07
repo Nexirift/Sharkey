@@ -47,7 +47,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import * as Misskey from 'misskey-js';
 import MkButton from '@/components/MkButton.vue';
 import * as os from '@/os.js';
@@ -57,6 +57,7 @@ import { definePage } from '@/page.js';
 import { $i } from '@/i.js';
 import { prefer } from '@/preferences.js';
 import { updateCurrentAccountPartial } from '@/accounts.js';
+import { confetti } from '@/utility/confetti.js';
 
 const props = defineProps<{
 	announcementId: string;
@@ -67,11 +68,22 @@ const error = ref<any>(null);
 const path = computed(() => props.announcementId);
 
 function fetch() {
+	console.log("aaa");
 	announcement.value = null;
 	misskeyApi('announcements/show', {
 		announcementId: props.announcementId,
 	}).then(async _announcement => {
+		console.log("bbbb");
 		announcement.value = _announcement;
+		console.log("cccc");
+		console.log(announcement.value.confetti);
+		console.log(announcement.value.isRead);
+		if (announcement.value.confetti && !announcement.value.isRead) {
+			console.log("dddd");
+			confetti({
+				duration: 1000 * 3,
+			});
+		}
 	}).catch(err => {
 		error.value = err;
 	});
@@ -106,6 +118,9 @@ definePage(() => ({
 	title: announcement.value ? announcement.value.title : i18n.ts.announcements,
 	icon: 'ti ti-speakerphone',
 }));
+
+onMounted(() => {
+});
 </script>
 
 <style lang="scss" module>

@@ -70,6 +70,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 						<MkSwitch v-model="announcement.needConfirmationToRead" :helpText="i18n.ts._announcement.needConfirmationToReadDescription">
 							{{ i18n.ts._announcement.needConfirmationToRead }}
 						</MkSwitch>
+						<MkSwitch v-model="announcement.confetti" :helpText="i18n.ts._announcement.confettiDescription">
+							{{ i18n.ts._announcement.confetti }}
+						</MkSwitch>
 						<p v-if="announcement.reads">{{ i18n.tsx.nUsersRead({ n: announcement.reads }) }}</p>
 					</div>
 				</MkFolder>
@@ -127,6 +130,7 @@ function add() {
 		forExistingUsers: false,
 		silence: false,
 		needConfirmationToRead: false,
+		confetti: false,
 	});
 }
 
