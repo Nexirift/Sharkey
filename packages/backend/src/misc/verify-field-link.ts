@@ -12,6 +12,7 @@ export async function verifyFieldLinks(fields: Field[], profile_url: string, htt
 	const verified_links = [];
 	for (const field_url of fields) {
 		try {
+			// getHtml validates the input URL, so we can safely pass in untrusted values
 			const html = await httpRequestService.getHtml(field_url.value);
 
 			const doc = cheerio(html);
