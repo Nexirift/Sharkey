@@ -81,20 +81,41 @@ const MAX_ROW_NUMBERS = 0x100;
 const ROW_BUFFER = 26;
 const MAX_CHANNEL_LIMIT = 0xFF;
 const HALF_BUFFER = Math.floor(ROW_BUFFER / 2);
+const MAX_SLICE_CHANNELS = 10;
+const MAX_SLICE_WIDTH = CHANNEL_WIDTH * MAX_SLICE_CHANNELS + 1;
 
 const props = defineProps<{
 	module: Misskey.entities.DriveFile
 }>();
 
-interface CanvasDisplay {
-	ctx: CanvasRenderingContext2D,
-	html: HTMLCanvasElement,
-	drawn: { top: number, bottom: number },
-	range: { top: number, bottom: number },
-	vPos: number,
-	transform: { x: number, y: number },
-	drawStart: number,
-	channels: number,
+class CanvasDisplay {
+	ctx: CanvasRenderingContext2D;
+	html: HTMLCanvasElement;
+	drawn: { top: number, bottom: number, completed: boolean };
+	vPos: number;
+	transform: { x: number, y: number };
+	drawStart: number;
+	constructor (
+		ctx: CanvasRenderingContext2D,
+		html: HTMLCanvasElement,
+	) {
+		this.ctx = ctx;
+		this.html = html;
+		this.drawn = { top: 0, bottom: 0, completed: false };
+		this.vPos = -0xFFFFFFFF;
+		this.transform = { x: 2 * CHAR_WIDTH + 1, y: 0 };
+		this.drawStart = 0;
+	}
+	updateStyleTransforms () {
+		this.html.style.transform = 'translate(' + this.transform.x + 'px,' + this.transform.y + 'px)';
+	}
+	resetDrawn() {
+		this.drawn = {
+			top: 0xFFFFFFFF,
+			bottom: -0xFFFFFFFF,
+			completed: false,
+		};
+	}
 }
 
 const isSensitive = props.module.isSensitive;
@@ -122,7 +143,7 @@ let patternDisplay = ref();
 const player = ref(new ChiptuneJsPlayer(new ChiptuneJsConfig()));
 
 let suppressScrollSliderWatcher = false;
-let displayScrollPos = 0;
+let nbChannels = 0;
 let currentColumn = 0;
 let maxChannelsInView = 10;
 let buffer = null;
@@ -131,9 +152,11 @@ let firstFrame = true;
 let lastPattern = -1;
 let lastDrawnRow = -1;
 let alreadyHiddenOnce = false;
+let virtualCanvasWidth = 0;
 let slices: CanvasDisplay[] = [];
+//let copyBuffer = { canvas: new OffscreenCanvas(1, 1), ctx: OffscreenCanvasRenderingContext2D };
 
-const peft = {
+const PERF_MONITOR = {
 	startTime: 0,
 	patternTime: { current: 0, max: 0, initial: 0 },
 	start: function() {
@@ -143,6 +166,7 @@ const peft = {
 		this.patternTime.current = performance.now() - this.startTime;
 		if (this.patternTime.initial !== 0 && this.patternTime.current > this.patternTime.max) this.patternTime.max = this.patternTime.current;
 		else if (this.patternTime.initial === 0) this.patternTime.initial = this.patternTime.current;
+		//debug(this.patternTime.max);
 	},
 	asses: function() {
 		if (this.patternTime.initial !== 0 && !alreadyHiddenOnce) {
@@ -179,38 +203,36 @@ function bakeNumberRow() {
 	}
 }
 
-function setupSlice(r: Ref, channels: number) {
+function setupSlice(r: Ref) {
 	let chtml = r.value as HTMLCanvasElement;
 	chtml.width = sliceWidth;
 	chtml.height = sliceHeight;
-	chtml.style.left = (2 * CHAR_WIDTH + 1) + 'px';
-	let slice: CanvasDisplay = {
-		ctx: chtml.getContext('2d', { alpha: false, desynchronized: false }) as CanvasRenderingContext2D,
-		html: chtml,
-		drawn: { top: 0, bottom: 0 },
-		range: { top: -0xFFFFFFFF, bottom: -0xFFFFFFFF },
-		vPos: -0xFFFFFFFF,
-		channels,
-		transform: { x: 0, y: 0 },
-		drawStart: 0,
-	};
+	let slice = new CanvasDisplay(
+		chtml.getContext('2d', { alpha: false, desynchronized: false }) as CanvasRenderingContext2D,
+		chtml,
+	);
 	slice.ctx.font = '10px monospace';
 	slice.ctx.imageSmoothingEnabled = false;
 	slices.push(slice);
 }
 
+// Yes, I'm very evil.
+let updateSliceSize = function() {};
+
 function setupCanvas() {
 	if (sliceCanvas1.value && sliceCanvas2.value && sliceCanvas3.value) {
-		let nbChannels = 0;
+		nbChannels = 0;
 		if (player.value.currentPlayingNode) {
 			nbChannels = player.value.currentPlayingNode.nbChannels;
 			nbChannels = nbChannels > MAX_CHANNEL_LIMIT ? MAX_CHANNEL_LIMIT : nbChannels;
 		}
-		sliceWidth = CHANNEL_WIDTH * nbChannels + 2;
+		virtualCanvasWidth = 13 + CHANNEL_WIDTH * nbChannels + 2;
+		sliceWidth = MAX_SLICE_WIDTH > virtualCanvasWidth ? virtualCanvasWidth : maxChannelsInView * CHANNEL_WIDTH + 1;
 		sliceHeight = HALF_BUFFER * CHAR_HEIGHT;
-		setupSlice(sliceCanvas1, nbChannels);
-		setupSlice(sliceCanvas2, nbChannels);
-		setupSlice(sliceCanvas3, nbChannels);
+		setupSlice(sliceCanvas1);
+		setupSlice(sliceCanvas2);
+		setupSlice(sliceCanvas3);
+		if (sliceDisplay.value) sliceDisplay.value.style.minWidth = (virtualCanvasWidth - CHANNEL_WIDTH) + 'px';
 	} else {
 		nextTick(() => {
 			console.warn('SkModPlayer: Jumped to the next tick, is Vue ok?');
@@ -333,7 +355,7 @@ function drawSlices(skipOptimizationChecks = false) {
 	const row = player.value.getRow();
 	const lower = row + HALF_BUFFER;
 	const upper = row - HALF_BUFFER;
-	const newDisplayTanslalation = -row * CHAR_HEIGHT;
+	const newDisplayTanslation = -row * CHAR_HEIGHT;
 	let curRow = row - HALF_BUFFER;
 
 	if (pattern === lastPattern && !skipOptimizationChecks && row !== lastDrawnRow) {
@@ -352,11 +374,8 @@ function drawSlices(skipOptimizationChecks = false) {
 				sli.drawStart += oneAndHalfBuf * norm;
 				sli.vPos = oneAndHalfBuf * rowDirInv;
 				sli.transform.y += (oneAndHalfBuf * CHAR_HEIGHT) * norm;
-				sli.html.style.transform = 'translateY(' + sli.transform.y + 'px)';
-				sli.drawn = {
-					top: 0xFFFFFFFF,
-					bottom: -0xFFFFFFFF,
-				};
+				sli.updateStyleTransforms();
+				sli.resetDrawn();
 
 				sli.ctx.fillStyle = colours.background;
 				sli.ctx.fillRect(0, 0, sliceWidth, sliceHeight);
@@ -373,17 +392,13 @@ function drawSlices(skipOptimizationChecks = false) {
 				drawRow(sli, newRow, pattern, 0, i * CHAR_HEIGHT + ROW_OFFSET_Y);
 			}
 		});
-		//debug_playPause();
 	} else {
 		slices.forEach((sli, i) => {
 			sli.drawStart = curRow;
 			sli.vPos = HALF_BUFFER * (i + 1);
-			sli.transform.y = -newDisplayTanslalation;
-			sli.html.style.transform = 'translateY(' + sli.transform.y + 'px)';
-			sli.drawn = {
-				top: 0xFFFFFFFF,
-				bottom: -0xFFFFFFFF,
-			};
+			sli.transform.y = -newDisplayTanslation;
+			sli.updateStyleTransforms();
+			sli.resetDrawn();
 
 			sli.ctx.fillStyle = colours.background;
 			sli.ctx.fillRect(0, 0, sliceWidth, sliceHeight);
@@ -399,7 +414,7 @@ function drawSlices(skipOptimizationChecks = false) {
 		});
 	}
 
-	if (sliceDisplay.value) sliceDisplay.value.style.transform = 'translateY(' + newDisplayTanslalation + 'px)';
+	if (sliceDisplay.value) sliceDisplay.value.style.transform = 'translateY(' + newDisplayTanslation + 'px)';
 
 	lastDrawnRow = row;
 	lastPattern = pattern;
@@ -409,7 +424,6 @@ function drawRow(slice: CanvasDisplay, row: number, pattern: number, drawX = 0, 
 	if (!player.value.currentPlayingNode) return false;
 	if (row < 0 || row > player.value.getPatternNumRows(pattern) - 1) return false;
 	const spacer = 11;
-	const skipSpacer = spacer + 3;
 	const space = ' ';
 	let seperators = '';
 	let note = '';
@@ -418,16 +432,7 @@ function drawRow(slice: CanvasDisplay, row: number, pattern: number, drawX = 0, 
 	let fx = '';
 	let op = '';
 
-	for (let channel = 0; channel < slice.channels; channel++) {
-		if (channel < currentColumn) {
-			seperators += space.repeat( skipSpacer );
-			note += space.repeat( skipSpacer );
-			instr += space.repeat( skipSpacer );
-			volume += space.repeat( skipSpacer );
-			fx += space.repeat( skipSpacer );
-			op += space.repeat( skipSpacer );
-			continue;
-		}
+	for (let channel = currentColumn; channel < nbChannels; channel++) {
 		if (channel === maxChannelsInView + currentColumn) break;
 		const part = player.value.getPatternRowChannel(pattern, row, channel);
 
@@ -493,6 +498,11 @@ function forceUpdateDisplay() {
 	if (noNode) player.value.play(buffer);
 	if (!patternHide.value) display(true);
 	if (noNode) player.value.togglePause();
+	if (currentColumn + maxChannelsInView >= nbChannels) return;
+	slices.forEach((sli) => {
+		sli.transform.x = currentColumn * CHANNEL_WIDTH + 1 + 2 * CHAR_WIDTH + 1;
+		sli.updateStyleTransforms();
+	});
 }
 
 function scrollHandler() {
@@ -502,12 +512,12 @@ function scrollHandler() {
 	if (!sliceDisplay.value.parentElement) return;
 
 	if (patternScrollSlider.value) {
-		patternScrollSliderPos.value = (sliceDisplay.value.parentElement.scrollLeft) / ((sliceWidth + 12) - sliceDisplay.value.parentElement.offsetWidth) * 100;
+		patternScrollSliderPos.value = (sliceDisplay.value.parentElement.scrollLeft) / ((virtualCanvasWidth - CHANNEL_WIDTH) - sliceDisplay.value.parentElement.offsetWidth) * 100;
 		patternScrollSlider.value.style.opacity = '1';
 	}
-	displayScrollPos = sliceDisplay.value.parentElement.scrollLeft;
-	const newColumn = Math.trunc((displayScrollPos) / CHANNEL_WIDTH);
-	if (newColumn !== currentColumn) {
+	const newColumn = Math.trunc((sliceDisplay.value.parentElement.scrollLeft - 13) / CHANNEL_WIDTH);
+	//debug('newColumn', newColumn, 'currentColumn', currentColumn, 'maxChannelsInView', maxChannelsInView, 'newColumn + MAX_SLICE_CHANNELS <= nbChannels', newColumn + maxChannelsInView <= nbChannels);
+	if (newColumn !== currentColumn && newColumn + maxChannelsInView <= nbChannels) {
 		currentColumn = newColumn;
 		forceUpdateDisplay();
 	}
@@ -525,22 +535,22 @@ function handleScrollBarEnable() {
 	if (patternScrollSliderShow.value !== true) return;
 
 	if (!sliceDisplay.value || !sliceDisplay.value.parentElement) return;
-	patternScrollSliderShow.value = (sliceWidth > sliceDisplay.value.parentElement.offsetWidth);
+	patternScrollSliderShow.value = (virtualCanvasWidth > sliceDisplay.value.parentElement.offsetWidth);
 }
 
 watch(patternScrollSliderPos, () => {
-	if (!sliceDisplay.value) return;
-	if (!sliceDisplay.value.parentElement) return;
-	if (suppressScrollSliderWatcher) return;
+	if (!sliceDisplay.value || !sliceDisplay.value.parentElement || suppressScrollSliderWatcher) return;
 
-	sliceDisplay.value.parentElement.scrollLeft = ((sliceWidth + 12) - sliceDisplay.value.parentElement.offsetWidth) * patternScrollSliderPos.value / 100;
+	sliceDisplay.value.parentElement.scrollLeft = ((virtualCanvasWidth - CHANNEL_WIDTH) - sliceDisplay.value.parentElement.offsetWidth) * patternScrollSliderPos.value / 100;
 });
 
 function resizeHandler(event: ResizeObserverEntry[]) {
 	if (event[0].contentRect.width === 0) return;
 	const newView = Math.ceil(event[0].contentRect.width / CHANNEL_WIDTH) + 1;
+	//if (newView !== maxChannelsInView) updateSliceSize();
 	if (newView > maxChannelsInView) forceUpdateDisplay();
 	maxChannelsInView = newView;
+	handleScrollBarEnable();
 }
 
 onDeactivated(() => {
@@ -610,7 +620,6 @@ onDeactivated(() => {
 			.patternSlice {
 				position: relative;
 				image-rendering: pixelated;
-				padding-right: 12px;
 			}
 		}
 
@@ -623,7 +632,6 @@ onDeactivated(() => {
 			position: absolute;
 			pointer-events: none;
 			z-index: 2;
-			display: none;
 		}
 
 		.patternShadowBottom {
@@ -635,7 +643,6 @@ onDeactivated(() => {
 			position: absolute;
 			pointer-events: none;
 			z-index: 2;
-			display: none;
 		}
 
 		.pattern_hide {
