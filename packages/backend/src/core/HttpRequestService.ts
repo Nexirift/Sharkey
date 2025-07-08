@@ -20,13 +20,21 @@ import type { IObject, IObjectWithId } from '@/core/activitypub/type.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { ApUtilityService } from '@/core/activitypub/ApUtilityService.js';
 import type { Response } from 'node-fetch';
-import type { URL } from 'node:url';
 import type { Socket } from 'node:net';
 
 export type HttpRequestSendOptions = {
 	throwErrorWhenResponseNotOk: boolean;
 	validators?: ((res: Response) => void)[];
 };
+
+export function isPrivateUrl(url: URL): boolean {
+	if (!ipaddr.isValid(url.hostname)) {
+		return false;
+	}
+
+	const ip = ipaddr.parse(url.hostname);
+	return ip.range() !== 'unicast';
+}
 
 export function isPrivateIp(allowedPrivateNetworks: PrivateNetwork[] | undefined, ip: string, port?: number): boolean {
 	const parsedIp = ipaddr.parse(ip);
@@ -303,6 +311,7 @@ export class HttpRequestService {
 			timeout?: number,
 			size?: number,
 			isLocalAddressAllowed?: boolean,
+			allowHttp?: boolean,
 		} = {},
 		extra: HttpRequestSendOptions = {
 			throwErrorWhenResponseNotOk: true,
@@ -311,7 +320,9 @@ export class HttpRequestService {
 	): Promise<Response> {
 		const timeout = args.timeout ?? 5000;
 
-		this.utilityService.assertUrl(url);
+		const parsedUrl = new URL(url);
+		const allowHttp = args.allowHttp || isPrivateUrl(parsedUrl);
+		this.utilityService.assertUrl(parsedUrl, allowHttp);
 
 		const controller = new AbortController();
 		setTimeout(() => {
@@ -320,7 +331,7 @@ export class HttpRequestService {
 
 		const isLocalAddressAllowed = args.isLocalAddressAllowed ?? false;
 
-		const res = await fetch(url, {
+		const res = await fetch(parsedUrl, {
 			method: args.method ?? 'GET',
 			headers: {
 				'User-Agent': this.config.userAgent,

@@ -226,7 +226,7 @@ export class UtilityService {
 	 * @throws {IdentifiableError} If URL contains credentials
 	 */
 	@bindThis
-	public assertUrl(url: string | URL): URL | never {
+	public assertUrl(url: string | URL, allowHttp?: boolean): URL | never {
 		// If string, parse and validate
 		if (typeof(url) === 'string') {
 			try {
@@ -237,7 +237,7 @@ export class UtilityService {
 		}
 
 		// Must be HTTPS
-		if (!this.checkHttps(url)) {
+		if (!this.checkHttps(url, allowHttp)) {
 			throw new IdentifiableError('0bedd29b-e3bf-4604-af51-d3352e2518af', `invalid url ${url}: unsupported protocol ${url.protocol}`);
 		}
 
@@ -255,12 +255,12 @@ export class UtilityService {
 	 * Based on check-https.ts.
 	 */
 	@bindThis
-	public checkHttps(url: string | URL): boolean {
+	public checkHttps(url: string | URL, allowHttp = false): boolean {
 		const isNonProd = this.envService.env.NODE_ENV !== 'production';
 
 		try {
 			const proto = new URL(url).protocol;
-			return proto === 'https:' || (proto === 'http:' && isNonProd);
+			return proto === 'https:' || (proto === 'http:' && (isNonProd || allowHttp));
 		} catch {
 			// Invalid URLs don't "count" as HTTPS
 			return false;

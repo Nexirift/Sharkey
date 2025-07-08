@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { jest } from '@jest/globals';
+import { describe, jest } from '@jest/globals';
 import type { Mock } from 'jest-mock';
 import type { PrivateNetwork } from '@/config.js';
 import type { Socket } from 'net';
-import { HttpRequestService, isPrivateIp, validateSocketConnect } from '@/core/HttpRequestService.js';
+import { HttpRequestService, isPrivateIp, isPrivateUrl, validateSocketConnect } from '@/core/HttpRequestService.js';
 import { parsePrivateNetworks } from '@/config.js';
 
 describe(HttpRequestService, () => {
@@ -50,6 +50,28 @@ describe(HttpRequestService, () => {
 		it('should return true when ip private and port is null but ports are specified', () => {
 			const result = isPrivateIp(allowedPrivateNetworks, '127.0.0.1', undefined);
 			expect(result).toBeTruthy();
+		});
+	});
+
+	describe('isPrivateUrl', () => {
+		it('should return false when URL is not an IP', () => {
+			const result = isPrivateUrl(new URL('https://example.com'));
+			expect(result).toBe(false);
+		});
+
+		it('should return false when IP is public', () => {
+			const result = isPrivateUrl(new URL('https://23.192.228.80'));
+			expect(result).toBe(false);
+		});
+
+		it('should return true when IP is private', () => {
+			const result = isPrivateUrl(new URL('https://127.0.0.1'));
+			expect(result).toBe(true);
+		});
+
+		it('should return true when IP is private with port and path', () => {
+			const result = isPrivateUrl(new URL('https://127.0.0.1:443/some/path'));
+			expect(result).toBe(true);
 		});
 	});
 
