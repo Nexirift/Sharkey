@@ -11,8 +11,8 @@ import semver from 'semver';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { bindThis } from '@/decorators.js';
-import { MiMeta, SoftwareSuspension } from '@/models/Meta.js';
-import { MiInstance } from '@/models/Instance.js';
+import type { MiMeta, SoftwareSuspension } from '@/models/Meta.js';
+import type { MiInstance } from '@/models/Instance.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { EnvService } from '@/core/EnvService.js';
 

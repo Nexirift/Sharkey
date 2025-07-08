@@ -45,7 +45,7 @@ import { verifyFieldLinks } from '@/misc/verify-field-link.js';
 import { isRetryableError } from '@/misc/is-retryable-error.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
-import { getApId, getApType, getNullableApId, isActor, isCollection, isCollectionOrOrderedCollection, isPropertyValue } from '../type.js';
+import { getApId, getApType, isActor, isCollection, isCollectionOrOrderedCollection, isPropertyValue } from '../type.js';
 import { extractApHashtags } from './tag.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { ApNoteService } from './ApNoteService.js';
@@ -156,46 +156,32 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 		const parsedUri = this.utilityService.assertUrl(uri);
 		const expectHost = this.utilityService.punyHostPSLDomain(parsedUri);
 
+		// Validate type
 		if (!isActor(x)) {
 			throw new UnrecoverableError(`invalid Actor ${uri}: unknown type '${x.type}'`);
 		}
 
-		if (!(typeof x.id === 'string' && x.id.length > 0)) {
-			throw new UnrecoverableError(`invalid Actor ${uri}: wrong id type`);
+		// Validate id
+		if (!x.id) {
+			throw new UnrecoverableError(`invalid Actor ${uri}: missing id`);
+		}
+		if (typeof(x.id) !== 'string') {
+			throw new UnrecoverableError(`invalid Actor ${uri}: wrong id type ${typeof(x.id)}`);
+		}
+		const parsedId = this.utilityService.assertUrl(x.id);
+		const idHost = this.utilityService.punyHostPSLDomain(parsedId);
+		if (idHost !== expectHost) {
+			throw new UnrecoverableError(`invalid Actor ${uri}: wrong host in id ${x.id} (got ${parsedId}, expected ${expectHost})`);
 		}
 
-		if (!(typeof x.inbox === 'string' && x.inbox.length > 0)) {
-			throw new UnrecoverableError(`invalid Actor ${uri}: wrong inbox type`);
-		}
-
-		this.utilityService.assertUrl(x.inbox);
-		const inboxHost = this.utilityService.punyHostPSLDomain(x.inbox);
-		if (inboxHost !== expectHost) {
-			throw new UnrecoverableError(`invalid Actor ${uri}: wrong inbox host ${inboxHost}`);
+		// Validate inbox
+		this.apUtilityService.sanitizeInlineObject(x, 'inbox', parsedUri, expectHost);
+		if (!x.inbox || typeof(x.inbox) !== 'string') {
+			throw new UnrecoverableError(`invalid Actor ${uri}: missing or invalid inbox ${x.inbox}`);
 		}
 
 		// Sanitize sharedInbox
-		try {
-			if (x.sharedInbox) {
-				const sharedInbox = getNullableApId(x.sharedInbox);
-				if (sharedInbox) {
-					const parsed = this.utilityService.assertUrl(sharedInbox);
-					if (this.utilityService.punyHostPSLDomain(parsed) !== expectHost) {
-						this.logger.warn(`Excluding sharedInbox for actor ${uri}: wrong host in ${sharedInbox}`);
-						x.sharedInbox = undefined;
-					}
-				} else {
-					this.logger.warn(`Excluding sharedInbox for actor ${uri}: missing ID`);
-					x.sharedInbox = undefined;
-				}
-			} else {
-				// Collapse all falsy values to undefined
-				x.sharedInbox = undefined;
-			}
-		} catch {
-			// Shared inbox is unparseable - strip out
-			x.sharedInbox = undefined;
-		}
+		this.apUtilityService.sanitizeInlineObject(x, 'sharedInbox', parsedUri, expectHost);
 
 		// Sanitize endpoints object
 		if (typeof(x.endpoints) === 'object') {
@@ -208,94 +194,47 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 
 		// Sanitize endpoints.sharedInbox
 		if (x.endpoints) {
-			try {
-				if (x.endpoints.sharedInbox) {
-					const sharedInbox = getNullableApId(x.endpoints.sharedInbox);
-					if (sharedInbox) {
-						const parsed = this.utilityService.assertUrl(sharedInbox);
-						if (this.utilityService.punyHostPSLDomain(parsed) !== expectHost) {
-							this.logger.warn(`Excluding endpoints.sharedInbox for actor ${uri}: wrong host in ${sharedInbox}`);
-							x.endpoints.sharedInbox = undefined;
-						}
-					} else {
-						this.logger.warn(`Excluding endpoints.sharedInbox for actor ${uri}: missing ID`);
-						x.endpoints.sharedInbox = undefined;
-					}
-				} else {
-					// Collapse all falsy values to undefined
-					x.endpoints.sharedInbox = undefined;
-				}
-			} catch {
-				// Shared inbox is unparseable - strip out
-				x.endpoints.sharedInbox = undefined;
+			this.apUtilityService.sanitizeInlineObject(x.endpoints, 'sharedInbox', parsedUri, expectHost, 'endpoints.');
+
+			if (!x.endpoints.sharedInbox) {
+				x.endpoints = undefined;
 			}
 		}
 
 		// Sanitize collections
-		for (const collection of ['outbox', 'followers', 'following', 'featured'] as (keyof IActor)[]) {
-			try {
-				if (x[collection]) {
-					const collectionUri = getNullableApId(x[collection]);
-					if (collectionUri) {
-						const parsed = this.utilityService.assertUrl(collectionUri);
-						if (this.utilityService.punyHostPSLDomain(parsed) !== expectHost) {
-							this.logger.warn(`Excluding ${collection} for actor ${uri}: wrong host in ${collectionUri}`);
-							x[collection] = undefined;
-						}
-					} else {
-						this.logger.warn(`Excluding ${collection} for actor ${uri}: missing ID`);
-						x[collection] = undefined;
-					}
-				} else {
-					// Collapse all falsy values to undefined
-					x[collection] = undefined;
-				}
-			} catch {
-				// Collection is unparseable - strip out
-				x[collection] = undefined;
-			}
+		for (const collection of ['outbox', 'followers', 'following', 'featured'] as const) {
+			this.apUtilityService.sanitizeInlineObject(x, collection, parsedUri, expectHost);
 		}
 
+		// Validate username
 		if (!(typeof x.preferredUsername === 'string' && x.preferredUsername.length > 0 && x.preferredUsername.length <= 128 && /^\w([\w-.]*\w)?$/.test(x.preferredUsername))) {
 			throw new UnrecoverableError(`invalid Actor ${uri}: wrong username`);
 		}
 
+		// Sanitize name
 		// These fields are only informational, and some AP software allows these
 		// fields to be very long. If they are too long, we cut them off. This way
 		// we can at least see these users and their activities.
-		if (x.name) {
-			if (!(typeof x.name === 'string' && x.name.length > 0)) {
-				throw new UnrecoverableError(`invalid Actor ${uri}: wrong name`);
-			}
-			x.name = truncate(x.name, nameLength);
-		} else if (x.name === '') {
-			// Mastodon emits empty string when the name is not set.
+		if (!x.name) {
 			x.name = undefined;
+		} else if (typeof(x.name) !== 'string') {
+			this.logger.warn(`Excluding name from object ${uri}: incorrect type ${typeof(x)}`);
+			x.name = undefined;
+		} else {
+			x.name = truncate(x.name, nameLength);
 		}
-		if (x.summary) {
-			if (!(typeof x.summary === 'string' && x.summary.length > 0)) {
-				throw new UnrecoverableError(`invalid Actor ${uri}: wrong summary`);
-			}
+
+		// Sanitize summary
+		if (!x.summary) {
+			x.summary = undefined;
+		} else if (typeof(x.summary) !== 'string') {
+			this.logger.warn(`Excluding summary from object ${uri}: incorrect type ${typeof(x)}`);
+		} else {
 			x.summary = truncate(x.summary, this.config.maxRemoteBioLength);
 		}
 
-		const parsedId = this.utilityService.assertUrl(x.id);
-		const idHost = this.utilityService.punyHostPSLDomain(parsedId);
-		if (idHost !== expectHost) {
-			throw new UnrecoverableError(`invalid Actor ${uri}: wrong id ${x.id}`);
-		}
-
-		if (x.publicKey) {
-			if (typeof x.publicKey.id !== 'string') {
-				throw new UnrecoverableError(`invalid Actor ${uri}: wrong publicKey.id type`);
-			}
-
-			const parsed = this.utilityService.assertUrl(x.publicKey.id);
-			const publicKeyIdHost = this.utilityService.punyHostPSLDomain(parsed);
-			if (publicKeyIdHost !== expectHost) {
-				throw new UnrecoverableError(`invalid Actor ${uri}: wrong publicKey.id ${x.publicKey.id}`);
-			}
-		}
+		// Sanitize publicKey
+		this.apUtilityService.sanitizeInlineObject(x, 'publicKey', parsedUri, expectHost);
 
 		return x;
 	}
