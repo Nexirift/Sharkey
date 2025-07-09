@@ -503,6 +503,9 @@ export function getNoteMenu(props: {
 
 		if (appearNote.userId === $i.id || $i.isModerator || $i.isAdmin) {
 			menuItems.push({ type: 'divider' });
+			if ($i.isModerator || $i.isAdmin) {
+				menuItems.push(getMandatoryCWMenu(appearNote));
+			}
 			if (appearNote.userId === $i.id) {
 				menuItems.push({
 					icon: 'ph-pencil-simple ph-bold ph-lg',
@@ -515,9 +518,6 @@ export function getNoteMenu(props: {
 					danger: true,
 					action: delEdit,
 				});
-			}
-			if ($i.isModerator || $i.isAdmin) {
-				menuItems.push(getMandatoryCWMenu(appearNote));
 			}
 			menuItems.push({
 				icon: 'ti ti-trash',
