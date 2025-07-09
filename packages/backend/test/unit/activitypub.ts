@@ -26,10 +26,11 @@ import { LoggerService } from '@/core/LoggerService.js';
 import { CacheManagementService } from '@/global/CacheManagementService.js';
 import { ApResolverService } from '@/core/activitypub/ApResolverService.js';
 import type { IActor, IApDocument, ICollection, IObject, IPost } from '@/core/activitypub/type.js';
-import { MiMeta, MiNote, MiUser, MiUserKeypair, UserProfilesRepository, UserPublickeysRepository, UserKeypairsRepository, UsersRepository, NotesRepository } from '@/models/_.js';
+import { MiMeta, MiNote, MiUser, MiUserKeypair, UserNotePiningsRepository, UserProfilesRepository, UserPublickeysRepository, UserKeypairsRepository, UsersRepository, NotesRepository } from '@/models/_.js';
 import { DI } from '@/di-symbols.js';
 import { secureRndstr } from '@/misc/secure-rndstr.js';
 import { DownloadService } from '@/core/DownloadService.js';
+import { ApUtilityService } from '@/core/activitypub/ApUtilityService.js';
 import { genAidx } from '@/misc/id/aidx.js';
 import { IdService } from '@/core/IdService.js';
 import { MockResolver } from '../misc/mock-resolver.js';
@@ -75,7 +76,7 @@ function createRandomFeaturedCollection(actor: NonTransientIActor, length: numbe
 	return {
 		'@context': 'https://www.w3.org/ns/activitystreams',
 		type: 'Collection',
-		id: actor.outbox as string,
+		id: actor.featured as string | null ?? `${actor.id}/featured`,
 		totalItems: items.length,
 		items,
 	};
@@ -108,6 +109,7 @@ describe('ActivityPub', () => {
 	let cacheManagementService: CacheManagementService;
 	let mockConsole: MockConsole;
 	let notesRepository: NotesRepository;
+	let userNotePiningsRepository: UserNotePiningsRepository;
 
 	const metaInitial = {
 		id: 'x',
@@ -185,6 +187,7 @@ describe('ActivityPub', () => {
 		mockConsole = app.get<MockConsole>(DI.console);
 		notesRepository = app.get<NotesRepository>(DI.notesRepository);
 	});
+		userNotePiningsRepository = app.get<UserNotePiningsRepository>(DI.userNotePiningsRepository);
 
 	afterAll(async () => {
 		await app.close();
@@ -380,7 +383,7 @@ describe('ActivityPub', () => {
 			resolver.register(actor2.id, actor2);
 			resolver.register(actor2Note.id, actor2Note);
 
-			await personService.createPerson(actor1.id, resolver);
+			const created = await personService.createPerson(actor1.id, resolver);
 
 			// actor2Note is from a different server and needs to be fetched again
 			assert.deepStrictEqual(
@@ -394,6 +397,10 @@ describe('ActivityPub', () => {
 			// Reflects the original content instead of the fraud
 			assert.strictEqual(note.text, 'test test foo');
 			assert.strictEqual(note.uri, actor2Note.id);
+
+			// Cross-user pin should be rejected
+			const pinExists = await userNotePiningsRepository.existsBy({ userId: created.id, noteId: note.id });
+			expect(pinExists).toBe(false);
 		});
 
 		test('Fetch a note that is a featured note of the attributed actor', async () => {

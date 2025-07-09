@@ -943,10 +943,17 @@ export class ApPersonService implements OnModuleInit {
 			const itemId = getNullableApId(item);
 			if (itemId && isPost(item)) {
 				try {
-					return await this.apNoteService.resolveNote(item, {
+					const note = await this.apNoteService.resolveNote(item, {
 						resolver: resolver,
-						sentFrom: user.uri,
+						sentFrom: itemId, // resolveCollectionItems has already verified this, so we can re-use it to avoid double fetch
 					});
+
+					if (note && note.userId !== userId) {
+						this.logger.warn(`Ignoring cross-note pin: user ${userId} tried to pin note ${note.id} belonging to user ${note.userId}`);
+						return null;
+					}
+
+					return note;
 				} catch (err) {
 					this.logger.warn(`Couldn't fetch pinned note ${itemId} for user ${user.id} (@${user.username}@${user.host}): ${renderInlineError(err)}`);
 				}
