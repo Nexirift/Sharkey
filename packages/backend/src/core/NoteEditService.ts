@@ -583,13 +583,13 @@ export class NoteEditService implements OnApplicationShutdown {
 						});
 
 						if (oldPoll) {
-							await transactionalEntityManager.update(MiPoll, { pollId: oldPoll.noteId }, poll);
+							await transactionalEntityManager.update(MiPoll, { noteId: oldPoll.noteId }, poll);
 						} else {
 							await transactionalEntityManager.insert(MiPoll, poll);
 						}
 					// Delete poll
 					} else if (oldPoll) {
-						await transactionalEntityManager.delete(MiPoll, { pollId: oldPoll.noteId });
+						await transactionalEntityManager.delete(MiPoll, { noteId: oldPoll.noteId });
 					}
 				});
 			} else {
