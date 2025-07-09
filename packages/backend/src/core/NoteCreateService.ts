@@ -144,6 +144,7 @@ type Option = {
 	url?: string | null;
 	app?: MiApp | null;
 	processErrors?: string[] | null;
+	mandatoryCW?: string | null;
 };
 
 export type PureRenoteOption = Option & { renote: MiNote } & ({ text?: null } | { cw?: null } | { reply?: null } | { poll?: null } | { files?: null | [] });
@@ -477,6 +478,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 			renoteUserHost: data.renote ? data.renote.userHost : null,
 			userHost: user.host,
 			processErrors: data.processErrors,
+			mandatoryCW: data.mandatoryCW,
 		});
 
 		// should really not happen, but better safe than sorry

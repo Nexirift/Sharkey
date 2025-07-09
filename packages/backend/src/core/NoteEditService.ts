@@ -224,13 +224,7 @@ export class NoteEditService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async edit(user: MiUser & {
-		id: MiUser['id'];
-		username: MiUser['username'];
-		host: MiUser['host'];
-		isBot: MiUser['isBot'];
-		noindex: MiUser['noindex'];
-	}, editid: MiNote['id'], data: Option, silent = false): Promise<MiNote> {
+	public async edit(user: MiUser, editid: MiNote['id'], data: Option, silent = false): Promise<MiNote> {
 		if (!editid) {
 			throw new UnrecoverableError('edit failed: missing editid');
 		}
@@ -457,6 +451,9 @@ export class NoteEditService implements OnApplicationShutdown {
 		if (oldnote.hasPoll !== !!data.poll) {
 			update.hasPoll = !!data.poll;
 		}
+		if (data.mandatoryCW !== undefined && oldnote.mandatoryCW !== data.mandatoryCW) {
+			update.mandatoryCW = data.mandatoryCW;
+		}
 
 		// TODO deep-compare files
 		const filesChanged = oldnote.fileIds.length || data.files?.length;
@@ -518,6 +515,7 @@ export class NoteEditService implements OnApplicationShutdown {
 				renoteUserHost: data.renote ? data.renote.userHost : null,
 				userHost: user.host,
 				reactionAndUserPairCache: oldnote.reactionAndUserPairCache,
+				mandatoryCW: data.mandatoryCW,
 			});
 
 			if (data.uri != null) note.uri = data.uri;

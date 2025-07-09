@@ -8,6 +8,7 @@ import { Endpoint } from '@/server/api/endpoint-base.js';
 import type { MiNote, MiUser, NotesRepository } from '@/models/_.js';
 import { DI } from '@/di-symbols.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
+import { NoteEditService } from '@/core/NoteEditService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -32,6 +33,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		@Inject(DI.notesRepository)
 		private readonly notesRepository: NotesRepository,
 
+		private readonly noteEditService: NoteEditService,
 		private readonly moderationLogService: ModerationLogService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
@@ -40,13 +42,16 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				relations: { user: true },
 			}) as MiNote & { user: MiUser };
 
+			// Collapse empty strings to null
+			const mandatoryCW = ps.cw || null;
+
 			// Skip if there's nothing to do
-			if (note.mandatoryCW === ps.cw) return;
+			if (note.mandatoryCW === mandatoryCW) return;
 
 			// Log event first.
 			// This ensures that we don't "lose" the log if an error occurs
 			await this.moderationLogService.log(me, 'setMandatoryCWForNote', {
-				newCW: ps.cw,
+				newCW: mandatoryCW,
 				oldCW: note.mandatoryCW,
 				noteId: note.id,
 				noteUserId: note.user.id,
@@ -54,10 +59,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				noteUserHost: note.user.host,
 			});
 
-			await this.notesRepository.update(ps.noteId, {
-				// Collapse empty strings to null
-				mandatoryCW: ps.cw || null,
-			});
+			await this.noteEditService.edit(note.user, note.id, { mandatoryCW });
 		});
 	}
 }
