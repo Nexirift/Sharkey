@@ -141,6 +141,7 @@ type Option = {
 	updatedAt?: Date | null;
 	editcount?: boolean | null;
 	processErrors?: string[] | null;
+	mandatoryCW?: string | null;
 };
 
 @Injectable()
