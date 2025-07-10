@@ -306,7 +306,7 @@ Make sure you have both remotes in the same clone. To do this, run
 the following command to add Misskey's remote to your local clone:
 
 ```bash
-    git remote add misskey https://github.com/misskey-dev/misskey.git
+git remote add misskey https://github.com/misskey-dev/misskey.git
 ```
 
 Then, to perform the merge:
