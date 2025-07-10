@@ -47,7 +47,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import * as Misskey from 'misskey-js';
 import MkButton from '@/components/MkButton.vue';
 import * as os from '@/os.js';
@@ -68,7 +68,6 @@ const error = ref<any>(null);
 const path = computed(() => props.announcementId);
 
 function fetch() {
-	console.log("aaa");
 	announcement.value = null;
 	misskeyApi('announcements/show', {
 		announcementId: props.announcementId,
@@ -113,9 +112,6 @@ definePage(() => ({
 	title: announcement.value ? announcement.value.title : i18n.ts.announcements,
 	icon: 'ti ti-speakerphone',
 }));
-
-onMounted(() => {
-});
 </script>
 
 <style lang="scss" module>
