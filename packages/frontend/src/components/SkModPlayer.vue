@@ -157,7 +157,6 @@ let patternScrollSliderPos = ref(0);
 let patternDisplay = ref();
 const player = ref(new ChiptuneJsPlayer(new ChiptuneJsConfig()));
 
-let suppressScrollSliderWatcher = false;
 let nbChannels = 0;
 let currentColumn = 0;
 let maxChannelsInView = 10;
@@ -170,7 +169,6 @@ let alreadyHiddenOnce = false;
 let virtualCanvasWidth = 0;
 let slices: CanvasDisplay[] = [];
 let numberRowPHTML: HTMLSpanElement;
-//let copyBuffer = { canvas: new OffscreenCanvas(1, 1), ctx: OffscreenCanvasRenderingContext2D };
 
 const PERF_MONITOR = {
 	startTime: 0,
@@ -182,7 +180,6 @@ const PERF_MONITOR = {
 		this.patternTime.current = performance.now() - this.startTime;
 		if (this.patternTime.initial !== 0 && this.patternTime.current > this.patternTime.max) this.patternTime.max = this.patternTime.current;
 		else if (this.patternTime.initial === 0) this.patternTime.initial = this.patternTime.current;
-		//debug(this.patternTime.max);
 	},
 	asses: function() {
 		if (this.patternTime.initial !== 0 && !alreadyHiddenOnce) {
@@ -385,8 +382,6 @@ function drawSlices(skipOptimizationChecks = false) {
 		const norm = 1 - 2 * rowDir;
 		const oneAndHalfBuf = HALF_BUFFER * 3;
 
-		//debug('rowDif', rowDif, 'rowDir', rowDir, 'norm', norm, 'isRowDirPos', isRowDirPos);
-
 		slices.forEach((sli) => {
 			sli.vPos -= rowDif;
 			if (sli.vPos <= 0 || sli.vPos >= oneAndHalfBuf) {
@@ -398,8 +393,6 @@ function drawSlices(skipOptimizationChecks = false) {
 
 				sli.ctx.fillStyle = colours.background;
 				sli.ctx.fillRect(0, 0, sliceWidth, sliceHeight);
-
-				//debug(sli);
 			}
 			let patternText: string[] = [];
 			for (let i = 0; i < HALF_BUFFER; i++) {
@@ -413,7 +406,6 @@ function drawSlices(skipOptimizationChecks = false) {
 				if (sli.drawn.bottom <= newRow) sli.drawn.bottom = newRow;
 
 				patternText.push(rowText(sli, newRow, pattern));
-				//drawRow(sli, newRow, pattern, 0, i * CHAR_HEIGHT + ROW_OFFSET_Y);
 			}
 			drawText(sli, patternText);
 		});
@@ -439,7 +431,6 @@ function drawSlices(skipOptimizationChecks = false) {
 				if (curRow > lower) break;
 			}
 			drawText(sli, patternText);
-			//debug(sli);
 		});
 	}
 
@@ -507,8 +498,6 @@ function forceUpdateDisplay() {
 }
 
 function scrollHandler() {
-	suppressScrollSliderWatcher = true;
-
 	if (!sliceDisplay.value) return;
 	if (!sliceDisplay.value.parentElement) return;
 
@@ -524,9 +513,8 @@ function scrollHandler() {
 	}
 }
 
+// https://bugs.webkit.org/show_bug.cgi?id=201556
 function scrollEndHandle() {
-	suppressScrollSliderWatcher = false;
-
 	if (!patternScrollSlider.value) return;
 	patternScrollSlider.value.style.opacity = '';
 }
@@ -540,7 +528,7 @@ function handleScrollBarEnable() {
 }
 
 watch(patternScrollSliderPos, () => {
-	if (!sliceDisplay.value || !sliceDisplay.value.parentElement || suppressScrollSliderWatcher) return;
+	if (!sliceDisplay.value || !sliceDisplay.value.parentElement) return;
 
 	sliceDisplay.value.parentElement.scrollLeft = ((virtualCanvasWidth - CHANNEL_WIDTH) - sliceDisplay.value.parentElement.offsetWidth) * patternScrollSliderPos.value / 100;
 });
