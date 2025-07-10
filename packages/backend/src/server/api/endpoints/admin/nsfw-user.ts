@@ -45,13 +45,13 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				alwaysMarkNsfw: true,
 			});
 
+			await this.cacheService.userProfileCache.delete(ps.userId);
+
 			await this.moderationLogService.log(me, 'nsfwUser', {
 				userId: ps.userId,
 				userUsername: user.username,
 				userHost: user.host,
 			});
-
-			await this.cacheService.userProfileCache.delete(ps.userId);
 		});
 	}
 }

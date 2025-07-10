@@ -45,6 +45,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				alwaysMarkNsfw: false,
 			});
 
+			await this.cacheService.userProfileCache.delete(ps.userId);
+
 			await this.moderationLogService.log(me, 'unNsfwUser', {
 				userId: ps.userId,
 				userUsername: user.username,
