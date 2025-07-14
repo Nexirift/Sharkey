@@ -42,9 +42,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				throw new Error('user not found');
 			}
 
-			if (user.isSuspended) {
-				return;
-			}
+			if (user.isSuspended) return;
 
 			if (await this.roleService.isModerator(user)) {
 				throw new Error('cannot suspend moderator account');
