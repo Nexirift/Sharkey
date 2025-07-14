@@ -314,6 +314,7 @@ _notification:
   edited: "Note got edited"
   scheduledNoteFailed: "Posting scheduled note failed"
   scheduledNotePosted: "Scheduled Note was posted"
+  importOfXCompleted: "Import of {x} has been completed"
   _types:
     renote: "Boosts"
     edited: "Edits"

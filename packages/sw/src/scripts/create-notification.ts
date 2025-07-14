@@ -235,6 +235,22 @@ async function composeNotification(data: PushNotificationDataMap[keyof PushNotif
 					}];
 				}
 
+				case 'importCompleted': {
+					const entityName = {
+						antenna: i18n.ts.antennas,
+						blocking: i18n.ts.blockedUsers,
+						customEmoji: i18n.ts.customEmojis,
+						following: i18n.ts.following,
+						muting: i18n.ts.mutedUsers,
+						userList: i18n.ts.lists,
+					} as const satisfies Record<typeof data.body.importedEntity, string>;
+
+					return [i18n.tsx._notification.importOfXCompleted({ x: entityName[data.body.importedEntity] }), {
+						badge: iconUrl('circle-check'),
+						data,
+					}];
+				}
+
 				case 'pollEnded':
 					return [i18n.ts._notification.pollEnded, {
 						body: data.body.note.text ?? '',

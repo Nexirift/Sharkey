@@ -12,6 +12,7 @@ import type { AntennasRepository, UsersRepository } from '@/models/_.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
+import { NotificationService } from '@/core/NotificationService.js';
 import { DBAntennaImportJobData } from '../types.js';
 import type * as Bull from 'bullmq';
 
@@ -65,6 +66,7 @@ export class ImportAntennasProcessorService {
 		private queueLoggerService: QueueLoggerService,
 		private idService: IdService,
 		private globalEventService: GlobalEventService,
+		private notificationService: NotificationService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('import-antennas');
 	}
@@ -106,6 +108,10 @@ export class ImportAntennasProcessorService {
 				this.logger.debug('Antenna created: ' + result.id);
 				this.globalEventService.publishInternalEvent('antennaCreated', result);
 			}
+
+			this.notificationService.createNotification(job.data.user.id, 'importCompleted', {
+				importedEntity: 'antenna',
+			});
 		} catch (err: any) {
 			this.logger.error('Error importing antennas:', err);
 		}

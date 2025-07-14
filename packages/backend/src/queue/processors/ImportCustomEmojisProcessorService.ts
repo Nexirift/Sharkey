@@ -18,6 +18,7 @@ import { bindThis } from '@/decorators.js';
 import type { Config } from '@/config.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
+import { NotificationService } from '@/core/NotificationService.js';
 import type * as Bull from 'bullmq';
 import type { DbUserImportJobData } from '../types.js';
 
@@ -40,6 +41,7 @@ export class ImportCustomEmojisProcessorService {
 		private driveService: DriveService,
 		private downloadService: DownloadService,
 		private queueLoggerService: QueueLoggerService,
+		private notificationService: NotificationService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('import-custom-emojis');
 	}
@@ -127,7 +129,12 @@ export class ImportCustomEmojisProcessorService {
 
 			cleanup();
 
-			this.logger.debug('Imported');
+			this.notificationService.createNotification(job.data.user.id, 'importCompleted', {
+				importedEntity: 'customEmoji',
+				fileId: file.id,
+			});
+
+			this.logger.debug('Imported', file.name);
 		} catch (e) {
 			this.logger.error('Error importing custom emojis:', e as Error);
 			cleanup();
