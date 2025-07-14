@@ -473,6 +473,8 @@ _auth:
   allowed: "Allowed"
 _announcement:
   new: "New"
+  confetti: "Throw confetti"
+  confettiDescription: "If enabled, the announcement will display a confetti effect when viewed."
 _deck:
   _columns:
     following: "Following"

@@ -1501,8 +1501,6 @@ _announcement:
   dialogAnnouncementUxWarn: "Having two or more dialog-style notifications simultaneously can significantly impact the user experience, so please use them carefully."
   silence: "No notification"
   silenceDescription: "Turning this on will skip the notification of this announcement and the user won't need to read it."
-  confetti: "Throw confetti"
-  confettiDescription: "If enabled, the announcement will display a confetti effect when viewed."
 _initialAccountSetting:
   accountCreated: "Your account was successfully created!"
   letsStartAccountSetup: "For starters, let's set up your profile."
