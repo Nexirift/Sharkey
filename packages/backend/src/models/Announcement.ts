@@ -72,7 +72,6 @@ export class MiAnnouncement {
 	})
 	public silence: boolean;
 
-	@Index()
 	@Column('boolean', {
 		default: false,
 	})
