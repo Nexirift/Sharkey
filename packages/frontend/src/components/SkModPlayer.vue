@@ -37,7 +37,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</div>
 	</div>
 	<div :class="$style.controls">
-		<input v-if="patternScrollSliderShow" ref="patternScrollSlider" v-model="patternScrollSliderPos" :class="$style.pattern_slider" type="range" min="0" max="100" step="0.01" style=""/>
+		<input v-if="patternScrollSliderShow" ref="patternScrollSlider" v-model="patternScrollSliderPos" :class="$style.pattern_slider" type="range" min="0" max="1" step="0.0001" style=""/>
 		<button :class="$style.play" @click="playPause()">
 			<i v-if="playing" class="ph-pause ph-bold ph-lg"></i>
 			<i v-else class="ph-play ph-bold ph-lg"></i>
@@ -89,6 +89,7 @@ const MAX_CHANNEL_LIMIT = 0xFF;
 const HALF_BUFFER = Math.floor(ROW_BUFFER / 2);
 const MAX_SLICE_CHANNELS = 10;
 const MAX_SLICE_WIDTH = CHANNEL_WIDTH * MAX_SLICE_CHANNELS + 1;
+const NUMBER_ROW_WIDTH = 2 * CHAR_WIDTH + 1;
 
 const props = defineProps<{
 	module: Misskey.entities.DriveFile
@@ -159,6 +160,8 @@ const player = ref(new ChiptuneJsPlayer(new ChiptuneJsConfig()));
 
 let nbChannels = 0;
 let currentColumn = 0;
+let currentSlidePos = 0;
+let scrollTimerID = -1;
 let maxChannelsInView = 10;
 let buffer = null;
 let isSeeking = false;
@@ -198,7 +201,7 @@ const PERF_MONITOR = {
 
 function bakeNumberRow() {
 	if (!numberRowCanvas.value && !numberRowParent.value) return;
-	numberRowCanvas.value.width = 2 * CHAR_WIDTH + 1;
+	numberRowCanvas.value.width = NUMBER_ROW_WIDTH;
 	numberRowCanvas.value.height = MAX_ROW_NUMBERS * CHAR_HEIGHT + 1;
 	numberRowPHTML = numberRowParent.value;
 	let ctx = numberRowCanvas.value.getContext('2d', { alpha: false }) as OffscreenCanvasRenderingContext2D;
@@ -242,13 +245,13 @@ function setupCanvas() {
 			nbChannels = player.value.currentPlayingNode.nbChannels;
 			nbChannels = nbChannels > MAX_CHANNEL_LIMIT ? MAX_CHANNEL_LIMIT : nbChannels;
 		}
-		virtualCanvasWidth = 13 + CHANNEL_WIDTH * nbChannels + 2;
-		sliceWidth = MAX_SLICE_WIDTH > virtualCanvasWidth ? virtualCanvasWidth : maxChannelsInView * CHANNEL_WIDTH + 1;
+		virtualCanvasWidth = NUMBER_ROW_WIDTH + CHANNEL_WIDTH * nbChannels + 2;
+		sliceWidth = MAX_SLICE_WIDTH > virtualCanvasWidth ? virtualCanvasWidth : MAX_SLICE_WIDTH;
 		sliceHeight = HALF_BUFFER * CHAR_HEIGHT;
 		setupSlice(sliceCanvas1, sliceBackground1);
 		setupSlice(sliceCanvas2, sliceBackground2);
 		setupSlice(sliceCanvas3, sliceBackground3);
-		if (sliceDisplay.value) sliceDisplay.value.style.minWidth = (virtualCanvasWidth - CHANNEL_WIDTH) + 'px';
+		if (sliceDisplay.value) sliceDisplay.value.style.minWidth = (virtualCanvasWidth) + 'px';
 	} else {
 		nextTick(() => {
 			console.warn('SkModPlayer: Jumped to the next tick, is Vue ok?');
@@ -490,9 +493,8 @@ function forceUpdateDisplay() {
 	if (noNode) player.value.play(buffer);
 	if (!patternHide.value) display(true);
 	if (noNode) player.value.togglePause();
-	if (currentColumn + maxChannelsInView >= nbChannels) return;
 	slices.forEach((sli) => {
-		sli.transform.x = currentColumn * CHANNEL_WIDTH + 1;
+		sli.transform.x = currentColumn * CHANNEL_WIDTH;
 		sli.updateStyleTransforms();
 	});
 }
@@ -502,10 +504,11 @@ function scrollHandler() {
 	if (!sliceDisplay.value.parentElement) return;
 
 	if (patternScrollSlider.value) {
-		patternScrollSliderPos.value = (sliceDisplay.value.parentElement.scrollLeft) / ((virtualCanvasWidth - CHANNEL_WIDTH) - sliceDisplay.value.parentElement.offsetWidth) * 100;
+		patternScrollSliderPos.value = sliceDisplay.value.parentElement.scrollLeft / (virtualCanvasWidth - sliceDisplay.value.parentElement.offsetWidth);
 		patternScrollSlider.value.style.opacity = '1';
 	}
-	const newColumn = Math.trunc((sliceDisplay.value.parentElement.scrollLeft - 13) / CHANNEL_WIDTH);
+	const newColumn = Math.trunc(sliceDisplay.value.parentElement.scrollLeft / CHANNEL_WIDTH);
+	currentSlidePos = sliceDisplay.value.parentElement.scrollLeft;
 	//debug('newColumn', newColumn, 'currentColumn', currentColumn, 'maxChannelsInView', maxChannelsInView, 'newColumn + MAX_SLICE_CHANNELS <= nbChannels', newColumn + maxChannelsInView <= nbChannels);
 	if (newColumn !== currentColumn && newColumn + maxChannelsInView <= nbChannels) {
 		currentColumn = newColumn;
@@ -530,14 +533,19 @@ function handleScrollBarEnable() {
 watch(patternScrollSliderPos, () => {
 	if (!sliceDisplay.value || !sliceDisplay.value.parentElement) return;
 
-	sliceDisplay.value.parentElement.scrollLeft = ((virtualCanvasWidth - CHANNEL_WIDTH) - sliceDisplay.value.parentElement.offsetWidth) * patternScrollSliderPos.value / 100;
+	sliceDisplay.value.parentElement.scrollLeft = (virtualCanvasWidth - sliceDisplay.value.parentElement.offsetWidth) * patternScrollSliderPos.value;
 });
 
 function resizeHandler(event: ResizeObserverEntry[]) {
 	if (event[0].contentRect.width === 0) return;
 	const newView = Math.ceil(event[0].contentRect.width / CHANNEL_WIDTH) + 1;
 	//if (newView !== maxChannelsInView) updateSliceSize();
-	if (newView > maxChannelsInView) forceUpdateDisplay();
+	/*
+	if (newView > maxChannelsInView) {
+		sliceDisplay.value.parentElement.scrollLeft = currentColumn * CHANNEL_WIDTH;
+		forceUpdateDisplay();
+	}
+	*/
 	maxChannelsInView = newView;
 	handleScrollBarEnable();
 }
@@ -598,10 +606,6 @@ html {
 		text-align: center;
 		max-height: 312px; /* magic_number = CHAR_HEIGHT * rowBuffer, needs to be in px */
 		scrollbar-width: none;
-
-		&::-webkit-scrollbar {
-			display: none;
-		}
 
 		.slice_display {
 			display: flex;
