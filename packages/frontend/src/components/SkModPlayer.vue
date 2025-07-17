@@ -160,7 +160,8 @@ const player = ref(new ChiptuneJsPlayer(new ChiptuneJsConfig()));
 
 let nbChannels = 0;
 let currentColumn = 0;
-let maxChannelsInView = 10;
+let currentRealColumn = 0;
+let channelsInView = 10;
 let buffer = null;
 let isSeeking = false;
 let firstFrame = true;
@@ -447,7 +448,7 @@ function rowText(slice: CanvasDisplay, row: number, pattern: number) : string {
 	let retrunStr = '|';
 
 	for (let channel = currentColumn; channel < nbChannels; channel++) {
-		if (channel === maxChannelsInView + currentColumn) break;
+		if (channel === channelsInView + currentColumn) break;
 		const part = player.value.getPatternRowChannel(pattern, row, channel);
 		retrunStr += part + '|';
 	}
@@ -497,17 +498,22 @@ function forceUpdateDisplay() {
 	});
 }
 
+let suppressSliderWatcher = false;
+let webkitTimeoutID = -1;
+
 function scrollHandler() {
-	if (!sliceDisplay.value) return;
-	if (!sliceDisplay.value.parentElement) return;
+	if (!sliceDisplay.value || !sliceDisplay.value.parentElement) return;
 
 	if (patternScrollSlider.value) {
-		patternScrollSliderPos.value = sliceDisplay.value.parentElement.scrollLeft / (virtualCanvasWidth - sliceDisplay.value.parentElement.offsetWidth);
+		suppressSliderWatcher = true;
+		webkitSliderHackSetup();
+		patternScrollSliderPos.value = sliceDisplay.value.parentElement.scrollLeft / ((virtualCanvasWidth - channelsInView + NUMBER_ROW_WIDTH) - sliceDisplay.value.parentElement.offsetWidth);
 		patternScrollSlider.value.style.opacity = '1';
 	}
 	let newColumn = Math.trunc(sliceDisplay.value.parentElement.scrollLeft / CHANNEL_WIDTH);
-	//debug('newColumn', newColumn, 'currentColumn', currentColumn, 'maxChannelsInView', maxChannelsInView, 'newColumn + maxChannelsInView > nbChannels', newColumn + maxChannelsInView > nbChannels);
-	newColumn = newColumn + maxChannelsInView > nbChannels ? nbChannels - maxChannelsInView : newColumn;
+	currentRealColumn = newColumn;
+	debug('newColumn', newColumn, 'currentColumn', currentColumn, 'maxChannelsInView', channelsInView, 'currentRealColumn', currentRealColumn);
+	newColumn = newColumn + MAX_SLICE_CHANNELS > nbChannels ? nbChannels - MAX_SLICE_CHANNELS : newColumn;
 	if (newColumn !== currentColumn) {
 		currentColumn = newColumn;
 		forceUpdateDisplay();
@@ -515,7 +521,32 @@ function scrollHandler() {
 }
 
 // https://bugs.webkit.org/show_bug.cgi?id=201556
+function webkitSliderHack () {
+	suppressSliderWatcher = false;
+	webkitTimeoutID = -1;
+	if (!patternScrollSlider.value) return;
+	patternScrollSlider.value.style.opacity = '';
+}
+
+let webkitSliderHackSetup = function() {
+	if (webkitTimeoutID > 0) {
+		window.clearTimeout(webkitTimeoutID);
+		webkitTimeoutID = -1;
+	}
+	if (webkitTimeoutID < 0) webkitTimeoutID = window.setTimeout(webkitSliderHack);
+};
+
+let webkitDisableHack = function() {
+	if (webkitTimeoutID > 0) window.clearTimeout(webkitTimeoutID);
+	webkitTimeoutID = -2;
+	// I hope SpiderMonkey/V8 is smart enough not to call empty functions.
+	webkitDisableHack = function() {};
+	webkitSliderHackSetup = function() {};
+};
+
 function scrollEndHandle() {
+	suppressSliderWatcher = false;
+	webkitDisableHack();
 	if (!patternScrollSlider.value) return;
 	patternScrollSlider.value.style.opacity = '';
 }
@@ -524,14 +555,12 @@ function handleScrollBarEnable() {
 	patternScrollSliderShow.value = (!patternHide.value && !isTouchUsing);
 	if (patternScrollSliderShow.value !== true) return;
 
-	if (!sliceDisplay.value || !sliceDisplay.value.parentElement) return;
-	patternScrollSliderShow.value = (virtualCanvasWidth > sliceDisplay.value.parentElement.offsetWidth);
+	if (sliceDisplay.value && sliceDisplay.value.parentElement) patternScrollSliderShow.value = (virtualCanvasWidth > sliceDisplay.value.parentElement.offsetWidth);
 }
 
 watch(patternScrollSliderPos, () => {
-	if (!sliceDisplay.value || !sliceDisplay.value.parentElement) return;
-
-	sliceDisplay.value.parentElement.scrollLeft = (virtualCanvasWidth - sliceDisplay.value.parentElement.offsetWidth) * patternScrollSliderPos.value;
+	if (!sliceDisplay.value || !sliceDisplay.value.parentElement || suppressSliderWatcher) return;
+	sliceDisplay.value.parentElement.scrollLeft = ((virtualCanvasWidth - channelsInView + NUMBER_ROW_WIDTH) - sliceDisplay.value.parentElement.offsetWidth) * patternScrollSliderPos.value;
 });
 
 function resizeHandler(event: ResizeObserverEntry[]) {
@@ -544,7 +573,7 @@ function resizeHandler(event: ResizeObserverEntry[]) {
 		forceUpdateDisplay();
 	}
 	*/
-	maxChannelsInView = newView;
+	channelsInView = newView;
 	handleScrollBarEnable();
 }
 
