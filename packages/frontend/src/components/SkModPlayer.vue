@@ -56,10 +56,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-const debug = console.debug;
-const debugw = console.warn;
-const debug_playPause = playPause;
-
 import { ref, nextTick, watch, onDeactivated, onMounted } from 'vue';
 import * as Misskey from 'misskey-js';
 import type { Ref } from 'vue';
@@ -80,8 +76,6 @@ const CHAR_WIDTH = 6;
 const CHAR_HEIGHT = 12;
 const ROW_OFFSET_Y = 10;
 const CHANNEL_WIDTH = CHAR_WIDTH * 14;
-const MAX_TIME_SPENT = 50;
-const MAX_TIME_PER_ROW = 15;
 const MAX_ROW_NUMBERS = 0x100;
 // It would be a great option for users to set themselves.
 const ROW_BUFFER = 26;
@@ -167,36 +161,9 @@ let isSeeking = false;
 let firstFrame = true;
 let lastPattern = -1;
 let lastDrawnRow = -1;
-let alreadyHiddenOnce = false;
 let virtualCanvasWidth = 0;
 let slices: CanvasDisplay[] = [];
 let numberRowPHTML: HTMLSpanElement;
-
-const PERF_MONITOR = {
-	startTime: 0,
-	patternTime: { current: 0, max: 0, initial: 0 },
-	start: function() {
-		this.startTime = performance.now();
-	},
-	end: function() {
-		this.patternTime.current = performance.now() - this.startTime;
-		if (this.patternTime.initial !== 0 && this.patternTime.current > this.patternTime.max) this.patternTime.max = this.patternTime.current;
-		else if (this.patternTime.initial === 0) this.patternTime.initial = this.patternTime.current;
-	},
-	asses: function() {
-		if (this.patternTime.initial !== 0 && !alreadyHiddenOnce) {
-			const trackerTime = player.value.currentPlayingNode.getProcessTime();
-
-			if (this.patternTime.initial + trackerTime.max > MAX_TIME_SPENT && trackerTime.max + this.patternTime.max > MAX_TIME_PER_ROW) {
-				alreadyHiddenOnce = true;
-				togglePattern();
-				return;
-			}
-		}
-
-		this.patternTime = { current: 0, max: 0, initial: 0 };
-	},
-};
 
 function bakeNumberRow() {
 	if (!numberRowCanvas.value && !numberRowParent.value) return;
@@ -252,9 +219,12 @@ function setupCanvas(r = 0) {
 		setupSlice(sliceCanvas2, sliceBackground2);
 		setupSlice(sliceCanvas3, sliceBackground3);
 		if (sliceDisplay.value) sliceDisplay.value.style.minWidth = (virtualCanvasWidth) + 'px';
-	} else if (r < 10) {
+	} else {
+		if (r > 9) {
+			console.warn('SkModPlayer: Jumped to the next tick multiple times without any results, is Vue ok?');
+			return;
+		}
 		nextTick(() => {
-			console.warn('SkModPlayer: Jumped to the next tick, is Vue ok?');
 			setupCanvas(r + 1);
 		});
 	}
@@ -353,15 +323,7 @@ function toggleVisible() {
 function togglePattern() {
 	patternHide.value = !patternHide.value;
 	handleScrollBarEnable();
-
-	if (player.value.getRow() === 0 && player.value.getPattern() === 0) {
-		try {
-			performSeek(true);
-		} catch (err) {
-			console.warn(err);
-		}
-		player.value.stop();
-	}
+	performSeek(true);
 }
 
 function drawSlices(skipOptimizationChecks = false) {
@@ -477,7 +439,7 @@ function display(skipOptimizationChecks = false) {
 
 	if (firstFrame) {
 		// Changing it to false should enable pattern display by default.
-		patternHide.value = false;
+		patternHide.value = true;
 		handleScrollBarEnable();
 		firstFrame = false;
 	}
@@ -515,7 +477,6 @@ function scrollHandler() {
 	}
 	const newColumn = Math.trunc(sliceDisplay.value.parentElement.scrollLeft / CHANNEL_WIDTH);
 	const correctedNewColumn = newColumn > nbChannels - MAX_SLICE_CHANNELS ? nbChannels - MAX_SLICE_CHANNELS : newColumn;
-	//debug('newColumn', newColumn, 'currentColumn', currentColumn, 'maxChannelsInView', channelsInView, 'currentRealColumn', currentRealColumn);
 	if (correctedNewColumn !== currentColumn || newColumn !== currentRealColumn) {
 		currentRealColumn = newColumn;
 		currentColumn = correctedNewColumn;
