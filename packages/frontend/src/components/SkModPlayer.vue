@@ -126,29 +126,27 @@ class CanvasDisplay {
 const isSensitive = props.module.isSensitive;
 const url = props.module.url;
 let hide = ref((prefer.s.nsfw === 'force') ? true : isSensitive && (prefer.s.nsfw !== 'ignore'));
-// Goto display function and set the default value there on the first frame.
-// Yes, this is my solution to a problem. That or have a constant kicking round doing nothing of note.
-let patternHide = ref(false);
-let playing = ref(false);
-let sliceDisplay = ref<HTMLDivElement>();
-let numberRowCanvas = ref();
-let sliceCanvas1 = ref();
-let sliceCanvas2 = ref();
-let sliceCanvas3 = ref();
-let sliceBackground1 = ref();
-let sliceBackground2 = ref();
-let sliceBackground3 = ref();
-let numberRowParent = ref();
-const displayHeight = ref(ROW_BUFFER * CHAR_HEIGHT);
-const numberRowOffset = ref(HALF_BUFFER * CHAR_HEIGHT);
+const patternHide = ref<boolean>(true);
+const playing = ref<boolean>(false);
+const sliceDisplay = ref<HTMLDivElement>();
+const numberRowCanvas = ref<HTMLCanvasElement>();
+const numberRowParent = ref<HTMLSpanElement>();
+const sliceCanvas1 = ref<HTMLCanvasElement>();
+const sliceCanvas2 = ref<HTMLCanvasElement>();
+const sliceCanvas3 = ref<HTMLCanvasElement>();
+const sliceBackground1 = ref<HTMLSpanElement>();
+const sliceBackground2 = ref<HTMLSpanElement>();
+const sliceBackground3 = ref<HTMLSpanElement>();
+const displayHeight = ref<number>(ROW_BUFFER * CHAR_HEIGHT);
+const numberRowOffset = ref<number>(HALF_BUFFER * CHAR_HEIGHT);
+const progress = ref<HTMLProgressElement>();
+const position = ref<number>(0);
+const patternScrollSlider = ref<HTMLProgressElement>();
+const patternScrollSliderShow = ref<boolean>(false);
+const patternScrollSliderPos = ref<number>(0);
+const patternDisplay = ref<HTMLDivElement>();
 let sliceWidth = 0;
 let sliceHeight = 0;
-let progress = ref<HTMLProgressElement>();
-let position = ref(0);
-let patternScrollSlider = ref<HTMLProgressElement>();
-let patternScrollSliderShow = ref(false);
-let patternScrollSliderPos = ref(0);
-let patternDisplay = ref();
 const player = ref(new ChiptuneJsPlayer(new ChiptuneJsConfig()));
 
 let nbChannels = 0;
@@ -165,23 +163,24 @@ let slices: CanvasDisplay[] = [];
 let numberRowPHTML: HTMLSpanElement;
 
 function bakeNumberRow() {
-	if (!numberRowCanvas.value && !numberRowParent.value) return;
-	numberRowCanvas.value.width = NUMBER_ROW_WIDTH;
-	numberRowCanvas.value.height = MAX_ROW_NUMBERS * CHAR_HEIGHT + 1;
-	numberRowPHTML = numberRowParent.value;
-	let ctx = numberRowCanvas.value.getContext('2d', { alpha: false }) as OffscreenCanvasRenderingContext2D;
-	ctx.font = '10px monospace';
-	ctx.fillStyle = colours.background;
-	ctx.fillRect( 0, 0, numberRowCanvas.value.width, numberRowCanvas.value.height );
+	if (numberRowCanvas.value && numberRowParent.value) {
+		numberRowCanvas.value.width = NUMBER_ROW_WIDTH;
+		numberRowCanvas.value.height = MAX_ROW_NUMBERS * CHAR_HEIGHT + 1;
+		numberRowPHTML = numberRowParent.value;
+		let ctx = numberRowCanvas.value.getContext('2d', { alpha: false }) as CanvasRenderingContext2D;
+		ctx.font = '10px monospace';
+		ctx.fillStyle = colours.background;
+		ctx.fillRect( 0, 0, numberRowCanvas.value.width, numberRowCanvas.value.height );
 
-	for (let i = 0; i <= MAX_ROW_NUMBERS; i++) {
-		let rowText = i.toString(16);
-		if (rowText.length === 1) rowText = '0' + rowText;
+		for (let i = 0; i <= MAX_ROW_NUMBERS; i++) {
+			let rowText = i.toString(16);
+			if (rowText.length === 1) rowText = '0' + rowText;
 
-		ctx.fillStyle = colours.foreground.default;
-		if (i % 4 === 0) ctx.fillStyle = colours.foreground.quarter;
+			ctx.fillStyle = colours.foreground.default;
+			if (i % 4 === 0) ctx.fillStyle = colours.foreground.quarter;
 
-		ctx.fillText(rowText, 0, 10 + i * 12);
+			ctx.fillText(rowText, 0, 10 + i * 12);
+		}
 	}
 }
 
@@ -371,7 +370,7 @@ function drawSlices(skipOptimizationChecks = false) {
 				if (sli.drawn.top > newRow) sli.drawn.top = newRow;
 				if (sli.drawn.bottom <= newRow) sli.drawn.bottom = newRow;
 
-				patternText.push(rowText(sli, newRow, pattern));
+				patternText.push(getRowText(sli, newRow, pattern));
 			}
 			drawText(sli, patternText, (currentRealColumn - currentColumn) * CHANNEL_WIDTH);
 		});
@@ -392,7 +391,7 @@ function drawSlices(skipOptimizationChecks = false) {
 			for (let itter = 0; itter < HALF_BUFFER; itter++) {
 				if (sli.drawn.top > curRow) sli.drawn.top = curRow;
 				if (sli.drawn.bottom <= curRow) sli.drawn.bottom = curRow;
-				patternText.push(rowText(sli, curRow, pattern));
+				patternText.push(getRowText(sli, curRow, pattern));
 				curRow++;
 				if (curRow > lower) break;
 			}
@@ -406,7 +405,7 @@ function drawSlices(skipOptimizationChecks = false) {
 	lastPattern = pattern;
 }
 
-function rowText(slice: CanvasDisplay, row: number, pattern: number) : string {
+function getRowText(slice: CanvasDisplay, row: number, pattern: number) : string {
 	if (!player.value.currentPlayingNode) return '';
 	if (row < 0 || row > player.value.getPatternNumRows(pattern) - 1) return '';
 	let retrunStr = '|';
@@ -437,8 +436,6 @@ function display(skipOptimizationChecks = false) {
 	if (patternHide.value && !skipOptimizationChecks) return;
 
 	if (firstFrame) {
-		// Changing it to false should enable pattern display by default.
-		patternHide.value = true;
 		handleScrollBarEnable();
 		firstFrame = false;
 	}
@@ -543,14 +540,14 @@ onDeactivated(() => {
 
 <style lang="scss" module>
 
-html {
-		--SkModPlayer-default: #ffffff;
-		--SkModPlayer-quarter: #ffff00;
-		--SkModPlayer-instr: #80e0ff;
-		--SkModPlayer-volume: #80ff80;
-		--SkModPlayer-fx: #ff80e0;
-		--SkModPlayer-operant: #ffe080;
-		--SkModPlayer-Shadow: #00000080;
+:root {
+		--MI_THEME-modPlayerDefault: #ffffff;
+		--MI_THEME-modPlayerQuarter: #ffff00;
+		--MI_THEME-modPlayerInstr: #80e0ff;
+		--MI_THEME-modPlayerVolume: #80ff80;
+		--MI_THEME-modPlayerFx: #ff80e0;
+		--MI_THEME-modPlayerOperant: #ffe080;
+		--MI_THEME-modPlayerShadow: #00000080;
 }
 
 .hide {
@@ -606,11 +603,11 @@ html {
 					position: relative;
 					background: repeating-linear-gradient(
 						to right,
-						var(--SkModPlayer-default) 0px calc(5 * 6px),
-						var(--SkModPlayer-instr) calc(5 * 6px) calc(7 * 6px),
-						var(--SkModPlayer-volume) calc(7 * 6px) calc(10 * 6px),
-						var(--SkModPlayer-fx) calc(10 * 6px) calc(13 * 6px),
-						var(--SkModPlayer-operant) calc(13 * 6px) calc(14 * 6px),
+						var(--MI_THEME-modPlayerDefault) 0px calc(5 * 6px),
+						var(--MI_THEME-modPlayerInstr) calc(5 * 6px) calc(7 * 6px),
+						var(--MI_THEME-modPlayerVolume) calc(7 * 6px) calc(10 * 6px),
+						var(--MI_THEME-modPlayerFx) calc(10 * 6px) calc(13 * 6px),
+						var(--MI_THEME-modPlayerOperant) calc(13 * 6px) calc(14 * 6px),
 					);
 					.patternSlice {
 						position: static;
@@ -638,7 +635,7 @@ html {
 		}
 
 		.patternShadowTop {
-			background: var(--SkModPlayer-Shadow);
+			background: var(--MI_THEME-modPlayerShadow);
 			width: 100%;
 			height: calc(50% - 12px);
 			translate: -50% -100%;
@@ -649,7 +646,7 @@ html {
 		}
 
 		.patternShadowBottom {
-			background: var(--SkModPlayer-Shadow);
+			background: var(--MI_THEME-modPlayerShadow);
 			width: 100%;
 			height: calc(50% - 27px);
 			translate: -50% 0%;
