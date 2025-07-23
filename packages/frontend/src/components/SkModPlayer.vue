@@ -104,9 +104,15 @@ class CanvasDisplay {
 	) {
 		this.ctx = ctx;
 		this.html = html;
-		this.drawn = { top: 0, bottom: 0 };
-		this.vPos = -0xFFFFFFFF;
-		this.transform = { x: 0, y: 0 };
+		this.drawn = {
+			top: Infinity,
+			bottom: -Infinity,
+		};
+		this.vPos = -Infinity;
+		this.transform = {
+			x: 0,
+			y: 0,
+		};
 		this.drawStart = 0;
 		this.background = background;
 		// Hacky solution to seeing raw background while the module isn't loaded yet.
@@ -117,8 +123,8 @@ class CanvasDisplay {
 	}
 	resetDrawn() {
 		this.drawn = {
-			top: 0xFFFFFFFF,
-			bottom: -0xFFFFFFFF,
+			top: Infinity,
+			bottom: -Infinity,
 		};
 	}
 }
@@ -597,7 +603,7 @@ onDeactivated(() => {
 			top: 50%;
 			span {
 				.sliceBackground {
-					display: none;
+					/* display: none; */
 					width: fit-content;
 					height: fit-content;
 					position: relative;
