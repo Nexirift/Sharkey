@@ -4,7 +4,7 @@
  */
 
 import { Inject, Injectable } from '@nestjs/common';
-import { Not, IsNull } from 'typeorm';
+import { Not, IsNull, DataSource } from 'typeorm';
 import type { FollowingsRepository, FollowRequestsRepository, UsersRepository } from '@/models/_.js';
 import { MiUser } from '@/models/User.js';
 import { QueueService } from '@/core/QueueService.js';
@@ -36,6 +36,9 @@ export class UserSuspendService {
 
 		@Inject(DI.followRequestsRepository)
 		private followRequestsRepository: FollowRequestsRepository,
+
+		@Inject(DI.db)
+		private db: DataSource,
 
 		private userEntityService: UserEntityService,
 		private queueService: QueueService,
@@ -184,10 +187,12 @@ export class UserSuspendService {
 		// Freeze follow relations with all remote users
 		await this.followingsRepository
 			.createQueryBuilder('following')
-			.andWhere('following."followeeId" = :id', { id: user.id })
-			.andWhere('following."followerHost" IS NOT NULL')
 			.update({
 				isFollowerHibernated: true,
+			})
+			.where({
+				followeeId: user.id,
+				followerHost: Not(IsNull()),
 			})
 			.execute();
 	}
@@ -195,15 +200,16 @@ export class UserSuspendService {
 	@bindThis
 	private async unFreezeAll(user: MiUser): Promise<void> {
 		// Restore follow relations with all remote users
-		await this.followingsRepository
-			.createQueryBuilder('following')
-			.innerJoin(MiUser, 'follower', 'user.id = following.followerId')
-			.andWhere('follower.isHibernated = false') // Don't unfreeze if the follower is *actually* frozen
-			.andWhere('following."followeeId" = :id', { id: user.id })
-			.andWhere('following."followerHost" IS NOT NULL')
-			.update({
-				isFollowerHibernated: false,
-			})
-			.execute();
+
+		// TypeORM does not support UPDATE with JOIN: https://github.com/typeorm/typeorm/issues/564#issuecomment-310331468
+		await this.db.query(`
+			UPDATE "following"
+				SET "isFollowerHibernated" = false
+			FROM "user"
+			WHERE "user"."id" = "following"."followerId"
+				AND "user"."isHibernated" = false -- Don't unfreeze if the follower is *actually* frozen
+				AND "followeeId" = $1
+				AND "followeeHost" IS NOT NULL
+		`, [user.id]);
 	}
 }
