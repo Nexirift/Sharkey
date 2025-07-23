@@ -131,6 +131,17 @@ export class AnnouncementService {
 
 	@bindThis
 	public async update(announcement: MiAnnouncement, values: Partial<MiAnnouncement>, moderator?: MiUser): Promise<void> {
+		// Check if this operation would produce an active dialog announcement
+		if ((values.display ?? announcement.display) === 'dialog' && (values.isActive ?? announcement.isActive)) {
+			// Check how many active dialog queries already exist, to enforce a limit
+			const query = this.announcementsRepository.createQueryBuilder('announcement');
+			query.andWhere('announcement.isActive = true');
+			const count = await query.getCount();
+			if (count >= 5) {
+				throw new IdentifiableError('c0d15f15-f18e-4a40-bcb1-f310d58204ee', 'Too many dialog announcements.');
+			}
+		}
+
 		await this.announcementsRepository.update(announcement.id, {
 			updatedAt: new Date(),
 			title: values.title,

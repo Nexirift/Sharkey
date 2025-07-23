@@ -52,7 +52,7 @@ export const meta = {
 	},
 
 	errors: {
-		tooManyDialogs: {
+		dialogLimitExceeded: {
 			message: 'Cannot create the announcement because there are too many active dialog-style announcements.',
 			code: 'DIALOG_LIMIT_EXCEEDED',
 			id: '7c1bc084-9c14-4bcf-a910-978cd8e99b5a',
@@ -101,7 +101,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				return packed;
 			} catch (e) {
 				if (e instanceof IdentifiableError) {
-					if (e.id === 'c0d15f15-f18e-4a40-bcb1-f310d58204ee') throw new ApiError(meta.errors.tooManyDialogs);
+					if (e.id === 'c0d15f15-f18e-4a40-bcb1-f310d58204ee') throw new ApiError(meta.errors.dialogLimitExceeded);
 				}
 				throw e;
 			}
