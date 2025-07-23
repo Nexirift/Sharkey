@@ -69,14 +69,7 @@ export class AnnouncementService {
 	@bindThis
 	public async create(values: Partial<MiAnnouncement>, moderator?: MiUser): Promise<{ raw: MiAnnouncement; packed: Packed<'Announcement'> }> {
 		if (values.display === 'dialog') {
-			// Check how many active dialog queries already exist, to enforce a limit
-			const dialogCount = await this.announcementsRepository.createQueryBuilder('announcement')
-				.where({ isActive: true })
-				.where({ display: 'dialog' })
-				.getCount();
-			if (dialogCount >= 5) {
-				throw new IdentifiableError('c0d15f15-f18e-4a40-bcb1-f310d58204ee', 'Too many dialog announcements.');
-			}
+			await this.assertDialogAnnouncenmentsCountLimit();
 		}
 
 		const announcement = await this.announcementsRepository.insertOne({
@@ -134,14 +127,7 @@ export class AnnouncementService {
 	public async update(announcement: MiAnnouncement, values: Partial<MiAnnouncement>, moderator?: MiUser): Promise<void> {
 		// Check if this operation would produce an active dialog announcement
 		if ((values.display ?? announcement.display) === 'dialog' && (values.isActive ?? announcement.isActive)) {
-			// Check how many active dialog queries already exist, to enforce a limit
-			const dialogCount = await this.announcementsRepository.createQueryBuilder('announcement')
-				.where({ isActive: true })
-				.where({ display: 'dialog' })
-				.getCount();
-			if (dialogCount >= 5) {
-				throw new IdentifiableError('c0d15f15-f18e-4a40-bcb1-f310d58204ee', 'Too many dialog announcements.');
-			}
+			await this.assertDialogAnnouncenmentsCountLimit();
 		}
 
 		await this.announcementsRepository.update(announcement.id, {
@@ -244,6 +230,19 @@ export class AnnouncementService {
 
 		if ((await this.getUnreadAnnouncements(user)).length === 0) {
 			this.globalEventService.publishMainStream(user.id, 'readAllAnnouncements');
+		}
+	}
+
+	private async assertDialogAnnouncenmentsCountLimit(): Promise<void> {
+		// Check how many active dialog queries already exist, to enforce a limit
+		const dialogCount = await this.announcementsRepository.createQueryBuilder('announcement')
+			.where({
+				isActive: true,
+				display: 'dialog',
+			})
+			.getCount();
+		if (dialogCount >= 5) {
+			throw new IdentifiableError('c0d15f15-f18e-4a40-bcb1-f310d58204ee', 'Too many dialog announcements.');
 		}
 	}
 }
