@@ -178,10 +178,8 @@ export class UserSuspendService {
 		// Freeze follow relations with all remote users
 		await this.followingsRepository
 			.createQueryBuilder('following')
-			.orWhere({
-				followeeId: user.id,
-				followerHost: Not(IsNull()),
-			})
+			.andWhere('following."followeeId" = :id', { id: user.id })
+			.andWhere('following."followerHost" IS NOT NULL')
 			.update({
 				isFollowerHibernated: true,
 			})
@@ -195,10 +193,8 @@ export class UserSuspendService {
 			.createQueryBuilder('following')
 			.innerJoin(MiUser, 'follower', 'user.id = following.followerId')
 			.andWhere('follower.isHibernated = false') // Don't unfreeze if the follower is *actually* frozen
-			.andWhere({
-				followeeId: user.id,
-				followerHost: Not(IsNull()),
-			})
+			.andWhere('following."followeeId" = :id', { id: user.id })
+			.andWhere('following."followerHost" IS NOT NULL')
 			.update({
 				isFollowerHibernated: false,
 			})
