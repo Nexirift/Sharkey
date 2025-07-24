@@ -38,6 +38,7 @@ import {
 import type { OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
 import { getCallerId } from '@/misc/attach-caller-id.js';
 import Ajv from 'ajv';
+import type { JSONSchemaType, ValidateFunction } from 'ajv';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 
 export type RolePolicies = {
@@ -124,9 +125,10 @@ export const DEFAULT_POLICIES: RolePolicies = {
 
 // TODO cache sync fixes (and maybe events too?)
 
-const DefaultPolicieSchema = {
+const DefaultPoliciesSchema: JSONSchemaType<RolePolicies> = {
 	type: 'object',
 	additionalProperties: false,
+	required: [],
 	properties: {
 		gtlAvailable: { type: 'boolean' },
 		ltlAvailable: { type: 'boolean' },
@@ -163,29 +165,41 @@ const DefaultPolicieSchema = {
 		canImportFollowing: { type: 'boolean' },
 		canImportMuting: { type: 'boolean' },
 		canImportUserLists: { type: 'boolean' },
-		chatAvailability: { enum: [ 'available', 'readonly', 'unavailable' ] },
+		chatAvailability: { type: 'string', enum: ['available', 'readonly', 'unavailable'] },
 		canTrend: { type: 'boolean' },
 	},
 };
 
-const RoleSchema = {
+const RoleSchema: JSONSchemaType<MiRole['policies']> = {
 	type: 'object',
 	additionalProperties: false,
+	required: [],
 	properties: Object.fromEntries(
-		Object.entries(DefaultPolicieSchema.properties).map( e => {
-			return [e[0], {
-				type: 'object',
-				additionalProperties: false,
-				properties: {
-					priority: { type: 'integer', minimum: 0, maximum: 2 },
-					useDefault: { type: 'boolean' },
-					value: e[1],
+		Object.entries(DefaultPoliciesSchema.properties!).map(
+			(
+				// I picked `canTrend` here, but any policy name is fine, the
+				// type of their bit of the schema is all the same
+				[policy, value]: [string, JSONSchemaType<RolePolicies>['properties']['canTrend']]
+			) => {
+			return [
+				policy as string,
+				{
+					type: 'object',
+					additionalProperties: false,
+					// we can't require `value` because the MiRole says `value:
+					// any` which includes undefined, so technically `value` is
+					// not really required
+					required: ['priority', 'useDefault'],
+					properties: {
+						priority: { type: 'integer', minimum: 0, maximum: 2 },
+						useDefault: { type: 'boolean' },
+						value,
+					},
 				},
-			}];
+			];
 		}),
 	),
 };
-
 
 @Injectable()
 export class RoleService implements OnApplicationShutdown, OnModuleInit {
@@ -194,8 +208,8 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 
 	private cacheService: CacheService;
 	private notificationService: NotificationService;
-	private defaultPoliciesValidator: Ajv;
-	private roleValidator: Ajv;
+	private defaultPoliciesValidator: ValidateFunction<RolePolicies>;
+	private roleValidator: ValidateFunction<MiRole['policies']>;
 
 	public static AlreadyAssignedError = class extends Error {};
 	public static NotAssignedError = class extends Error {};
@@ -922,7 +936,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 		if (!this.roleValidator) {
 			// this is copied from server/api/endpoint-base.ts
 			const ajv = new Ajv.default({
-				useDefault: true,
+				useDefaults: true,
 				allErrors: true,
 			});
 			this.roleValidator = ajv.compile(RoleSchema);
@@ -938,16 +952,15 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 		);
 	}
 
-
 	@bindThis
 	public assertValidDefaultPolicies(policies: object): void {
 		if (!this.defaultPoliciesValidator) {
 			// this is copied from server/api/endpoint-base.ts
 			const ajv = new Ajv.default({
-				useDefault: true,
+				useDefaults: true,
 				allErrors: true,
 			});
-			this.defaultPoliciesValidator = ajv.compile(DefaultPolicieSchema);
+			this.defaultPoliciesValidator = ajv.compile(DefaultPoliciesSchema);
 		}
 
 		if (this.defaultPoliciesValidator(policies)) return;
