@@ -145,8 +145,12 @@ const DefaultPoliciesSchema: JSONSchemaType<RolePolicies> = {
 		canSearchNotes: { type: 'boolean' },
 		canUseTranslator: { type: 'boolean' },
 		canHideAds: { type: 'boolean' },
-		driveCapacityMb: { type: 'integer', minimum: 0 },
-		maxFileSizeMb: { type: 'integer', minimum: 0 },
+
+		// these can be less than 1 MB
+		// (test/unit/server/api/drive/files/create.ts depends on this)
+		driveCapacityMb: { type: 'number', minimum: 0 },
+		maxFileSizeMb: { type: 'number', minimum: 0 },
+
 		alwaysMarkNsfw: { type: 'boolean' },
 		canUpdateBioMedia: { type: 'boolean' },
 		pinLimit: { type: 'integer', minimum: 0 },
