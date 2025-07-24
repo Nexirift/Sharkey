@@ -551,6 +551,7 @@ onDeactivated(() => {
 		--MI_THEME-modPlayerFx: #ff80e0;
 		--MI_THEME-modPlayerOperant: #ffe080;
 		--MI_THEME-modPlayerShadow: #00000080;
+		--MI_THEME-modPlayerSliderKnob: hsl(from var(--MI_THEME-indicator) h s calc(l * 0.1));
 }
 
 .hide {
@@ -761,7 +762,7 @@ onDeactivated(() => {
 				height: 100%;
 				width: 14px;
 				border-radius: 0;
-				background: hsl(from var(--MI_THEME-indicator) h s calc(l * 0.5));
+				background: var(--MI_THEME-modPlayerSliderKnob);
 				cursor: pointer;
 				-webkit-appearance: none;
 				box-shadow: calc(-100vw - 14px) 0 0 100vw var(--MI_THEME-accent);
@@ -790,7 +791,7 @@ onDeactivated(() => {
 				height: 100%;
 				border-radius: 0;
 				width: 14px;
-				background: hsl(from var(--MI_THEME-indicator) h s calc(l * 0.5));
+				background: var(--MI_THEME-modPlayerSliderKnob);
 				cursor: pointer;
 			}
 
@@ -823,7 +824,7 @@ onDeactivated(() => {
 				height: 100%;
 				width: 14px;
 				border-radius: 0;
-				background: hsl(from var(--MI_THEME-indicator) h s calc(l * 0.5));
+				background: var(--MI_THEME-modPlayerSliderKnob);
 				cursor: pointer;
 			}
 
