@@ -125,7 +125,7 @@ export class FetchInstanceMetadataService {
 				this.getDescription(info, dom, manifest).catch(() => null),
 			]);
 
-			this.logger.debug(`Successfuly fetched metadata of ${instance.host}`);
+			this.logger.debug(`Successfully fetched metadata of ${instance.host}`);
 
 			const updates = {
 				infoUpdatedAt: this.timeService.date,
@@ -133,7 +133,9 @@ export class FetchInstanceMetadataService {
 
 			if (info) {
 				const softwareName = typeof info.software?.name === 'string' ? info.software.name.toLowerCase() : '?';
-				if (softwareName !== instance.softwareName) updates.softwareName = updates.softwareVersion = info.software?.version;
+				if (softwareName !== instance.softwareName) updates.softwareName = softwareName;
+				const softwareVersion = typeof info.software?.version === 'string' ? info.software.version.toLowerCase() : '?';
+				if (softwareVersion !== instance.softwareVersion) updates.softwareVersion = softwareVersion;
 				if (info.openRegistrations !== instance.openRegistrations) updates.openRegistrations = info.openRegistrations;
 				const maintainerName = info.metadata ? info.metadata.maintainer ? (info.metadata.maintainer.name ?? null) : null : null;
 				if (maintainerName !== instance.maintainerName) updates.maintainerName = maintainerName;
