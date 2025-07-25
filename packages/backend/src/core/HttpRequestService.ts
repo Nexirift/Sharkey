@@ -27,16 +27,27 @@ export type HttpRequestSendOptions = {
 	validators?: ((res: Response) => void)[];
 };
 
-export function isPrivateUrl(url: URL): boolean {
-	if (!ipaddr.isValid(url.hostname)) {
-		return false;
-	}
-
-	const ip = ipaddr.parse(url.hostname);
+export async function isPrivateUrl(url: URL, lookup: net.LookupFunction): Promise<boolean> {
+	const ip = await resolveIp(url, lookup);
 	return ip.range() !== 'unicast';
 }
 
-export function isPrivateIp(allowedPrivateNetworks: PrivateNetwork[] | undefined, ip: string, port?: number): boolean {
+export async function resolveIp(url: URL, lookup: net.LookupFunction) {
+	if (ipaddr.isValid(url.hostname)) {
+		return ipaddr.parse(url.hostname);
+	}
+
+	const resolvedIp = await new Promise<string>((resolve, reject) => {
+		lookup(url.hostname, {}, (err, address) => {
+			if (err) reject(err);
+			else resolve(address as string);
+		});
+	});
+
+	return ipaddr.parse(resolvedIp);
+}
+
+export function isAllowedPrivateIp(allowedPrivateNetworks: PrivateNetwork[] | undefined, ip: string, port?: number): boolean {
 	const parsedIp = ipaddr.parse(ip);
 
 	for (const { cidr, ports } of allowedPrivateNetworks ?? []) {
@@ -53,7 +64,7 @@ export function isPrivateIp(allowedPrivateNetworks: PrivateNetwork[] | undefined
 export function validateSocketConnect(allowedPrivateNetworks: PrivateNetwork[] | undefined, socket: Socket): void {
 	const address = socket.remoteAddress;
 	if (address && ipaddr.isValid(address)) {
-		if (isPrivateIp(allowedPrivateNetworks, address, socket.remotePort)) {
+		if (isAllowedPrivateIp(allowedPrivateNetworks, address, socket.remotePort)) {
 			socket.destroy(new Error(`Blocked address: ${address}`));
 		}
 	}
@@ -142,12 +153,15 @@ export class HttpRequestService {
 		private config: Config,
 		private readonly apUtilityService: ApUtilityService,
 		private readonly utilityService: UtilityService,
+		private readonly lookup: net.LookupFunction,
 	) {
 		const cache = new CacheableLookup({
 			maxTtl: 3600,	// 1hours
 			errorTtl: 30,	// 30secs
 			lookup: false,	// nativeのdns.lookupにfallbackしない
 		});
+
+		this.lookup = cache.lookup as unknown as net.LookupFunction;
 
 		const agentOption = {
 			keepAlive: true,
@@ -321,7 +335,7 @@ export class HttpRequestService {
 		const timeout = args.timeout ?? 5000;
 
 		const parsedUrl = new URL(url);
-		const allowHttp = args.allowHttp || isPrivateUrl(parsedUrl);
+		const allowHttp = args.allowHttp || await isPrivateUrl(parsedUrl, this.lookup);
 		this.utilityService.assertUrl(parsedUrl, allowHttp);
 
 		const controller = new AbortController();
