@@ -9,7 +9,6 @@ import type { PrivateNetwork } from '@/config.js';
 import type { Socket } from 'net';
 import { HttpRequestService, isAllowedPrivateIp, isPrivateUrl, resolveIp, validateSocketConnect } from '@/core/HttpRequestService.js';
 import { parsePrivateNetworks } from '@/config.js';
-import { IPv4 } from 'ipaddr.js';
 
 describe(HttpRequestService, () => {
 	let allowedPrivateNetworks: PrivateNetwork[] | undefined;

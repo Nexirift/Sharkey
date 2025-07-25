@@ -148,12 +148,16 @@ export class HttpRequestService {
 	 */
 	public readonly httpsAgent: https.Agent;
 
+	/**
+	 * Get shared DNS resolver
+	 */
+	public readonly lookup: net.LookupFunction;
+
 	constructor(
 		@Inject(DI.config)
 		private config: Config,
 		private readonly apUtilityService: ApUtilityService,
 		private readonly utilityService: UtilityService,
-		private readonly lookup: net.LookupFunction,
 	) {
 		const cache = new CacheableLookup({
 			maxTtl: 3600,	// 1hours
