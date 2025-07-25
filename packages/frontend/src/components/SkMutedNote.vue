@@ -47,6 +47,16 @@ Displays a placeholder for a muted note.
 			</template>
 		</I18n>
 
+		<!-- Silenced users/instances -->
+		<I18n v-if="mute.isSilenced" :src="i18n.ts.silencedUserSaysSomething" tag="small">
+			<template #name>
+				<MkUserName :user="note.user"/>
+			</template>
+			<template #host>
+				{{ host }}
+			</template>
+		</I18n>
+
 		<!-- Word mutes -->
 		<template v-if="mutedWords">
 			<I18n v-if="prefer.s.showSoftWordMutedWord" :src="i18n.ts.userSaysSomethingAbout" tag="small">

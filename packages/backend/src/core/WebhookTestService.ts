@@ -409,6 +409,7 @@ export class WebhookTestService {
 			isMutingNote: false,
 			isFavorited: false,
 			isRenoted: false,
+			isSilenced: false,
 			visibility: note.visibility,
 			mentions: note.mentions,
 			visibleUserIds: note.visibleUserIds,
