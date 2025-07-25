@@ -31,14 +31,14 @@ import { parseMutes } from '@/utility/parse-mutes.js';
 import { getMutedWords } from '@/utility/check-word-mute.js';
 
 const props = defineProps<{
-	mutedWords?: string | null,
+	mutedWords: string,
 }>();
 
 const testWords = ref<string | null>(null);
 const testMatches = ref<string | null>(null);
 
 function testWordMutes() {
-	if (!testWords.value || !props.mutedWords) {
+	if (!testWords.value) {
 		testMatches.value = null;
 		return;
 	}
