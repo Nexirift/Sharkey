@@ -34,20 +34,20 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		super(meta, paramDef, async (ps, me) => {
 			const instance = await this.federatedInstanceService.fetchOrRegister(ps.host);
 
+			// Collapse empty strings to null
+			const newCW = ps.cw || null;
+			const oldCW = instance.mandatoryCW;
+
 			// Skip if there's nothing to do
-			if (instance.mandatoryCW === ps.cw) return;
+			if (oldCW === newCW) return;
 
-			// Log event first.
-			// This ensures that we don't "lose" the log if an error occurs
+			// This synchronizes caches automatically
+			await this.federatedInstanceService.update(instance.id, { mandatoryCW: newCW });
+
 			await this.moderationLogService.log(me, 'setMandatoryCWForInstance', {
-				newCW: ps.cw,
-				oldCW: instance.mandatoryCW,
+				newCW,
+				oldCW,
 				host: ps.host,
-			});
-
-			await this.federatedInstanceService.update(instance.id, {
-				// Collapse empty strings to null
-				mandatoryCW: ps.cw || null,
 			});
 		});
 	}

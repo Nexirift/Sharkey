@@ -43,23 +43,22 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			}) as MiNote & { user: MiUser };
 
 			// Collapse empty strings to null
-			const mandatoryCW = ps.cw || null;
+			const newCW = ps.cw || null;
+			const oldCW = note.mandatoryCW;
 
 			// Skip if there's nothing to do
-			if (note.mandatoryCW === mandatoryCW) return;
+			if (oldCW === newCW) return;
 
-			// Log event first.
-			// This ensures that we don't "lose" the log if an error occurs
+			await this.noteEditService.edit(note.user, note.id, { mandatoryCW: newCW });
+
 			await this.moderationLogService.log(me, 'setMandatoryCWForNote', {
-				newCW: mandatoryCW,
-				oldCW: note.mandatoryCW,
+				newCW,
+				oldCW,
 				noteId: note.id,
 				noteUserId: note.user.id,
 				noteUserUsername: note.user.username,
 				noteUserHost: note.user.host,
 			});
-
-			await this.noteEditService.edit(note.user, note.id, { mandatoryCW });
 		});
 	}
 }
