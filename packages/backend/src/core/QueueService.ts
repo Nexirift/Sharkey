@@ -269,6 +269,9 @@ export class QueueService {
 				age: 3600 * 24 * 7, // keep up to 7 days
 				count: 100,
 			},
+			deduplication: {
+				id: user.id,
+			},
 		});
 	}
 
@@ -279,6 +282,9 @@ export class QueueService {
 		}, {
 			removeOnComplete: true,
 			removeOnFail: true,
+			deduplication: {
+				id: user.id,
+			},
 		});
 	}
 
@@ -294,6 +300,9 @@ export class QueueService {
 			removeOnFail: {
 				age: 3600 * 24 * 7, // keep up to 7 days
 				count: 100,
+			},
+			deduplication: {
+				id: user.id,
 			},
 		});
 	}
@@ -311,6 +320,9 @@ export class QueueService {
 				age: 3600 * 24 * 7, // keep up to 7 days
 				count: 100,
 			},
+			deduplication: {
+				id: user.id,
+			},
 		});
 	}
 
@@ -326,6 +338,9 @@ export class QueueService {
 			removeOnFail: {
 				age: 3600 * 24 * 7, // keep up to 7 days
 				count: 100,
+			},
+			deduplication: {
+				id: user.id,
 			},
 		});
 	}
@@ -345,6 +360,9 @@ export class QueueService {
 				age: 3600 * 24 * 7, // keep up to 7 days
 				count: 100,
 			},
+			deduplication: {
+				id: user.id,
+			},
 		});
 	}
 
@@ -360,6 +378,9 @@ export class QueueService {
 			removeOnFail: {
 				age: 3600 * 24 * 7, // keep up to 7 days
 				count: 100,
+			},
+			deduplication: {
+				id: user.id,
 			},
 		});
 	}
@@ -377,6 +398,9 @@ export class QueueService {
 				age: 3600 * 24 * 7, // keep up to 7 days
 				count: 100,
 			},
+			deduplication: {
+				id: user.id,
+			},
 		});
 	}
 
@@ -393,6 +417,9 @@ export class QueueService {
 				age: 3600 * 24 * 7, // keep up to 7 days
 				count: 100,
 			},
+			deduplication: {
+				id: user.id,
+			},
 		});
 	}
 
@@ -408,6 +435,9 @@ export class QueueService {
 			removeOnFail: {
 				age: 3600 * 24 * 7, // keep up to 7 days
 				count: 100,
+			},
+			deduplication: {
+				id: user.id,
 			},
 		});
 	}
