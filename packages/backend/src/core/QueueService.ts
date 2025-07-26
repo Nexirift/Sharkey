@@ -250,6 +250,9 @@ export class QueueService {
 				age: 3600 * 24 * 7, // keep up to 7 days
 				count: 100,
 			},
+			deduplication: {
+				id: user.id,
+			},
 		});
 	}
 
