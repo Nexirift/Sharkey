@@ -28,8 +28,9 @@ export interface IObject {
 	inReplyTo?: any;
 	replies?: ICollection | IOrderedCollection | string;
 	content?: string | null;
-	startTime?: Date;
-	endTime?: Date;
+	startTime?: Date; // TODO these are wrong - should be string
+	endTime?: Date; // TODO these are wrong - should be string
+	updated?: string;
 	icon?: any;
 	image?: any;
 	mediaType?: string;
@@ -216,7 +217,6 @@ export interface IPost extends IObject {
 	quoteUrl?: string;
 	quoteUri?: string;
 	quote?: string;
-	updated?: string;
 }
 
 export interface IQuestion extends IObject {

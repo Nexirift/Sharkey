@@ -750,9 +750,11 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderUpdate(object: string | IObject, user: { id: MiUser['id'] }): IUpdate {
+	public renderUpdate(object: IObject, user: { id: MiUser['id'] }): IUpdate {
+		// Deterministic activity IDs to allow de-duplication by remote instances
+		const updatedAt = object.updated ? new Date(object.updated).getTime() : Date.now();
 		return {
-			id: `${this.config.url}/users/${user.id}#updates/${new Date().getTime()}`,
+			id: `${this.config.url}/users/${user.id}#updates/${updatedAt}`,
 			actor: this.userEntityService.genLocalUserUri(user.id),
 			type: 'Update',
 			to: ['https://www.w3.org/ns/activitystreams#Public'],
