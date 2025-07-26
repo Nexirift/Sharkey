@@ -51,7 +51,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			await this.usersRepository.update(ps.userId, { mandatoryCW: newCW });
 
 			// Synchronize caches and other processes
-			this.globalEventService.publishInternalEvent('localUserUpdated', { id: ps.userId });
+			const evt = user.host == null ? 'localUserUpdated' : 'remoteUserUpdated';
+			this.globalEventService.publishInternalEvent(evt, { id: ps.userId });
 
 			await this.moderationLogService.log(me, 'setMandatoryCW', {
 				newCW,
