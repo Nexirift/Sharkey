@@ -4640,6 +4640,7 @@ export type components = {
       display: 'dialog' | 'normal' | 'banner';
       needConfirmationToRead: boolean;
       silence: boolean;
+      confetti: boolean;
       forYou: boolean;
       isRead?: boolean;
     };
@@ -6697,6 +6698,8 @@ export type operations = {
           silence?: boolean;
           /** @default false */
           needConfirmationToRead?: boolean;
+          /** @default false */
+          confetti?: boolean;
           /**
            * Format: misskey:id
            * @default null
@@ -6910,6 +6913,7 @@ export type operations = {
           forExistingUsers?: boolean;
           silence?: boolean;
           needConfirmationToRead?: boolean;
+          confetti?: boolean;
           isActive?: boolean;
         };
       };
