@@ -184,6 +184,10 @@ export const packedUserLiteSchema = {
 			type: 'boolean',
 			nullable: false, optional: false,
 		},
+		isSilencedForMe: {
+			type: 'boolean',
+			nullable: false, optional: false,
+		},
 		requireSigninToViewContents: {
 			type: 'boolean',
 			nullable: false, optional: true,

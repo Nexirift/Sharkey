@@ -110,7 +110,7 @@ function getMutes(note: Misskey.entities.Note, withHardMute: boolean, overrides:
 	const hardMuted = override.hardMuted ?? (!isMe && withHardMute && isHardMuted(note));
 	const softMutedWords = override.softMutedWords ?? (isMe ? [] : isSoftMuted(note));
 	const sensitiveMuted = override.sensitiveMuted ?? isSensitiveMuted(note);
-	const isSilenced = override.isSilenced ?? note.isSilenced;
+	const isSilenced = override.isSilenced ?? note.user.isSilencedForMe;
 	const threadMuted = override.threadMuted ?? (!isMe && note.isMutingThread);
 	const noteMuted = override.noteMuted ?? (!isMe && note.isMutingNote);
 	const noteMandatoryCW = override.noteMandatoryCW !== undefined

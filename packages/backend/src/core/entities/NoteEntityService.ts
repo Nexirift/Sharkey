@@ -642,26 +642,13 @@ export class NoteEntityService implements OnModuleInit {
 					.getExists() : false),
 		]);
 
-		const packedUser = packedUsers?.get(note.userId) ?? this.userEntityService.pack(note.user ?? note.userId, me);
-		const isSilenced = Promise.resolve(packedUser).then(async u => {
-			if (!u.isSilenced && !u.instance?.isSilenced) return false;
-			if (note.userId === meId) return false;
-
-			if (meId) {
-				const followings = opts._hint_?.userFollowings.get(meId) ?? await this.cacheService.userFollowingsCache.fetch(meId);
-				if (followings.has(note.userId)) return false;
-			}
-
-			return true;
-		});
-
 		const packed: Packed<'Note'> = await awaitAll({
 			id: note.id,
 			threadId,
 			createdAt: this.idService.parse(note.id).date.toISOString(),
 			updatedAt: note.updatedAt ? note.updatedAt.toISOString() : undefined,
 			userId: note.userId,
-			user: packedUser,
+			user: packedUsers?.get(note.userId) ?? this.userEntityService.pack(note.user ?? note.userId, me),
 			text: text,
 			cw: note.cw,
 			mandatoryCW: note.mandatoryCW,
@@ -702,7 +689,6 @@ export class NoteEntityService implements OnModuleInit {
 			isMutingNote: mutedNotes.has(note.id),
 			isFavorited,
 			isRenoted,
-			isSilenced,
 
 			...(meId && Object.keys(reactions).length > 0 ? {
 				myReaction: this.populateMyReaction({

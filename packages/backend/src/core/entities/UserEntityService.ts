@@ -183,7 +183,7 @@ export class UserEntityService implements OnModuleInit {
 	public isRemoteUser = isRemoteUser;
 
 	@bindThis
-	public async getRelation(me: MiUser['id'], target: MiUser['id']): Promise<UserRelation> {
+	public async getRelation(me: MiUser['id'], target: MiUser['id'], hint?: { myFollowings?: Map<string, Omit<MiFollowing, 'isFollowerHibernated'>> }): Promise<UserRelation> {
 		const [
 			following,
 			isFollowed,
@@ -197,7 +197,9 @@ export class UserEntityService implements OnModuleInit {
 			memo,
 			mutedInstances,
 		] = await Promise.all([
-			this.cacheService.userFollowingsCache.fetch(me).then(f => f.get(target) ?? null),
+			hint?.myFollowings
+				? (hint.myFollowings.get(target) ?? null)
+				: this.cacheService.userFollowingsCache.fetch(me).then(f => f.get(target) ?? null),
 			this.cacheService.userFollowingsCache.fetch(target).then(f => f.has(me)),
 			this.followRequestsRepository.exists({
 				where: {
@@ -248,7 +250,8 @@ export class UserEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async getRelations(me: MiUser['id'], targets: MiUser['id'][]): Promise<Map<MiUser['id'], UserRelation>> {
+	public async getRelations(me: MiUser['id'], targets: MiUser['id'][], hint?: { myFollowings?: Map<string, Omit<MiFollowing, 'isFollowerHibernated'>> }): Promise<Map<MiUser['id'], UserRelation>> {
+		// noinspection ES6MissingAwait
 		const [
 			myFollowing,
 			myFollowers,
@@ -262,7 +265,7 @@ export class UserEntityService implements OnModuleInit {
 			memos,
 			mutedInstances,
 		] = await Promise.all([
-			this.cacheService.userFollowingsCache.fetch(me),
+			hint?.myFollowings ?? this.cacheService.userFollowingsCache.fetch(me),
 			this.cacheService.userFollowersCache.fetch(me),
 			this.followRequestsRepository.createQueryBuilder('f')
 				.select('f.followeeId')
@@ -432,6 +435,7 @@ export class UserEntityService implements OnModuleInit {
 			userIdsByUri?: Map<string, string>,
 			instances?: Map<string, MiInstance | null>,
 			securityKeyCounts?: Map<string, number>,
+			myFollowings?: Map<string, Omit<MiFollowing, 'isFollowerHibernated'>>,
 		},
 	): Promise<Packed<S>> {
 		const opts = Object.assign({
@@ -479,12 +483,14 @@ export class UserEntityService implements OnModuleInit {
 			? (opts.userProfile ?? user.userProfile ?? await this.userProfilesRepository.findOneByOrFail({ userId: user.id }))
 			: null;
 
+		const myFollowings = opts.myFollowings ?? (meId ? await this.cacheService.userFollowingsCache.fetch(meId) : undefined);
+
 		let relation: UserRelation | null = null;
 		if (meId && !isMe && isDetailed) {
 			if (opts.userRelations) {
 				relation = opts.userRelations.get(user.id) ?? null;
 			} else {
-				relation = await this.getRelation(meId, user.id);
+				relation = await this.getRelation(meId, user.id, { myFollowings });
 			}
 		}
 
@@ -537,6 +543,14 @@ export class UserEntityService implements OnModuleInit {
 		let fetchPoliciesPromise: Promise<RolePolicies> | null = null;
 		const fetchPolicies = () => fetchPoliciesPromise ??= this.roleService.getUserPolicies(user);
 
+		const instancePromise = Promise.resolve(user.host
+			? opts.instances?.has(user.host)
+				? opts.instances.get(user.host)
+				: this.federatedInstanceService.fetch(user.host)
+			: null);
+
+		const bypassSilence = isMe || (meId && myFollowings ? myFollowings.has(meId) : false);
+
 		const packed = {
 			id: user.id,
 			name: user.name,
@@ -564,13 +578,14 @@ export class UserEntityService implements OnModuleInit {
 			mandatoryCW: user.mandatoryCW,
 			rejectQuotes: user.rejectQuotes,
 			attributionDomains: user.attributionDomains,
-			isSilenced: user.isSilenced || fetchPolicies().then(r => !r.canPublicNote),
+			isSilenced: user.isSilenced,
+			isSilencedForMe: !bypassSilence && instancePromise.then(i => user.isSilenced || i?.isSilenced),
 			speakAsCat: user.speakAsCat ?? false,
 			approved: user.approved,
 			requireSigninToViewContents: user.requireSigninToViewContents === false ? undefined : true,
 			makeNotesFollowersOnlyBefore: user.makeNotesFollowersOnlyBefore ?? undefined,
 			makeNotesHiddenBefore: user.makeNotesHiddenBefore ?? undefined,
-			instance: user.host ? Promise.resolve(opts.instances?.has(user.host) ? opts.instances.get(user.host) : this.federatedInstanceService.fetch(user.host)).then(instance => instance ? {
+			instance: instancePromise.then(instance => instance ? {
 				name: instance.name,
 				softwareName: instance.softwareName,
 				softwareVersion: instance.softwareVersion,
@@ -579,7 +594,7 @@ export class UserEntityService implements OnModuleInit {
 				themeColor: instance.themeColor,
 				isSilenced: instance.isSilenced,
 				mandatoryCW: instance.mandatoryCW,
-			} : undefined) : undefined,
+			} : undefined),
 			followersCount: followersCount ?? 0,
 			followingCount: followingCount ?? 0,
 			notesCount: user.notesCount,
@@ -783,14 +798,20 @@ export class UserEntityService implements OnModuleInit {
 
 		// -- 実行者の有無や指定スキーマの種別によって要否が異なる値群を取得
 
-		const [profilesMap, userMemos, userRelations, pinNotes, userIdsByUri, instances, securityKeyCounts] = await Promise.all([
+		const myFollowingsPromise: Promise<Map<string, Omit<MiFollowing, 'isFollowerHibernated'>> | undefined> = meId
+			? this.cacheService.userFollowingsCache.fetch(meId)
+			: Promise.resolve(undefined);
+
+		const [profilesMap, userMemos, userRelations, pinNotes, userIdsByUri, instances, securityKeyCounts, myFollowings] = await Promise.all([
 			// profilesMap
 			this.cacheService.userProfileCache.fetchMany(_profilesToFetch).then(profiles => new Map(profiles.concat(_profilesFromUsers))),
 			// userMemos
 			isDetailed && meId ? this.userMemosRepository.findBy({ userId: meId })
 				.then(memos => new Map(memos.map(memo => [memo.targetUserId, memo.memo]))) : new Map(),
 			// userRelations
-			isDetailed && meId ? this.getRelations(meId, _userIds) : new Map(),
+			meId
+				? myFollowingsPromise.then(myFollowings => this.getRelations(meId, _userIds, { myFollowings }))
+				: new Map(),
 			// pinNotes
 			isDetailed ? this.userNotePiningsRepository.createQueryBuilder('pin')
 				.where('pin.userId IN (:...userIds)', { userIds: _userIds })
@@ -834,6 +855,8 @@ export class UserEntityService implements OnModuleInit {
 				.getRawMany<{ userId: string, userCount: number }>()
 				.then(counts => new Map(counts.map(c => [c.userId, c.userCount])))
 			: undefined, // .pack will fetch the keys for the requesting user if it's in the _userIds
+			// myFollowings
+			myFollowingsPromise,
 		]);
 
 		return Promise.all(

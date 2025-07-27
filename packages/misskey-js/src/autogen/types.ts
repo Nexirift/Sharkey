@@ -4307,6 +4307,7 @@ export type components = {
       isCat?: boolean;
       speakAsCat?: boolean;
       isSilenced: boolean;
+      isSilencedForMe: boolean;
       requireSigninToViewContents?: boolean;
       makeNotesFollowersOnlyBefore?: number | null;
       makeNotesHiddenBefore?: number | null;
@@ -4731,7 +4732,6 @@ export type components = {
       isMutingNote: boolean;
       isFavorited: boolean;
       isRenoted: boolean;
-      isSilenced: boolean;
       emojis?: {
         [key: string]: string;
       };
