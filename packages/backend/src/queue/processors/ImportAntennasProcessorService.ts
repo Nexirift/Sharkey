@@ -11,8 +11,8 @@ import Logger from '@/logger.js';
 import type { AntennasRepository, UsersRepository } from '@/models/_.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
-import { QueueLoggerService } from '../QueueLoggerService.js';
 import { NotificationService } from '@/core/NotificationService.js';
+import { QueueLoggerService } from '../QueueLoggerService.js';
 import { DBAntennaImportJobData } from '../types.js';
 import type * as Bull from 'bullmq';
 
@@ -79,7 +79,7 @@ export class ImportAntennasProcessorService {
 			return;
 		}
 
-		this.logger.debug(`Importing blocking of ${job.data.user.id} ...`);
+		this.logger.debug(`Importing antennas of ${job.data.user.id} ...`);
 
 		const now = new Date();
 		try {

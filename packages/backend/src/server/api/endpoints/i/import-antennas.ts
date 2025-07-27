@@ -83,7 +83,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			if (currentAntennasCount + antennas.length >= (await this.roleService.getUserPolicies(me.id)).antennaLimit) {
 				throw new ApiError(meta.errors.tooManyAntennas);
 			}
-			this.queueService.createImportAntennasJob(me, antennas);
+			await this.queueService.createImportAntennasJob(me, antennas, file.id);
 		});
 	}
 }
