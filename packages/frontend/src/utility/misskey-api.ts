@@ -144,3 +144,17 @@ export function misskeyApiGet<
 
 	return promise;
 }
+
+export function printError(error: unknown): string {
+	if (error != null && typeof(error) === 'object') {
+		if ('info' in error && typeof (error.info) === 'object' && error.info) {
+			if ('e' in error.info && typeof (error.info.e) === 'object' && error.info.e) {
+				if ('message' in error.info.e && typeof (error.info.e.message) === 'string') return error.info.e.message;
+				if ('code' in error.info.e && typeof (error.info.e.code) === 'string') return error.info.e.code;
+				if ('id' in error.info.e && typeof (error.info.e.id) === 'string') return error.info.e.id;
+			}
+		}
+	}
+
+	return String(error);
+}
