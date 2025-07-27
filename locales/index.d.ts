@@ -6005,6 +6005,14 @@ export interface Locale extends ILocale {
          * New
          */
         "new": string;
+        /**
+         * Throw confetti
+         */
+        "confetti": string;
+        /**
+         * If enabled, the announcement will display a confetti effect when viewed.
+         */
+        "confettiDescription": string;
     };
     "_initialAccountSetting": {
         /**
@@ -11984,6 +11992,14 @@ export interface Locale extends ILocale {
      * Separate with spaces for an AND condition or with line breaks for an OR condition. Using surrounding keywords with slashes will turn them into a regular expression. If you write only the domain name, it will be a backward match.
      */
     "trustedLinkUrlPatternsDescription": string;
+    /**
+     * Link to external site warning exclusion list
+     */
+    "trustedDomainsList": string;
+    /**
+     * Following links to these domains will not show a warning. Write one domain per line.
+     */
+    "trustedDomainsListDescription": string;
     /**
      * Mutuals
      */
