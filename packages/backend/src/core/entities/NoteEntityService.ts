@@ -648,7 +648,7 @@ export class NoteEntityService implements OnModuleInit {
 			if (note.userId === meId) return false;
 
 			if (meId) {
-				const followings = opts._hint_?.userFollowings ?? await this.cacheService.userFollowingsCache.fetch(meId);
+				const followings = opts._hint_?.userFollowings.get(meId) ?? await this.cacheService.userFollowingsCache.fetch(meId);
 				if (followings.has(note.userId)) return false;
 			}
 
