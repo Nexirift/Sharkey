@@ -21,9 +21,11 @@ export const meta = {
 
 	kind: 'write:chat',
 
+	// Up to 10 message burst, then 2/second
 	limit: {
-		duration: ms('1hour'),
-		max: 500,
+		type: 'bucket',
+		size: 10,
+		dripRate: 500,
 	},
 
 	res: {
