@@ -8,7 +8,7 @@ import type { HttpRequestService } from '@/core/HttpRequestService.js';
 
 type Field = { name: string, value: string };
 
-export async function verifyFieldLinks(fields: Field[], profile_url: string, httpRequestService: HttpRequestService): Promise<string[]> {
+export async function verifyFieldLinks(fields: Field[], profileUrls: string[], httpRequestService: HttpRequestService): Promise<string[]> {
 	const verified_links = [];
 	for (const field_url of fields.filter(x => URL.canParse(x.value) && ['http:', 'https:'].includes((new URL(x.value).protocol)))) {
 		try {
@@ -18,7 +18,7 @@ export async function verifyFieldLinks(fields: Field[], profile_url: string, htt
 
 			const links = doc('a[rel~="me"][href], link[rel~="me"][href]').toArray();
 
-			const includesProfileLinks = links.some(link => link.attribs.href === profile_url);
+			const includesProfileLinks = links.some(link => profileUrls.includes(link.attribs.href));
 			if (includesProfileLinks) {
 				verified_links.push(field_url.value);
 			}
