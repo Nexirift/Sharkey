@@ -267,6 +267,7 @@ function onExpandMute(note: Misskey.entities.Note) {
 				[props.user.id]: {
 					userMandatoryCW: null,
 					instanceMandatoryCW: null,
+					isSilenced: false,
 				},
 			},
 		});

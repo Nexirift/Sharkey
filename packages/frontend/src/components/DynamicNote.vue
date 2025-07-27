@@ -58,6 +58,7 @@ function onExpandNote(note: Misskey.entities.Note) {
 			user: {
 				[note.user.id]: {
 					userMandatoryCW: null,
+					isSilenced: false,
 				},
 			},
 			instance: {
