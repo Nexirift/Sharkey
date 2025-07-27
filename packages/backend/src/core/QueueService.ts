@@ -879,7 +879,7 @@ export class QueueService {
 	public async queueGetJobs(queueType: typeof QUEUE_TYPES[number], jobTypes: JobType[], search?: string) {
 		const RETURN_LIMIT = 100;
 		const queue = this.getQueue(queueType);
-		let jobs: Bull.Job[];
+		let jobs: (Bull.Job | null)[];
 
 		if (search) {
 			jobs = await queue.getJobs(jobTypes, 0, 1000);
@@ -896,7 +896,9 @@ export class QueueService {
 			jobs = await queue.getJobs(jobTypes, 0, RETURN_LIMIT);
 		}
 
-		return jobs.map(job => this.packJobData(job));
+		return jobs
+			.filter(job => job != null) // not sure how this happens, but it does
+			.map(job => this.packJobData(job));
 	}
 
 	@bindThis
