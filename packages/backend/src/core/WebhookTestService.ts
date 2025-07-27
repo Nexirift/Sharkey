@@ -409,7 +409,6 @@ export class WebhookTestService {
 			isMutingNote: false,
 			isFavorited: false,
 			isRenoted: false,
-			isSilenced: false,
 			visibility: note.visibility,
 			mentions: note.mentions,
 			visibleUserIds: note.visibleUserIds,
@@ -452,6 +451,8 @@ export class WebhookTestService {
 			username: user.username,
 			host: user.host,
 			description: 'dummy user',
+			isSilenced: false,
+			isSilencedForMe: false,
 			avatarUrl: user.avatarId == null ? null : user.avatarUrl,
 			avatarBlurhash: user.avatarId == null ? null : user.avatarBlurhash,
 			avatarDecorations: user.avatarDecorations.map(it => ({
