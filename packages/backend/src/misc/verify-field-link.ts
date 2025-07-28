@@ -10,8 +10,9 @@ type Field = { name: string, value: string };
 
 export async function verifyFieldLinks(fields: Field[], profileUrls: string[], httpRequestService: HttpRequestService): Promise<string[]> {
 	const verified_links = [];
-	for (const field_url of fields.filter(x => URL.canParse(x.value) && ['http:', 'https:'].includes((new URL(x.value).protocol)))) {
+	for (const field_url of fields) {
 		try {
+			// getHtml validates the input URL, so we can safely pass in untrusted values
 			const html = await httpRequestService.getHtml(field_url.value);
 
 			const doc = cheerio(html);
