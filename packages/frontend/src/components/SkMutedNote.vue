@@ -94,7 +94,7 @@ Displays a placeholder for a muted note.
 
 <script setup lang="ts">
 import * as Misskey from 'misskey-js';
-import { computed, ref, useTemplateRef, defineExpose } from 'vue';
+import { computed, ref, useTemplateRef } from 'vue';
 import { host } from '@@/js/config.js';
 import type { Ref } from 'vue';
 import { i18n } from '@/i18n.js';
