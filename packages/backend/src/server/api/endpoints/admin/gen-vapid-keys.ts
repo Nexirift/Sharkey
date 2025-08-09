@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import webpush from 'web-push';
-const { generateVAPIDKeys } = webpush;
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 
@@ -15,6 +14,21 @@ export const meta = {
 	requireCredential: true,
 	requireModerator: true,
 	kind: 'write:admin:meta',
+
+	res: {
+		type: 'object',
+		optional: false, nullable: false,
+		properties: {
+			public: {
+				type: 'string',
+				optional: false, nullable: false,
+			},
+			private: {
+				type: 'string',
+				optional: false, nullable: false,
+			},
+		},
+	},
 } as const;
 
 export const paramDef = {
@@ -28,8 +42,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 	constructor(
 		private moderationLogService: ModerationLogService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const keys = await generateVAPIDKeys();
+		super(meta, paramDef, async () => {
+			const keys = webpush.generateVAPIDKeys();
 
 			// TODO add moderation log
 
