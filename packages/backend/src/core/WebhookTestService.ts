@@ -452,7 +452,7 @@ export class WebhookTestService {
 			host: user.host,
 			description: 'dummy user',
 			isSilenced: false,
-			isSilencedForMe: false,
+			bypassSilence: false,
 			avatarUrl: user.avatarId == null ? null : user.avatarUrl,
 			avatarBlurhash: user.avatarId == null ? null : user.avatarBlurhash,
 			avatarDecorations: user.avatarDecorations.map(it => ({
