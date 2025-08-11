@@ -205,6 +205,22 @@ export class FanoutTimelineEndpointService {
 				};
 			}
 
+			// This one MUST be last!
+			{
+				const parentFilter = filter;
+				filter = (note) => {
+					// If this is a boost, then first run all checks for the boost target.
+					if (isPureRenote(note) && note.renote) {
+						if (!parentFilter(note.renote)) {
+							return false;
+						}
+					}
+
+					// Either way, make sure to run the checks for the actual note too!
+					return parentFilter(note);
+				};
+			}
+
 			const redisTimeline: MiNote[] = [];
 			let readFromRedis = 0;
 			let lastSuccessfulRate = 1; // rateをキャッシュする？
