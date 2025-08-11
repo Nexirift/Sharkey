@@ -247,12 +247,12 @@ export class QueryService {
 				// case 1: user does not exist (note is not reply/renote)
 				qb.orWhere(`note.${key}Id IS NULL`);
 
-				// case 2: user not silenced AND instance not silenced
+				// case 2: user not silenced AND (instance not silenced OR instance is local)
 				qb.orWhere(new Brackets(qbb => qbb
+					.andWhere(`"${key}"."isSilenced" = false`)
 					.andWhere(new Brackets(qbbb => qbbb
 						.orWhere(`"${key}Instance"."isSilenced" = false`)
-						.orWhere(`"${key}Instance" IS NULL`)))
-					.andWhere(`"${key}"."isSilenced" = false`)));
+						.orWhere(`"note"."${key}Host" IS NULL`)))));
 
 				if (me) {
 					// case 3: we are the author
