@@ -803,7 +803,7 @@ export class UserEntityService implements OnModuleInit {
 			isDetailed && meId ? this.userMemosRepository.findBy({ userId: meId })
 				.then(memos => new Map(memos.map(memo => [memo.targetUserId, memo.memo]))) : new Map(),
 			// userRelations
-			meId
+			meId && isDetailed
 				? myFollowingsPromise.then(myFollowings => this.getRelations(meId, _userIds, { myFollowings }))
 				: new Map(),
 			// pinNotes
