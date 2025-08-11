@@ -480,50 +480,58 @@ export class NoteEntityService implements OnModuleInit {
 	@bindThis
 	public async isVisibleForMe(note: MiNote, meId: MiUser['id'] | null, hint?: {
 		myFollowing?: ReadonlySet<string>,
-		myBlocking?: ReadonlySet<string>,
 		myBlockers?: ReadonlySet<string>,
-		me?: Pick<MiUser, 'host'> | null,
+		me?: Pick<MiUser, 'id' | 'host'> | null,
 	}): Promise<boolean> {
+		const [myFollowings, myBlockers, me] = await Promise.all([
+			hint?.myFollowing ?? (meId ? this.cacheService.userFollowingsCache.fetch(meId).then(fs => new Set(fs.keys())) : null),
+			hint?.myBlockers ?? (meId ? this.cacheService.userBlockedCache.fetch(meId) : null),
+			hint?.me ?? (meId ? this.cacheService.findUserById(meId) : null),
+		]);
+
+		return this.isVisibleForMeSync(note, me, myFollowings, myBlockers);
+	}
+
+	@bindThis
+	public isVisibleForMeSync(note: MiNote, me: Pick<MiUser, 'id' | 'host'> | null, myFollowings: ReadonlySet<string> | null, myBlockers: ReadonlySet<string> | null): boolean {
+		// We can always view our own notes
+		if (me?.id === note.userId) {
+			return true;
+		}
+
+		// We can *never* view blocked notes
+		if (myBlockers?.has(note.userId)) {
+			return false;
+		}
+
 		// This code must always be synchronized with the checks in generateVisibilityQuery.
 		// visibility が specified かつ自分が指定されていなかったら非表示
 		if (note.visibility === 'specified') {
-			if (meId == null) {
+			if (me == null) {
 				return false;
-			} else if (meId === note.userId) {
-				return true;
 			} else {
 				// 指定されているかどうか
-				return note.visibleUserIds.some(id => meId === id);
+				return note.visibleUserIds.includes(me.id);
 			}
 		}
 
 		// visibility が followers かつ自分が投稿者のフォロワーでなかったら非表示
 		if (note.visibility === 'followers') {
-			if (meId == null) {
+			if (me == null) {
 				return false;
-			} else if (meId === note.userId) {
-				return true;
-			} else if (note.reply && (meId === note.reply.userId)) {
+			} else if (note.reply && (me.id === note.reply.userId)) {
 				// 自分の投稿に対するリプライ
 				return true;
-			} else if (note.mentions && note.mentions.some(id => meId === id)) {
+			} else if (note.mentions.includes(me.id)) {
 				// 自分へのメンション
+				return true;
+			} else if (note.visibleUserIds.includes(me.id)) {
+				// Explicitly visible to me
 				return true;
 			} else {
 				// フォロワーかどうか
-				const [blocked, following, userHost] = await Promise.all([
-					hint?.myBlocking
-						? hint.myBlocking.has(note.userId)
-						: this.cacheService.userBlockingCache.fetch(meId).then((ids) => ids.has(note.userId)),
-					hint?.myFollowing
-						? hint.myFollowing.has(note.userId)
-						: this.cacheService.userFollowingsCache.fetch(meId).then(ids => ids.has(note.userId)),
-					hint?.me !== undefined
-						? (hint.me?.host ?? null)
-						: this.cacheService.findUserById(meId).then(me => me.host),
-				]);
-
-				if (blocked) return false;
+				const following = myFollowings?.has(note.userId);
+				const userHost = me.host;
 
 				/* If we know the following, everyhting is fine.
 
@@ -534,13 +542,6 @@ export class NoteEntityService implements OnModuleInit {
 				*/
 				return following || (note.userHost != null && userHost != null);
 			}
-		}
-
-		if (meId != null) {
-			const blockers = hint?.myBlockers ?? await this.cacheService.userBlockedCache.fetch(meId);
-			const isBlocked = blockers.has(note.userId);
-
-			if (isBlocked) return false;
 		}
 
 		return true;
