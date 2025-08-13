@@ -95,6 +95,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			this.queryService
 				.leftJoin(query, 'note.userInstance', 'userInstance');
 
+			this.queryService.generateExcludedRepliesQueryForNotes(query, me);
 			this.queryService.generateBlockedHostQueryForNote(query);
 			this.queryService.generateSuspendedUserQueryForNote(query);
 			this.queryService.generateSilencedUserQueryForNotes(query, me);

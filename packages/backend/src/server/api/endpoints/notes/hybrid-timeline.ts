@@ -185,14 +185,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		withRenotes: boolean,
 	}, me: MiLocalUser) {
 		const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'), ps.sinceId, ps.untilId)
-			// 1. by a user I follow, 2. a public local post, 3. my own post
+			// by a user I follow OR a public local post OR my own post
 			.andWhere(new Brackets(qb => this.queryService
 				.orFollowingUser(qb, ':meId', 'note.userId')
 				.orWhere(new Brackets(qbb => qbb
 					.andWhere('note.visibility = \'public\'')
 					.andWhere('note.userHost IS NULL')))
 				.orWhere(':meId = note.userId')))
-			// 1. in a channel I follow, 2. not in a channel
+			// in a channel I follow OR not in a channel
 			.andWhere(new Brackets(qb => this.queryService
 				.orFollowingChannel(qb, ':meId', 'note.channelId')
 				.orWhere('note.channelId IS NULL')))
@@ -205,11 +205,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			.limit(ps.limit);
 
 		if (!ps.withReplies) {
-			query
-				// 1. Not a reply, 2. a self-reply
-				.andWhere(new Brackets(qb => qb
-					.orWhere('note.replyId IS NULL') // 返信ではない
-					.orWhere('note.replyUserId = note.userId')));
+			this.queryService.generateExcludedRepliesQueryForNotes(query, me);
 		}
 
 		this.queryService.generateVisibilityQuery(query, me);

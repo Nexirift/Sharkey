@@ -157,16 +157,6 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			.innerJoin(this.userListMembershipsRepository.metadata.targetName, 'userListMemberships', 'userListMemberships.userId = note.userId')
 			.andWhere('userListMemberships.userListId = :userListId', { userListId: list.id })
 			.andWhere('note.channelId IS NULL') // チャンネルノートではない
-			.andWhere(new Brackets(qb => qb
-				// 返信ではない
-				.orWhere('note.replyId IS NULL')
-				// 返信だけど投稿者自身への返信
-				.orWhere('note.replyUserId = note.userId')
-				// 返信だけど自分宛ての返信
-				.orWhere('note.replyUserId = :meId')
-				// 返信だけどwithRepliesがtrueの場合
-				.orWhere('userListMemberships.withReplies = true'),
-			))
 			.setParameters({ meId: me.id })
 			.innerJoinAndSelect('note.user', 'user')
 			.leftJoinAndSelect('note.reply', 'reply')
@@ -175,6 +165,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			.leftJoinAndSelect('renote.user', 'renoteUser')
 			.limit(ps.limit);
 
+		this.queryService.generateExcludedRepliesQueryForNotes(query, me, 'userListMemberships.withReplies');
 		this.queryService.generateVisibilityQuery(query, me);
 		this.queryService.generateBlockedHostQueryForNote(query);
 		this.queryService.generateSuspendedUserQueryForNote(query);
