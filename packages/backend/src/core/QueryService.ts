@@ -276,6 +276,11 @@ export class QueryService {
 					// case 4: we are following the user
 					this.orFollowingUser(qb, ':meId', `note.${key}Id`);
 				}
+
+				// case 5: user is the same
+				if (key !== 'user') {
+					qb.orWhere(`note.${key}Id = note.userId`);
+				}
 			}));
 		};
 
