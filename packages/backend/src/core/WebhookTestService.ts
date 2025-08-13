@@ -401,6 +401,7 @@ export class WebhookTestService {
 			text: note.text,
 			cw: note.cw,
 			userId: note.userId,
+			userHost: note.userHost ?? null,
 			user: await this.toPackedUserLite(note.user ?? generateDummyUser()),
 			replyId: note.replyId,
 			renoteId: note.renoteId,

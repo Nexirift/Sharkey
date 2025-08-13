@@ -15,10 +15,11 @@ import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { FanoutTimelineName, FanoutTimelineService } from '@/core/FanoutTimelineService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { isUserRelated } from '@/misc/is-user-related.js';
-import { isPureRenote, isQuote, isRenote } from '@/misc/is-renote.js';
+import { isQuote, isRenote } from '@/misc/is-renote.js';
 import { CacheService } from '@/core/CacheService.js';
 import { isReply } from '@/misc/is-reply.js';
 import { isInstanceMuted } from '@/misc/is-instance-muted.js';
+import { NoteVisibilityService, PopulatedNote } from '@/core/NoteVisibilityService.js';
 
 type TimelineOptions = {
 	untilId: string | null,
@@ -56,6 +57,7 @@ export class FanoutTimelineEndpointService {
 		private cacheService: CacheService,
 		private fanoutTimelineService: FanoutTimelineService,
 		private utilityService: UtilityService,
+		private readonly noteVisibilityService: NoteVisibilityService,
 	) {
 	}
 
@@ -110,52 +112,14 @@ export class FanoutTimelineEndpointService {
 				filter = (note) => (!isRenote(note) || isQuote(note)) && parentFilter(note);
 			}
 
-			if (ps.me) {
-				const [
-					userIdsWhoMeMuting,
-					userIdsWhoMeMutingRenotes,
-					userIdsWhoBlockingMe,
-					userMutedInstances,
-					myFollowings,
-					myThreadMutings,
-					myNoteMutings,
-					me,
-				] = await Promise.all([
-					this.cacheService.userMutingsCache.fetch(ps.me.id),
-					this.cacheService.renoteMutingsCache.fetch(ps.me.id),
-					this.cacheService.userBlockedCache.fetch(ps.me.id),
-					this.cacheService.userProfileCache.fetch(ps.me.id).then(p => new Set(p.mutedInstances)),
-					this.cacheService.userFollowingsCache.fetch(ps.me.id).then(fs => new Set(fs.keys())),
-					this.cacheService.threadMutingsCache.fetch(ps.me.id),
-					this.cacheService.noteMutingsCache.fetch(ps.me.id),
-					this.cacheService.findUserById(ps.me.id),
-				]);
+			{
+				const me = ps.me ? await this.cacheService.findUserById(ps.me.id) : null;
+				const data = await this.noteVisibilityService.populateData(me);
 
 				const parentFilter = filter;
 				filter = (note) => {
-					if (isUserRelated(note, userIdsWhoBlockingMe, ps.ignoreAuthorFromBlock)) return false;
-					if (isUserRelated(note, userIdsWhoMeMuting, ps.ignoreAuthorFromMute)) return false;
-					if (!ps.ignoreAuthorFromMute && isRenote(note) && !isQuote(note) && userIdsWhoMeMutingRenotes.has(note.userId)) return false;
-					if (isInstanceMuted(note, userMutedInstances)) return false;
-
-					// Silenced users (when logged in)
-					if (!ps.ignoreAuthorFromUserSilence && !myFollowings.has(note.userId)) {
-						if (note.user?.isSilenced || note.user?.instance?.isSilenced) return false;
-						if (note.reply?.user?.isSilenced || note.reply?.user?.instance?.isSilenced) return false;
-						if (note.renote?.user?.isSilenced || note.renote?.user?.instance?.isSilenced) return false;
-					}
-
-					// Muted threads / posts
-					if (!ps.includeMutedNotes) {
-						if (myThreadMutings.has(note.threadId ?? note.id) || myNoteMutings.has(note.id)) return false;
-						if (note.replyId && myNoteMutings.has(note.replyId)) return false;
-						if (note.renote && (myThreadMutings.has(note.renote.threadId ?? note.renote.id) || myNoteMutings.has(note.renote.id))) return false;
-					}
-
-					// Invisible notes
-					if (!this.noteEntityService.isVisibleForMeSync(note, me, myFollowings, userIdsWhoBlockingMe)) {
-						return false;
-					}
+					const { accessible, silence } = this.noteVisibilityService.checkNoteVisibility(note as PopulatedNote, me, { data, filters: { includeSilencedAuthor: ps.ignoreAuthorFromUserSilence } });
+					if (!accessible || silence) return false;
 
 					return parentFilter(note);
 				};
@@ -187,36 +151,6 @@ export class FanoutTimelineEndpointService {
 					if (note.userId !== note.renoteUserId && noteJoined.renoteUser?.isSuspended) return false;
 					if (note.userId !== note.replyUserId && noteJoined.replyUser?.isSuspended) return false;
 
-					return parentFilter(note);
-				};
-			}
-
-			{
-				const parentFilter = filter;
-				filter = (note) => {
-					// Silenced users (when logged out)
-					if (!ps.ignoreAuthorFromUserSilence && !ps.me) {
-						if (note.user?.isSilenced || note.user?.instance?.isSilenced) return false;
-						if (note.reply?.user?.isSilenced || note.reply?.user?.instance?.isSilenced) return false;
-						if (note.renote?.user?.isSilenced || note.renote?.user?.instance?.isSilenced) return false;
-					}
-
-					return parentFilter(note);
-				};
-			}
-
-			// This one MUST be last!
-			{
-				const parentFilter = filter;
-				filter = (note) => {
-					// If this is a boost, then first run all checks for the boost target.
-					if (isPureRenote(note) && note.renote) {
-						if (!parentFilter(note.renote)) {
-							return false;
-						}
-					}
-
-					// Either way, make sure to run the checks for the actual note too!
 					return parentFilter(note);
 				};
 			}

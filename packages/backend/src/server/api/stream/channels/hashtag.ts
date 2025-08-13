@@ -43,7 +43,8 @@ class HashtagChannel extends Channel {
 		const matched = this.q.some(tags => tags.every(tag => noteTags.includes(normalizeForSearch(tag))));
 		if (!matched) return;
 
-		if (this.isNoteMutedOrBlocked(note)) return;
+		const { accessible, silence } = await this.checkNoteVisibility(note, { includeReplies: true });
+		if (!accessible || silence) return;
 
 		const clonedNote = await this.rePackNote(note);
 		this.send('note', clonedNote);

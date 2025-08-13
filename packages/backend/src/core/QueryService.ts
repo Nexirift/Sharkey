@@ -128,29 +128,44 @@ export class QueryService {
 	}
 
 	@bindThis
-	public generateMutedUserQueryForNotes<E extends ObjectLiteral>(q: SelectQueryBuilder<E>, me: { id: MiUser['id'] }, exclude?: { id: MiUser['id'] }): SelectQueryBuilder<E> {
-		// 投稿の作者をミュートしていない かつ
-		// 投稿の返信先の作者をミュートしていない かつ
-		// 投稿の引用元の作者をミュートしていない
-		return this
-			.andNotMutingUser(q, ':meId', 'note.userId', exclude)
+	public generateMutedUserQueryForNotes<E extends ObjectLiteral>(q: SelectQueryBuilder<E>, me: { id: MiUser['id'] }, excludeAuthor = false): SelectQueryBuilder<E> {
+		if (!excludeAuthor) {
+			this
+				// muted user
+				.andNotMutingUser(q, ':meId', 'note.userId')
+				// muted host
+				.andWhere(new Brackets(qb => {
+					qb.orWhere('note.userHost IS NULL');
+					this.orFollowingUser(qb, ':meId', 'note.userId');
+					this.orNotMutingInstance(qb, ':meId', 'note.userHost');
+				}));
+		}
+
+		return q
+			// muted reply user
 			.andWhere(new Brackets(qb => this
-				.orNotMutingUser(qb, ':meId', 'note.replyUserId', exclude)
+				.orNotMutingUser(qb, ':meId', 'note.replyUserId')
+				.orWhere('note.replyUserId = note.userId')
 				.orWhere('note.replyUserId IS NULL')))
+			// muted renote user
 			.andWhere(new Brackets(qb => this
-				.orNotMutingUser(qb, ':meId', 'note.renoteUserId', exclude)
+				.orNotMutingUser(qb, ':meId', 'note.renoteUserId')
+				.orWhere('note.renoteUserId = note.userId')
 				.orWhere('note.renoteUserId IS NULL')))
-			// TODO exclude should also pass a host to skip these instances
-			// mute instances
-			.andWhere(new Brackets(qb => this
-				.andNotMutingInstance(qb, ':meId', 'note.userHost')
-				.orWhere('note.userHost IS NULL')))
-			.andWhere(new Brackets(qb => this
-				.orNotMutingInstance(qb, ':meId', 'note.replyUserHost')
-				.orWhere('note.replyUserHost IS NULL')))
-			.andWhere(new Brackets(qb => this
-				.orNotMutingInstance(qb, ':meId', 'note.renoteUserHost')
-				.orWhere('note.renoteUserHost IS NULL')))
+			// muted reply host
+			.andWhere(new Brackets(qb => {
+				qb.orWhere('note.replyUserHost IS NULL');
+				qb.orWhere('note.replyUserHost = note.userHost');
+				this.orFollowingUser(qb, ':meId', 'note.replyUserId');
+				this.orNotMutingInstance(qb, ':meId', 'note.replyUserHost');
+			}))
+			// muted renote host
+			.andWhere(new Brackets(qb => {
+				qb.orWhere('note.renoteUserHost IS NULL');
+				qb.orWhere('note.renoteUserHost = note.userHost');
+				this.orFollowingUser(qb, ':meId', 'note.renoteUserId');
+				this.orNotMutingInstance(qb, ':meId', 'note.renoteUserHost');
+			}))
 			.setParameters({ meId: me.id });
 	}
 
@@ -238,10 +253,10 @@ export class QueryService {
 
 	@bindThis
 	public generateSilencedUserQueryForNotes<E extends ObjectLiteral>(q: SelectQueryBuilder<E>, me?: { id: MiUser['id'] } | null, excludeAuthor = false): SelectQueryBuilder<E> {
-		const checkFor = (key: 'user' | 'replyUser' | 'renoteUser') => {
+		const checkFor = (key: 'user' | 'replyUser' | 'renoteUser', userKey: 'note.user' | 'reply.user' | 'renote.user') => {
 			// These are de-duplicated, since most call sites already provide some of them.
 			this.leftJoin(q, `note.${key}Instance`, `${key}Instance`); // note->instance
-			this.leftJoin(q, `note.${key}`, key); // note->user
+			this.leftJoin(q, userKey, key); // note->user
 
 			q.andWhere(new Brackets(qb => {
 				// case 1: user does not exist (note is not reply/renote)
@@ -270,10 +285,10 @@ export class QueryService {
 		}
 
 		if (!excludeAuthor) {
-			checkFor('user');
+			checkFor('user', 'note.user');
 		}
-		checkFor('replyUser');
-		checkFor('renoteUser');
+		checkFor('replyUser', 'reply.user');
+		checkFor('renoteUser', 'renote.user');
 
 		return q;
 	}

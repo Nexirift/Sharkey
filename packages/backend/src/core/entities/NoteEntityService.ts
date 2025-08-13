@@ -17,8 +17,9 @@ import { DebounceLoader } from '@/misc/loader.js';
 import { IdService } from '@/core/IdService.js';
 import { ReactionsBufferingService } from '@/core/ReactionsBufferingService.js';
 import { QueryService } from '@/core/QueryService.js';
-import { isPackedPureRenote } from '@/misc/is-renote.js';
 import type { Config } from '@/config.js';
+import { NoteVisibilityService } from '@/core/NoteVisibilityService.js';
+import type { NoteVisibilityData } from '@/core/NoteVisibilityService.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { CacheService } from '../CacheService.js';
 import type { CustomEmojiService } from '../CustomEmojiService.js';
@@ -101,6 +102,9 @@ export class NoteEntityService implements OnModuleInit {
 		@Inject(DI.noteFavoritesRepository)
 		private noteFavoritesRepository: NoteFavoritesRepository,
 
+		// This is public to avoid weaving a whole new service through the Channel class hierarchy.
+		public readonly noteVisibilityService: NoteVisibilityService,
+
 		private readonly queryService: QueryService,
 		//private userEntityService: UserEntityService,
 		//private driveFileEntityService: DriveFileEntityService,
@@ -121,6 +125,8 @@ export class NoteEntityService implements OnModuleInit {
 		this.idService = this.moduleRef.get('IdService');
 	}
 
+	// Implementation moved to NoteVisibilityService
+	/*
 	@bindThis
 	private treatVisibility(packedNote: Packed<'Note'>): Packed<'Note'>['visibility'] {
 		if (packedNote.visibility === 'public' || packedNote.visibility === 'home') {
@@ -136,24 +142,31 @@ export class NoteEntityService implements OnModuleInit {
 		}
 		return packedNote.visibility;
 	}
+	*/
 
 	@bindThis
-	public async hideNotes(notes: Packed<'Note'>[], meId: string | null): Promise<void> {
-		const myFollowing = meId ? new Map(await this.cacheService.userFollowingsCache.fetch(meId)) : new Map<string, Omit<MiFollowing, 'isFollowerHibernated'>>();
-		const myBlockers = meId ? new Set(await this.cacheService.userBlockedCache.fetch(meId)) : new Set<string>();
+	public async hideNotes(notes: Packed<'Note'>[], meId: string | null, hint?: Partial<NoteVisibilityData>): Promise<void> {
+		const me = meId ? await this.cacheService.findUserById(meId) : null;
+		const data = await this.noteVisibilityService.populateData(me, hint);
 
-		// This shouldn't actually await, but we have to wrap it anyway because hideNote() is async
-		await Promise.all(notes.map(note => this.hideNote(note, meId, {
-			myFollowing,
-			myBlockers,
-		})));
+		for (const note of notes) {
+			this.hideNote(note, me, data);
+		}
 	}
 
 	@bindThis
-	public async hideNote(packedNote: Packed<'Note'>, meId: MiUser['id'] | null, hint?: {
-		myFollowing?: ReadonlyMap<string, Omit<MiFollowing, 'isFollowerHibernated'>> | ReadonlySet<string>,
-		myBlockers?: ReadonlySet<string>,
-	}): Promise<void> {
+	public async hideNoteAsync(packedNote: Packed<'Note'>, me: string | Pick<MiUser, 'id' | 'host'> | null, hint?: Partial<NoteVisibilityData>): Promise<void> {
+		const { redact } = await this.noteVisibilityService.checkNoteVisibilityAsync(packedNote, me, { hint });
+
+		if (redact) {
+			this.redactNoteContents(packedNote);
+		}
+	}
+
+	@bindThis
+	public hideNote(packedNote: Packed<'Note'>, me: Pick<MiUser, 'id' | 'host'> | null, data: NoteVisibilityData): void {
+		// Implementation moved to NoteVisibilityService
+		/*
 		if (meId === packedNote.userId) return;
 
 		// TODO: isVisibleForMe を使うようにしても良さそう(型違うけど)
@@ -232,8 +245,17 @@ export class NoteEntityService implements OnModuleInit {
 
 			if (isBlocked) hide = true;
 		}
+		*/
+
+		const hide = this.noteVisibilityService.checkNoteVisibility(packedNote, me, { data }).redact;
 
 		if (hide) {
+			this.redactNoteContents(packedNote);
+		}
+	}
+
+	private redactNoteContents(packedNote: Packed<'Note'>) {
+		{
 			packedNote.visibleUserIds = undefined;
 			packedNote.fileIds = [];
 			packedNote.files = [];
@@ -477,6 +499,8 @@ export class NoteEntityService implements OnModuleInit {
 		return undefined;
 	}
 
+	// Implementation moved to NoteVisibilityService
+	/*
 	@bindThis
 	public async isVisibleForMe(note: MiNote, meId: MiUser['id'] | null, hint?: {
 		myFollowing?: ReadonlySet<string>,
@@ -493,7 +517,7 @@ export class NoteEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	public isVisibleForMeSync(note: MiNote, me: Pick<MiUser, 'id' | 'host'> | null, myFollowings: ReadonlySet<string> | null, myBlockers: ReadonlySet<string> | null): boolean {
+	public isVisibleForMeSync(note: MiNote | Packed<'Note'>, me: Pick<MiUser, 'id' | 'host'> | null, myFollowings: ReadonlySet<string> | null, myBlockers: ReadonlySet<string> | null): boolean {
 		// We can always view our own notes
 		if (me?.id === note.userId) {
 			return true;
@@ -509,6 +533,8 @@ export class NoteEntityService implements OnModuleInit {
 		if (note.visibility === 'specified') {
 			if (me == null) {
 				return false;
+			} else if (!note.visibleUserIds) {
+				return false;
 			} else {
 				// 指定されているかどうか
 				return note.visibleUserIds.includes(me.id);
@@ -522,9 +548,13 @@ export class NoteEntityService implements OnModuleInit {
 			} else if (note.reply && (me.id === note.reply.userId)) {
 				// 自分の投稿に対するリプライ
 				return true;
+			} else if (!note.mentions) {
+				return false;
 			} else if (note.mentions.includes(me.id)) {
 				// 自分へのメンション
 				return true;
+			} else if (!note.visibleUserIds) {
+				return false;
 			} else if (note.visibleUserIds.includes(me.id)) {
 				// Explicitly visible to me
 				return true;
@@ -533,19 +563,19 @@ export class NoteEntityService implements OnModuleInit {
 				const following = myFollowings?.has(note.userId);
 				const userHost = me.host;
 
-				/* If we know the following, everyhting is fine.
-
-				But if we do not know the following, it might be that both the
-				author of the note and the author of the like are remote users,
-				in which case we can never know the following. Instead we have
-				to assume that the users are following each other.
-				*/
+				// If we know the following, everyhting is fine.
+				//
+				// But if we do not know the following, it might be that both the
+				// author of the note and the author of the like are remote users,
+				// in which case we can never know the following. Instead we have
+				// to assume that the users are following each other.
 				return following || (note.userHost != null && userHost != null);
 			}
 		}
 
 		return true;
 	}
+	*/
 
 	@bindThis
 	public async packAttachedFiles(fileIds: MiNote['fileIds'], packedFiles: Map<MiNote['fileIds'][number], Packed<'DriveFile'> | null>): Promise<Packed<'DriveFile'>[]> {
@@ -649,6 +679,7 @@ export class NoteEntityService implements OnModuleInit {
 			createdAt: this.idService.parse(note.id).date.toISOString(),
 			updatedAt: note.updatedAt ? note.updatedAt.toISOString() : undefined,
 			userId: note.userId,
+			userHost: note.userHost,
 			user: packedUsers?.get(note.userId) ?? this.userEntityService.pack(note.user ?? note.userId, me),
 			text: text,
 			cw: note.cw,
@@ -719,12 +750,14 @@ export class NoteEntityService implements OnModuleInit {
 			} : {}),
 		});
 
-		this.treatVisibility(packed);
+		this.noteVisibilityService.syncVisibility(packed);
 
 		if (!opts.skipHide) {
-			await this.hideNote(packed, meId, meId == null ? undefined : {
-				myFollowing: opts._hint_?.userFollowings.get(meId),
-				myBlockers: opts._hint_?.userBlockers.get(meId),
+			await this.hideNoteAsync(packed, meId, {
+				userFollowings: meId ? opts._hint_?.userFollowings.get(meId) : null,
+				userBlockers: meId ? opts._hint_?.userBlockers.get(meId) : null,
+				userMutedNotes: opts._hint_?.mutedNotes,
+				userMutedThreads: opts._hint_?.mutedThreads,
 			});
 		}
 

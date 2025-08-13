@@ -50,6 +50,10 @@ export const packedNoteSchema = {
 			optional: false, nullable: false,
 			format: 'id',
 		},
+		userHost: {
+			type: 'string',
+			optional: false, nullable: true,
+		},
 		user: {
 			type: 'object',
 			ref: 'UserLite',
