@@ -784,75 +784,8 @@ export class NoteEntityService implements OnModuleInit {
 	) {
 		if (notes.length === 0) return [];
 
-		const targetNotesMap = new Map<string, MiNote>();
-		const targetNotesToFetch : string[] = [];
-		for (const note of notes) {
-			if (isPureRenote(note)) {
-				// we may need to fetch 'my reaction' for renote target.
-				if (note.renote) {
-					targetNotesMap.set(note.renote.id, note.renote);
-					if (note.renote.reply) {
-						// idem if the renote is also a reply.
-						targetNotesMap.set(note.renote.reply.id, note.renote.reply);
-					}
-				} else if (options?.detail) {
-					targetNotesToFetch.push(note.renoteId);
-				}
-			} else {
-				if (note.reply) {
-					// idem for OP of a regular reply.
-					targetNotesMap.set(note.reply.id, note.reply);
-				} else if (note.replyId && options?.detail) {
-					targetNotesToFetch.push(note.replyId);
-				}
-
-				targetNotesMap.set(note.id, note);
-			}
-		}
-
-		// Don't fetch notes that were added by ID and then found inline in another note.
-		for (let i = targetNotesToFetch.length - 1; i >= 0; i--) {
-			if (targetNotesMap.has(targetNotesToFetch[i])) {
-				targetNotesToFetch.splice(i, 1);
-			}
-		}
-
-		// Populate any relations that weren't included in the source
-		if (targetNotesToFetch.length > 0) {
-			const newNotes = await this.notesRepository.find({
-				where: {
-					id: In(targetNotesToFetch),
-				},
-				relations: {
-					user: {
-						userProfile: true,
-					},
-					reply: {
-						user: {
-							userProfile: true,
-						},
-					},
-					renote: {
-						user: {
-							userProfile: true,
-						},
-						reply: {
-							user: {
-								userProfile: true,
-							},
-						},
-					},
-					channel: true,
-				},
-			});
-
-			for (const note of newNotes) {
-				targetNotesMap.set(note.id, note);
-			}
-		}
-
-		const targetNotes = Array.from(targetNotesMap.values());
-		const noteIds = Array.from(targetNotesMap.keys());
+		const targetNotes = await this.fetchRequiredNotes(notes, options?.detail ?? false);
+		const noteIds = Array.from(new Set(targetNotes.map(n => n.id)));
 
 		const usersMap = new Map<string, MiUser | string>();
 		const allUsers = notes.flatMap(note => [
@@ -957,6 +890,84 @@ export class NoteEntityService implements OnModuleInit {
 				renotedNotes,
 			},
 		})));
+	}
+
+	// TODO find a way to de-duplicate pack() calls when we have multiple references to the same note.
+
+	private async fetchRequiredNotes(notes: MiNote[], detail: boolean): Promise<MiNote[]> {
+		const notesMap = new Map<string, MiNote>();
+		const notesToFetch = new Set<string>();
+
+		function addNote(note: string | MiNote | null | undefined) {
+			if (note == null) return;
+
+			if (typeof(note) === 'object') {
+				notesMap.set(note.id, note);
+				notesToFetch.delete(note.id);
+			} else if (detail) {
+				if (!notesMap.has(note)) {
+					notesToFetch.add(note);
+				}
+			}
+		}
+
+		// Enumerate 1st-tier dependencies
+		for (const note of notes) {
+			// Add note itself
+			addNote(note);
+
+			// Add renote
+			if (note.renoteId) {
+				if (note.renote) {
+					addNote(note.renote);
+					addNote(note.renote.reply ?? note.renote.replyId);
+					addNote(note.renote.renote ?? note.renote.renoteId);
+				} else {
+					addNote(note.renoteId);
+				}
+			}
+
+			// Add reply
+			addNote(note.reply ?? note.replyId);
+		}
+
+		// Populate 1st-tier dependencies
+		if (notesToFetch.size > 0) {
+			const newNotes = await this.notesRepository.find({
+				where: {
+					id: In(Array.from(notesToFetch)),
+				},
+				relations: {
+					reply: true,
+					renote: {
+						reply: true,
+						renote: true,
+					},
+					channel: true,
+				},
+			});
+
+			for (const note of newNotes) {
+				addNote(note);
+			}
+
+			notesToFetch.clear();
+		}
+
+		// Extract second-tier dependencies
+		for (const note of Array.from(notesMap.values())) {
+			if (isPureRenote(note) && note.renote) {
+				if (note.renote.reply && !notesMap.has(note.renote.reply.id)) {
+					notesMap.set(note.renote.reply.id, note.renote.reply);
+				}
+
+				if (note.renote.renote && !notesMap.has(note.renote.renote.id)) {
+					notesMap.set(note.renote.renote.id, note.renote.renote);
+				}
+			}
+		}
+
+		return Array.from(notesMap.values());
 	}
 
 	@bindThis
