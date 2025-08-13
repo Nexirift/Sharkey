@@ -313,6 +313,35 @@ export class QueryService {
 			}));
 		};
 
+		const checkForRenote = (_q: WhereExpressionBuilder, key: 'replyUser' | 'renoteUser', userRel: 'renoteReply.user' | 'renoteRenote.user', userAlias: 'renoteReplyUser' | 'renoteRenoteUser') => {
+			const instanceAlias = `${userAlias}Instance`;
+			this.leftJoin(q, `renote.${key}Instance`, instanceAlias); // note->instance
+			this.leftJoin(q, userRel, userAlias); // note->user
+
+			_q.andWhere(new Brackets(qb => {
+				// case 1: user does not exist (note is not reply/renote)
+				qb.orWhere(`renote.${key}Id IS NULL`);
+
+				// case 2: user not silenced AND (instance not silenced OR instance is local)
+				qb.orWhere(new Brackets(qbb => qbb
+					.andWhere(`"${userAlias}"."isSilenced" = false`)
+					.andWhere(new Brackets(qbbb => qbbb
+						.orWhere(`"${instanceAlias}"."isSilenced" = false`)
+						.orWhere(`"renote"."${key}Host" IS NULL`)))));
+
+				if (me) {
+					// case 3: we are the author
+					qb.orWhere(`renote.${key}Id = :meId`);
+
+					// case 4: we are following the user
+					this.orFollowingUser(qb, ':meId', `renote.${key}Id`);
+				}
+
+				// case 5: user is the same
+				qb.orWhere(`renote.${key}Id = renote.userId`);
+			}));
+		};
+
 		// Set parameters only once
 		if (me) {
 			q.setParameters({ meId: me.id });
@@ -323,6 +352,16 @@ export class QueryService {
 		}
 		checkFor('replyUser', 'reply.user');
 		checkFor('renoteUser', 'renote.user');
+
+		// Filter for boosts
+		this.leftJoin(q, 'renote.reply', 'renoteReply');
+		this.leftJoin(q, 'renote.renote', 'renoteRenote');
+		q.andWhere(new Brackets(qb => this
+			.orIsNotRenote(qb, 'note')
+			.orWhere(new Brackets(qbb => {
+				checkForRenote(qbb, 'replyUser', 'renoteReply.user', 'renoteReplyUser');
+				checkForRenote(qbb, 'renoteUser', 'renoteRenote.user', 'renoteRenoteUser');
+			}))));
 
 		return q;
 	}
