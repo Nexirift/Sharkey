@@ -232,25 +232,25 @@ export class FanoutTimelineEndpointService {
 			}
 			if (note.reply) {
 				usersToFetch.add(note.reply.userId);
-				if (note.replyUserHost) {
-					instancesToFetch.add(note.replyUserHost);
+				if (note.reply.userHost) {
+					instancesToFetch.add(note.reply.userHost);
 				}
 			}
 			if (note.renote) {
 				usersToFetch.add(note.renote.userId);
-				if (note.renoteUserHost) {
-					instancesToFetch.add(note.renoteUserHost);
+				if (note.renote.userHost) {
+					instancesToFetch.add(note.renote.userHost);
 				}
 				if (note.renote.reply) {
 					usersToFetch.add(note.renote.reply.userId);
-					if (note.renote.replyUserHost) {
-						instancesToFetch.add(note.renote.replyUserHost);
+					if (note.renote.reply.userHost) {
+						instancesToFetch.add(note.renote.reply.userHost);
 					}
 				}
 				if (note.renote.renote) {
 					usersToFetch.add(note.renote.renote.userId);
-					if (note.renote.renoteUserHost) {
-						instancesToFetch.add(note.renote.renoteUserHost);
+					if (note.renote.renote.userHost) {
+						instancesToFetch.add(note.renote.renote.userHost);
 					}
 				}
 			}
