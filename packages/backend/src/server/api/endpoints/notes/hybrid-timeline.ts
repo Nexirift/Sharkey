@@ -153,7 +153,6 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				me,
 				redisTimelines: timelineConfig,
 				useDbFallback: this.serverSettings.enableFanoutTimelineDbFallback,
-				alwaysIncludeMyNotes: true,
 				excludePureRenotes: !ps.withRenotes,
 				excludeBots: !ps.withBots,
 				dbFallback: async (untilId, sinceId, limit) => await this.getFromDb({

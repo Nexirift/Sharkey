@@ -129,7 +129,6 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					: ps.withReplies ? ['localTimeline', 'localTimelineWithReplies']
 					: me ? ['localTimeline', `localTimelineWithReplyTo:${me.id}`]
 					: ['localTimeline'],
-				alwaysIncludeMyNotes: true,
 				excludePureRenotes: !ps.withRenotes,
 				excludeBots: !ps.withBots,
 				dbFallback: async (untilId, sinceId, limit) => await this.getFromDb({

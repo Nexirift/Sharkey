@@ -31,7 +31,6 @@ type TimelineOptions = {
 	useDbFallback: boolean,
 	redisTimelines: FanoutTimelineName[],
 	noteFilter?: (note: MiNote) => boolean,
-	alwaysIncludeMyNotes?: boolean;
 	ignoreAuthorFromBlock?: boolean;
 	ignoreAuthorFromMute?: boolean;
 	ignoreAuthorFromInstanceBlock?: boolean;
@@ -87,12 +86,6 @@ export class FanoutTimelineEndpointService {
 
 		if (!shouldFallbackToDb) {
 			let filter = ps.noteFilter ?? (_note => true);
-
-			if (ps.alwaysIncludeMyNotes && ps.me) {
-				const me = ps.me;
-				const parentFilter = filter;
-				filter = (note) => note.userId === me.id || parentFilter(note);
-			}
 
 			if (ps.excludeNoFiles) {
 				const parentFilter = filter;
