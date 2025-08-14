@@ -167,8 +167,16 @@ export class NoteVisibilityService {
 		// Copy note since we mutate it below
 		note = {
 			...note,
-			renote: note.renote ? { ...note.renote } : null,
-			reply: note.reply ? { ...note.reply } : null,
+			renote: note.renote ? {
+				...note.renote,
+				renote: note.renote.renote ? { ...note.renote.renote } : null,
+				reply: note.renote.reply ? { ...note.renote.reply } : null,
+			} : null,
+			reply: note.reply ? {
+				...note.reply,
+				renote: note.reply.renote ? { ...note.reply.renote } : null,
+				reply: note.reply.reply ? { ...note.reply.reply } : null,
+			} : null,
 		} as PopulatedNote;
 
 		this.syncVisibility(note);
