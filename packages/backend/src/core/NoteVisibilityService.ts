@@ -280,7 +280,7 @@ export class NoteVisibilityService {
 	}
 
 	// Based on NoteEntityService.hideNote
-	private shouldRedact(note: PopulatedNote, user: PopulatedUser, data: NoteVisibilityData): boolean {
+	private shouldRedact(note: PopulatedNote, user: PopulatedUser): boolean {
 		// Never redact our own notes
 		if (user?.id === note.userId) return false;
 
@@ -298,12 +298,6 @@ export class NoteVisibilityService {
 			const hiddenOpt1 = hiddenBefore <= 0 && (Date.now() - createdAt > 0 - hiddenBefore);
 			const hiddenOpt2 = hiddenBefore > 0 && (createdAt < hiddenBefore);
 			if (hiddenOpt1 || hiddenOpt2) return true;
-		}
-
-		// Redact if inaccessible.
-		// We have to repeat the check in case note visibility changed in treatVisibility!
-		if (!this.isAccessible(note, user, data)) {
-			return true;
 		}
 
 		// Otherwise don't redact
