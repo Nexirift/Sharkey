@@ -216,9 +216,9 @@ export class FanoutTimelineEndpointService {
 		// These fields *must* be populated or NoteVisibilityService won't work right!
 		await this.populateUsers(notes);
 
-		notes.filter(noteFilter).sort((a, b) => idCompare(a.id, b.id));
-
-		return notes;
+		return notes
+			.filter(noteFilter)
+			.sort((a, b) => idCompare(a.id, b.id));
 	}
 
 	private async populateUsers(notes: MiNote[]): Promise<void> {
