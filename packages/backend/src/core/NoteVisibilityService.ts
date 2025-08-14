@@ -180,24 +180,25 @@ export class NoteVisibilityService {
 		} as PopulatedNote;
 
 		this.syncVisibility(note);
+		return this.checkNoteVisibilityFor(note, user, opts);
+	}
 
+	private checkNoteVisibilityFor(note: PopulatedNote, user: PopulatedUser, opts: { filters?: NoteVisibilityFilters, data: NoteVisibilityData }): NoteVisibilityResult {
 		const accessible = this.isAccessible(note, user, opts.data);
-		const redact = this.shouldRedact(note, user, opts.data);
+		const redact = !accessible || this.shouldRedact(note, user);
 		const silence = this.shouldSilence(note, user, opts.data, opts.filters);
-
-		const baseVisibility = { accessible, redact, silence };
 
 		// For boosts (pure renotes), we must recurse and pick the lowest common access level.
 		if (isPopulatedBoost(note)) {
-			const boostVisibility = this.checkNoteVisibility(note.renote, user, opts);
+			const boostVisibility = this.checkNoteVisibilityFor(note.renote, user, opts);
 			return {
-				accessible: baseVisibility.accessible && boostVisibility.accessible,
-				redact: baseVisibility.redact || boostVisibility.redact,
-				silence: baseVisibility.silence || boostVisibility.silence,
+				accessible: accessible && boostVisibility.accessible,
+				redact: redact || boostVisibility.redact,
+				silence: silence || boostVisibility.silence,
 			};
 		}
 
-		return baseVisibility;
+		return { accessible, redact, silence };
 	}
 
 	// Based on NoteEntityService.isVisibleForMe
