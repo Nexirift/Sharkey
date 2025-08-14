@@ -266,8 +266,9 @@ export class QueryService {
 					.orWhere(`"${key}Instance" IS NULL`) // local
 					.orWhere(`"${key}Instance"."isBlocked" = false`); // not blocked
 
-				if (excludeAuthor) {
-					qb.orWhere(`note.userId = note.${key}Id`); // author
+				if (key !== 'user') {
+					// Don't re-check self-replies and self-renote targets
+					qb.orWhere(`note.userId = note.${key}Id`);
 				}
 			}));
 
