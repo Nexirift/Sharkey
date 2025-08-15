@@ -449,6 +449,8 @@ export class ImportNotesProcessorService {
 
 		if (post.directMessage) return;
 
+                const visibility = post.to.includes('https://www.w3.org/ns/activitystreams#Public') ? 'public' : post.cc.includes('https://www.w3.org/ns/activitystreams#Public') ? 'home' : 'followers';
+
 		const date = new Date(post.object.published);
 		let text = undefined;
 		const files: MiDriveFile[] = [];
@@ -516,7 +518,7 @@ export class ImportNotesProcessorService {
 			}
 		}
 
-		const createdNote = await this.noteCreateService.import(user, { createdAt: date, text: text, files: files, apMentions: new Array(0), cw: post.object.sensitive ? post.object.summary : null, reply: reply });
+		const createdNote = await this.noteCreateService.import(user, { createdAt: date, text: text, files: files, visibility: visibility, apMentions: new Array(0), cw: post.object.sensitive ? post.object.summary : null, reply: reply });
 		if (post.childNotes) this.queueService.createImportPleroToDbJob(user, post.childNotes, createdNote.id);
 	}
 
