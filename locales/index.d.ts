@@ -13379,6 +13379,10 @@ export interface Locale extends ILocale {
          */
         "keepFilesInUseDescription": string;
     };
+    /**
+     * Custom font size
+     */
+    "customFontSize": string;
 }
 declare const locales: {
     [lang: string]: Locale;
