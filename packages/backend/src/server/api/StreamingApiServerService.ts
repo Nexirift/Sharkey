@@ -270,8 +270,12 @@ export class StreamingApiServerService implements OnApplicationShutdown {
 			if (user) {
 				this.usersService.updateLastActiveDate(user);
 			}
+			const pong = () => {
+				this.#connections.set(connection, Date.now());
+			};
 
 			connection.once('close', () => {
+				connection.off('pong', pong);
 				ev.removeAllListeners();
 				stream.dispose();
 				this.#globalEv.off('message', onRedisMessage);
@@ -279,9 +283,7 @@ export class StreamingApiServerService implements OnApplicationShutdown {
 				if (userUpdateIntervalId) clearInterval(userUpdateIntervalId);
 			});
 
-			connection.on('pong', () => {
-				this.#connections.set(connection, Date.now());
-			});
+			connection.on('pong', pong);
 		});
 
 		// 一定期間通信が無いコネクションは実際には切断されている可能性があるため定期的にterminateする
