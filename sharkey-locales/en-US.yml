@@ -479,6 +479,10 @@ _auth:
   allowed: "Allowed"
 _announcement:
   new: "New"
+  onlyForRoles: "Restrict to roles"
+  onlyForRolesChange: "Change role restrictions"
+  onlyForRolesUnrestricted: "Shown to everyone"
+  onlyForRolesRestricted: "Shown to members of {roles} roles"
   confetti: "Throw confetti"
   confettiDescription: "If enabled, the announcement will display a confetti effect when viewed."
 _deck:
