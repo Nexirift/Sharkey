@@ -275,6 +275,7 @@ export class StreamingApiServerService implements OnApplicationShutdown {
 			};
 
 			connection.once('close', () => {
+				connection.off('error', this.onWsError);
 				connection.off('pong', pong);
 				ev.removeAllListeners();
 				stream.dispose();
@@ -283,6 +284,7 @@ export class StreamingApiServerService implements OnApplicationShutdown {
 				if (userUpdateIntervalId) clearInterval(userUpdateIntervalId);
 			});
 
+			connection.on('error', this.onWsError);
 			connection.on('pong', pong);
 		});
 
