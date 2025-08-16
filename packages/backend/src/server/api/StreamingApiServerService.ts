@@ -322,11 +322,13 @@ export class StreamingApiServerService implements OnApplicationShutdown {
 
 		await new Promise<void>((resolve, reject) => {
 			this.#wss.close(err => {
-				this.#wss.off('error', this.onWsError);
 				if (err) reject(err);
 				else resolve();
 			});
 		});
+
+		// Don't disconnect this until *after* close returns
+		this.#wss.off('error', this.onWsError);
 	}
 
 	@bindThis
