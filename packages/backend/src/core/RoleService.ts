@@ -70,6 +70,7 @@ export type RolePolicies = {
 	canImportUserLists: boolean;
 	chatAvailability: 'available' | 'readonly' | 'unavailable';
 	canTrend: boolean;
+	canViewFederation: boolean;
 };
 
 export const DEFAULT_POLICIES: RolePolicies = {
@@ -110,6 +111,7 @@ export const DEFAULT_POLICIES: RolePolicies = {
 	canImportUserLists: true,
 	chatAvailability: 'available',
 	canTrend: true,
+	canViewFederation: true,
 };
 
 @Injectable()
@@ -472,6 +474,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 			canImportUserLists: calc('canImportUserLists', vs => vs.some(v => v === true)),
 			chatAvailability: calc('chatAvailability', aggregateChatAvailability),
 			canTrend: calc('canTrend', vs => vs.some(v => v === true)),
+			canViewFederation: calc('canViewFederation', vs => vs.some(v => v === true)),
 		};
 	}
 

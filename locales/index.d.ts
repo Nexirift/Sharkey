@@ -6006,6 +6006,22 @@ export interface Locale extends ILocale {
          */
         "new": string;
         /**
+         * Restrict to roles
+         */
+        "onlyForRoles": string;
+        /**
+         * Change role restrictions
+         */
+        "onlyForRolesChange": string;
+        /**
+         * Shown to everyone
+         */
+        "onlyForRolesUnrestricted": string;
+        /**
+         * Shown to members of {roles} roles
+         */
+        "onlyForRolesRestricted": ParameterizedString<"roles">;
+        /**
          * Throw confetti
          */
         "confetti": string;
@@ -7651,6 +7667,10 @@ export interface Locale extends ILocale {
              * Can appear in trending notes / users
              */
             "canTrend": string;
+            /**
+             * Can view federation stats and details of remote instances
+             */
+            "canViewFederation": string;
         };
         "_condition": {
             /**

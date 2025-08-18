@@ -5558,6 +5558,7 @@ export type components = {
       /** @enum {string} */
       chatAvailability: 'available' | 'readonly' | 'unavailable';
       canTrend: boolean;
+      canViewFederation: boolean;
     };
     ReversiGameLite: {
       /** Format: id */
@@ -5642,6 +5643,7 @@ export type components = {
        */
       uri: string;
       description: string | null;
+      about: string | null;
       langs: string[];
       tosUrl: string | null;
       /** @default https://github.com/misskey-dev/misskey */
@@ -12256,6 +12258,7 @@ export type operations = {
           name?: string | null;
           shortName?: string | null;
           description?: string | null;
+          about?: string | null;
           defaultLightTheme?: string | null;
           defaultDarkTheme?: string | null;
           defaultLike?: string;

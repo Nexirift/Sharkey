@@ -250,6 +250,7 @@ _role:
     canUpdateBioMedia: "Allow users to edit their avatar or banner"
     scheduleNoteMax: "Maximum number of scheduled notes"
     canTrend: "Can appear in trending notes / users"
+    canViewFederation: "Can view federation stats and details of remote instances"
   _condition:
     isLocked: "Private account"
     isExplorable: "Account is discoverable"
