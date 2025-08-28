@@ -15,10 +15,14 @@ import { AnnouncementEntityService } from '@/core/entities/AnnouncementEntitySer
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
+import type { Config } from '@/config.js';
 
 @Injectable()
 export class AnnouncementService {
 	constructor(
+		@Inject(DI.config)
+		private config: Config,
+
 		@Inject(DI.announcementsRepository)
 		private announcementsRepository: AnnouncementsRepository,
 
@@ -241,7 +245,7 @@ export class AnnouncementService {
 				display: 'dialog',
 			})
 			.getCount();
-		if (dialogCount >= 5) {
+		if (dialogCount >= this.config.maxDialogAnnouncements) {
 			throw new IdentifiableError('c0d15f15-f18e-4a40-bcb1-f310d58204ee', 'Too many dialog announcements.');
 		}
 	}
