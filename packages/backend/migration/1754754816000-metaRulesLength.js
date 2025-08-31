@@ -5,10 +5,10 @@
 
 export class MetaRulesLength1754754816000 {
 	async up(queryRunner) {
-		await queryRunner.query(`ALTER TABLE "meta" ALTER COLUMN "serverRules" TYPE TEXT`);
+		await queryRunner.query(`ALTER TABLE "meta" ALTER COLUMN "serverRules" TYPE TEXT[]`);
 	}
 
 	async down(queryRunner) {
-		await queryRunner.query(`ALTER TABLE "meta" ALTER COLUMN "serverRules" TYPE character varying(280)`);
+		await queryRunner.query(`ALTER TABLE "meta" ALTER COLUMN "serverRules" TYPE character varying(280)[]`);
 	}
 }
