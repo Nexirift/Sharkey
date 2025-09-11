@@ -156,10 +156,19 @@ type AdminCaptchaSaveRequest = operations['admin___captcha___save']['requestBody
 type AdminCwInstanceRequest = operations['admin___cw-instance']['requestBody']['content']['application/json'];
 
 // @public (undocumented)
+type AdminCwInstanceResponse = operations['admin___cw-instance']['responses']['200']['content']['application/json'];
+
+// @public (undocumented)
 type AdminCwNoteRequest = operations['admin___cw-note']['requestBody']['content']['application/json'];
 
 // @public (undocumented)
+type AdminCwNoteResponse = operations['admin___cw-note']['responses']['200']['content']['application/json'];
+
+// @public (undocumented)
 type AdminCwUserRequest = operations['admin___cw-user']['requestBody']['content']['application/json'];
+
+// @public (undocumented)
+type AdminCwUserResponse = operations['admin___cw-user']['responses']['200']['content']['application/json'];
 
 // @public (undocumented)
 type AdminDeclineUserRequest = operations['admin___decline-user']['requestBody']['content']['application/json'];
@@ -1549,8 +1558,11 @@ declare namespace entities {
         AdminCaptchaCurrentResponse,
         AdminCaptchaSaveRequest,
         AdminCwInstanceRequest,
+        AdminCwInstanceResponse,
         AdminCwNoteRequest,
+        AdminCwNoteResponse,
         AdminCwUserRequest,
+        AdminCwUserResponse,
         AdminDeclineUserRequest,
         AdminDeleteAccountRequest,
         AdminDeleteAllFilesOfAUserRequest,

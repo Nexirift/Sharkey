@@ -7428,9 +7428,11 @@ export type operations = {
       };
     };
     responses: {
-      /** @description OK (without any results) */
-      204: {
-        content: never;
+      /** @description OK (with results) */
+      200: {
+        content: {
+          'application/json': unknown;
+        };
       };
       /** @description Client error */
       400: {
@@ -7481,9 +7483,11 @@ export type operations = {
       };
     };
     responses: {
-      /** @description OK (without any results) */
-      204: {
-        content: never;
+      /** @description OK (with results) */
+      200: {
+        content: {
+          'application/json': unknown;
+        };
       };
       /** @description Client error */
       400: {
@@ -7534,9 +7538,11 @@ export type operations = {
       };
     };
     responses: {
-      /** @description OK (without any results) */
-      204: {
-        content: never;
+      /** @description OK (with results) */
+      200: {
+        content: {
+          'application/json': unknown;
+        };
       };
       /** @description Client error */
       400: {
