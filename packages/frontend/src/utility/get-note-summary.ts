@@ -9,9 +9,10 @@ import { i18n } from '@/i18n.js';
 
 /**
  * 投稿を表す文字列を取得します。
- * @param {*} note (packされた)投稿
+ * @param note (packされた)投稿
+ * @param withMandatoryCw if true (default), include the note/user/instance mandatory CW
  */
-export const getNoteSummary = (note?: Misskey.entities.Note | null): string => {
+export const getNoteSummary = (note: Misskey.entities.Note | null | undefined, withMandatoryCw = true): string => {
 	if (note == null) {
 		return '';
 	}
@@ -28,14 +29,16 @@ export const getNoteSummary = (note?: Misskey.entities.Note | null): string => {
 
 	// Append mandatory CW, if applicable
 	let cw = note.cw;
-	if (note.mandatoryCW) {
-		cw = appendContentWarning(cw, note.mandatoryCW);
-	}
-	if (note.user.mandatoryCW) {
-		cw = appendContentWarning(cw, note.user.mandatoryCW);
-	}
-	if (note.user.instance?.mandatoryCW) {
-		cw = appendContentWarning(cw, note.user.instance.mandatoryCW);
+	if (withMandatoryCw) {
+		if (note.mandatoryCW) {
+			cw = appendContentWarning(cw, note.mandatoryCW);
+		}
+		if (note.user.mandatoryCW) {
+			cw = appendContentWarning(cw, note.user.mandatoryCW);
+		}
+		if (note.user.instance?.mandatoryCW) {
+			cw = appendContentWarning(cw, note.user.instance.mandatoryCW);
+		}
 	}
 
 	// 本文

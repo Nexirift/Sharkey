@@ -20,7 +20,7 @@ Selectable entry on the "Following" feed, displaying a user with their most rece
 			</MkA>
 		</header>
 		<div>
-			<Mfm :class="$style.text" :text="getNoteSummary(note)" :isBlock="true" :plain="true" :nowrap="false" :isNote="true" nyaize="respect" :author="note.user"/>
+			<Mfm :class="$style.text" :text="getNoteSummary(note, false)" :isBlock="true" :plain="true" :nowrap="false" :isNote="true" nyaize="respect" :author="note.user"/>
 		</div>
 	</div>
 </SkMutedNote>
