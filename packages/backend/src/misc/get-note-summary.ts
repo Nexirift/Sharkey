@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { appendContentWarning } from './append-content-warning.js';
 import type { Packed } from './json-schema.js';
 
 /**
@@ -24,13 +23,16 @@ export const getNoteSummary = (note: Packed<'Note'>): string => {
 	// Append mandatory CW, if applicable
 	let cw = note.cw;
 	if (note.mandatoryCW) {
-		cw = appendContentWarning(cw, note.mandatoryCW);
+		cw = `Note is flagged: "${note.mandatoryCW}", ${cw}`;
 	}
 	if (note.user.mandatoryCW) {
-		cw = appendContentWarning(cw, note.user.mandatoryCW);
+		const username = note.user.host
+			? `@${note.user.username}@${note.user.host}`
+			: `@${note.user.username}`;
+		cw = `${username} is flagged: "${note.user.mandatoryCW}", ${cw}`;
 	}
 	if (note.user.instance?.mandatoryCW) {
-		cw = appendContentWarning(cw, note.user.instance.mandatoryCW);
+		cw = `${note.user.host} is flagged: "${note.user.instance.mandatoryCW}", ${cw}`;
 	}
 
 	// 本文
