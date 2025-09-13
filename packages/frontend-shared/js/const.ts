@@ -40,6 +40,9 @@ export const FILE_TYPE_BROWSERSAFE = [
 	'video/webm',
 	'audio/webm',
 
+	// MKV files
+	'video/x-matroska',
+
 	'audio/aac',
 
 	// see https://github.com/misskey-dev/misskey/pull/10686
