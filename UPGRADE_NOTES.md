@@ -8,7 +8,7 @@ The "Mark instance as NSFW" has been removed in favor of the new "mandatory CW" 
 Moderators can now apply any Content Warning of their choice to all notes from an instance by populating the "Force content warning" field on that instance's info page.
 The new Content Warning applies immediately, is retroactive, and does not federate or "infect" replies in a thread.
 
-The upgrade will automatically a content warning of "NSFW" for instances that were formerly marked as NSFW, which displays as `[instance name] is flagged: "NSFW"` to users.
+The upgrade will automatically set a content warning of "NSFW" for instances that were formerly marked as NSFW, which displays as `[instance name] is flagged: "NSFW"` to users.
 The `notes` table is also cleaned up to remove any leftover "Instance is marked as NSFW" content warnings from posts.
 Staff can then remove or modify the new CW as usual.
 
