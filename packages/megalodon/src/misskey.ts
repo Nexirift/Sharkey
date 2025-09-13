@@ -653,7 +653,7 @@ export default class Misskey implements MegalodonInterface {
       max_id?: string
       since_id?: string
     }
-  ): Promise<Response<Array<Entity.Account>> | any> {
+  ): Promise<Response<Array<Entity.Account>>> {
     let params = {
       query: q,
       detail: true
