@@ -382,6 +382,7 @@ export default class Connection {
 		for (const k of this.subscribingNotes.keys()) {
 			this.subscriber.off(`noteStream:${k}`, this.onNoteStreamMessage);
 		}
+		this.wsConnection.off('message', this.onWsConnectionMessage);
 
 		this.fetchIntervalId = null;
 		this.channels.clear();
