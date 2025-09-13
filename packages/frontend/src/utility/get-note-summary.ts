@@ -4,6 +4,7 @@
  */
 
 import * as Misskey from 'misskey-js';
+import { appendContentWarning } from '@@/js/append-content-warning.js';
 import { host } from '@@/js/config.js';
 import { i18n } from '@/i18n.js';
 
@@ -31,17 +32,17 @@ export const getNoteSummary = (note: Misskey.entities.Note | null | undefined, w
 	let cw = note.cw;
 	if (withMandatoryCw) {
 		if (note.mandatoryCW) {
-			cw = i18n.tsx.noteIsFlaggedAs({ cw: note.mandatoryCW }) + ', ' + cw;
+			cw = appendContentWarning(cw, i18n.tsx.noteIsFlaggedAs({ cw: note.mandatoryCW }));
 		}
 		if (note.user.mandatoryCW) {
 			const username = note.user.host
 				? `@${note.user.username}@${note.user.host}`
 				: `@${note.user.username}`;
-			cw = i18n.tsx.userIsFlaggedAs({ name: username, cw: note.user.mandatoryCW }) + ', ' + cw;
+			cw = appendContentWarning(cw, i18n.tsx.userIsFlaggedAs({ name: username, cw: note.user.mandatoryCW }));
 		}
 		if (note.user.instance?.mandatoryCW) {
 			const instanceName = note.user.host ?? host;
-			cw = i18n.tsx.instanceIsFlaggedAs({ name: instanceName, cw: note.user.instance.mandatoryCW }) + ', ' + cw;
+			cw = appendContentWarning(cw, i18n.tsx.instanceIsFlaggedAs({ name: instanceName, cw: note.user.instance.mandatoryCW }));
 		}
 	}
 
