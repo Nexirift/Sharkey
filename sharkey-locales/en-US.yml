@@ -269,6 +269,7 @@ _role:
     remoteFollowingLessThanOrEq: "Follows X or fewer remote accounts"
     remoteFollowingMoreThanOrEq: "Follows X or more remote accounts"
   remoteDataWarning: "This condition may be incorrect for remote users."
+  selectTestUser: "Select a user to test the condition."
 _emailUnavailable:
   banned: "This email address is banned"
 _signup:

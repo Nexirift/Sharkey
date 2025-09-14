@@ -357,6 +357,39 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 	}
 
 	@bindThis
+	public annotateCond(user: MiUser, roles: MiRole[], value: RoleCondFormulaValue, followStats: FollowStats, results: { [k: string]: boolean }): boolean {
+		let result: boolean;
+		try {
+			switch (value.type) {
+				case 'and': {
+					result = true;
+					// Don't use every(), since that short-circuits.
+					// We need to run annotateCond() on every condition.
+					value.values.forEach(v => result = this.annotateCond(user, roles, v, followStats, results) && result);
+					break;
+				}
+				case 'or': {
+					result = false;
+					value.values.forEach(v => result = this.annotateCond(user, roles, v, followStats, results) || result);
+					break;
+				}
+				case 'not': {
+					result = !this.annotateCond(user, roles, value.value, followStats, results);
+					break;
+				}
+				default: {
+					result = this.evalCond(user, roles, value, followStats);
+				}
+			}
+		} catch (err) {
+			// TODO: log error
+			result = false;
+		}
+		results[value.id] = result;
+		return result;
+	}
+
+	@bindThis
 	public async getRoles() {
 		const roles = await this.rolesCache.fetch(() => this.rolesRepository.findBy({}));
 		return roles;
