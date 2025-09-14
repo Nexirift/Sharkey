@@ -201,9 +201,12 @@ export class AccountMoveService {
 		if (oldMutings.length === 0) return;
 
 		// Check if the destination account is already indefinitely muted by the muter
-		const existingMutingsMuterUserIds = await this.mutingsRepository.findBy(
-			{ muteeId: dst.id, expiresAt: IsNull() },
-		).then(mutings => mutings.map(muting => muting.muterId));
+		const [existingMutingsMuterUserIds, dstFollowers] = await Promise.all([
+			this.mutingsRepository.findBy(
+				{ muteeId: dst.id, expiresAt: IsNull() },
+			).then(mutings => mutings.map(muting => muting.muterId)),
+			this.cacheService.userFollowersCache.fetch(dst.id),
+		]);
 
 		const newMutings: Map<string, { muterId: string; muteeId: string; expiresAt: Date | null; }> = new Map();
 
@@ -217,6 +220,7 @@ export class AccountMoveService {
 		};
 		for (const muting of oldMutings) {
 			if (existingMutingsMuterUserIds.includes(muting.muterId)) continue; // skip if already muted indefinitely
+			if (dstFollowers.has(muting.muterId)) continue; // skip if already following
 			newMutings.set(genId(), {
 				...muting,
 				muteeId: dst.id,
