@@ -523,6 +523,10 @@ const activitystreams = {
 			'@id': 'as:alsoKnownAs',
 			'@type': '@id',
 		},
+		'movedTo': {
+			'@id': 'as:movedTo',
+			'@type': '@id',
+		},
 	},
 } satisfies JsonLd;
 
