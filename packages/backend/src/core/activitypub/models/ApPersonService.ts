@@ -46,6 +46,7 @@ import { verifyFieldLinks } from '@/misc/verify-field-link.js';
 import { isRetryableError } from '@/misc/is-retryable-error.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
+import { QueueService } from '@/core/QueueService.js';
 import { getApId, getApType, isActor, isCollection, isCollectionOrOrderedCollection, isPropertyValue } from '../type.js';
 import { ApLoggerService } from '../ApLoggerService.js';
 import { extractApHashtags } from './tag.js';
@@ -121,6 +122,7 @@ export class ApPersonService implements OnModuleInit {
 		private readonly apUtilityService: ApUtilityService,
 		private readonly idService: IdService,
 		private readonly timeService: TimeService,
+		private readonly queueService: QueueService,
 
 		apLoggerService: ApLoggerService,
 	) {

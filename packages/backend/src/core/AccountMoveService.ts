@@ -323,7 +323,7 @@ export class AccountMoveService {
 		// Set the old account's following and followers counts to 0.
 		// TODO use CollapsedQueueService when merged
 		await this.usersRepository.update({ id: oldAccount.id }, { followersCount: 0, followingCount: 0 });
-		await this.internalEventService.emit('userUpdated', { id: oldAccount.id });
+		await this.internalEventService.emit(oldAccount.host == null ? 'localUserUpdated' : 'remoteUserUpdated', { id: oldAccount.id });
 
 		// Decrease following counts of local followers by 1.
 		// TODO use CollapsedQueueService when merged
