@@ -30,9 +30,14 @@ import { CacheService } from '@/core/CacheService.js';
 import { UserListService } from '@/core/UserListService.js';
 import { TimeService } from '@/global/TimeService.js';
 import { InternalEventService } from '@/global/InternalEventService.js';
+import { LoggerService } from '@/core/LoggerService.js';
+import type Logger from '@/logger.js';
+import { renderInlineError } from '@/misc/render-inline-error.js';
 
 @Injectable()
 export class AccountMoveService {
+	private readonly logger: Logger;
+
 	constructor(
 		@Inject(DI.meta)
 		private meta: MiMeta,
@@ -76,7 +81,9 @@ export class AccountMoveService {
 		private readonly userListService: UserListService,
 		private readonly timeService: TimeService,
 		private readonly internalEventService: InternalEventService,
+		private readonly loggerService: LoggerService,
 	) {
+		this.logger = this.loggerService.getLogger('account-move');
 	}
 
 	/**
@@ -130,7 +137,7 @@ export class AccountMoveService {
 	public async postMoveProcess(src: MiUser, dst: MiUser): Promise<void> {
 		// Copy blockings and mutings, and update lists
 		try {
-			await Promise.all([
+			const results = await Promise.allSettled([
 				this.copyBlocking(src, dst),
 				this.copyMutings(src, dst),
 				this.deleteScheduledNotes(src),
@@ -138,8 +145,16 @@ export class AccountMoveService {
 				this.updateLists(src, dst),
 				this.antennaService.onMoveAccount(src, dst),
 			]);
-		} catch {
+
+			// Log errors, but keep moving
+			for (const result of results) {
+				if (result.status === 'rejected') {
+					this.logger.warn(`Non-fatal exception in migration from ${src.id} (@${src.usernameLower}@${src.host}) to ${dst.id} (@${dst.usernameLower}@${dst.host}): ${renderInlineError(result.reason)}`);
+				}
+			}
+		} catch (err) {
 			/* skip if any error happens */
+			this.logger.warn(`Non-fatal exception in migration from ${src.id} (@${src.usernameLower}@${src.host}) to ${dst.id} (@${dst.usernameLower}@${dst.host}): ${renderInlineError(err)}`);
 		}
 
 		// follow the new account
@@ -155,8 +170,9 @@ export class AccountMoveService {
 		// Decrease following count instead of unfollowing.
 		try {
 			await this.adjustFollowingCounts(followJobs.map(job => job.from.id), src);
-		} catch {
+		} catch (err) {
 			/* skip if any error happens */
+			this.logger.warn(`Non-fatal exception in migration from ${src.id} (@${src.usernameLower}@${src.host}) to ${dst.id} (@${dst.usernameLower}@${dst.host}): ${renderInlineError(err)}`);
 		}
 
 		// Should be queued because this can cause a number of follow per one move.
