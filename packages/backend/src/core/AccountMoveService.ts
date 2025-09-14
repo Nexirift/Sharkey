@@ -128,8 +128,7 @@ export class AccountMoveService {
 			to: { id: followeeId },
 		})), process.env.NODE_ENV === 'test' ? 10000 : 1000 * 60 * 60 * 24);
 
-		// TODO add this to relationship queue
-		await this.postMoveProcess(src, dst);
+		await this.queueService.createMoveJob(src, dst);
 
 		return iObj;
 	}

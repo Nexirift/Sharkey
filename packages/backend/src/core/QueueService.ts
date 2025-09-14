@@ -706,7 +706,13 @@ export class QueueService implements OnModuleInit {
 	}
 
 	@bindThis
-	private generateRelationshipJobData(name: 'follow' | 'unfollow' | 'block' | 'unblock', data: RelationshipJobData, opts: Bull.JobsOptions = {}): {
+	public createMoveJob(from: ThinUser, to: ThinUser) {
+		const job = this.generateRelationshipJobData('move', { from, to });
+		return this.relationshipQueue.add(job.name, job.data, job.opts);
+	}
+
+	@bindThis
+	private generateRelationshipJobData(name: 'follow' | 'unfollow' | 'block' | 'unblock' | 'move', data: RelationshipJobData, opts: Bull.JobsOptions = {}): {
 		name: string,
 		data: RelationshipJobData,
 		opts: Bull.JobsOptions,

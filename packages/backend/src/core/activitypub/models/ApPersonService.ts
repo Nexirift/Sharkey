@@ -988,7 +988,7 @@ export class ApPersonService implements OnModuleInit {
 			return 'skip: alsoKnownAs does not include from.uri';
 		}
 
-		await this.accountMoveService.postMoveProcess(src, dst);
+		await this.queueService.createMoveJob(src, dst);
 
 		return 'ok';
 	}
