@@ -37,6 +37,7 @@ export class CacheService implements OnApplicationShutdown {
 	public readonly uriPersonCache: ManagedMemoryKVCache<MiUser | null>;
 	public readonly userProfileCache: ManagedQuantumKVCache<MiUserProfile>;
 	public readonly userMutingsCache: ManagedQuantumKVCache<Set<string>>;
+	public readonly userMutedCache: ManagedQuantumKVCache<Set<string>>;
 	public readonly userBlockingCache: ManagedQuantumKVCache<Set<string>>;
 	public readonly userBlockedCache: ManagedQuantumKVCache<Set<string>>; // NOTE: 「被」Blockキャッシュ
 	public readonly userListMembershipsCache: ManagedQuantumKVCache<Map<string, MiUserListMembership>>;
@@ -128,6 +129,19 @@ export class CacheService implements OnApplicationShutdown {
 				.groupBy('muting.muterId')
 				.getRawMany<{ muterId: string, muteeIds: string[] }>()
 				.then(ms => ms.map(m => [m.muterId, new Set(m.muteeIds)])),
+		});
+
+		this.userMutedCache = this.cacheManagementService.createQuantumKVCache<Set<string>>('userMuted', {
+			lifetime: 1000 * 60 * 30, // 30m
+			fetcher: (key) => this.mutingsRepository.find({ where: { muteeId: key }, select: ['muterId'] }).then(xs => new Set(xs.map(x => x.muterId))),
+			bulkFetcher: muteeIds => this.mutingsRepository
+				.createQueryBuilder('muting')
+				.select('"muting"."muteeId"', 'muteeId')
+				.addSelect('array_agg("muting"."muterId")', 'muterIds')
+				.where({ muteeId: In(muteeIds) })
+				.groupBy('muting.muteeId')
+				.getRawMany<{ muteeId: string, muterIds: string[] }>()
+				.then(ms => ms.map(m => [m.muteeId, new Set(m.muterIds)])),
 		});
 
 		this.userBlockingCache = this.cacheManagementService.createQuantumKVCache<Set<string>>('userBlocking', {
@@ -394,6 +408,7 @@ export class CacheService implements OnApplicationShutdown {
 			await Promise.all([
 				this.userProfileCache.deleteMany(ids),
 				this.userMutingsCache.deleteMany(ids),
+				this.userMutedCache.deleteMany(ids),
 				this.userBlockingCache.deleteMany(ids),
 				this.userBlockedCache.deleteMany(ids),
 				this.renoteMutingsCache.deleteMany(ids),
