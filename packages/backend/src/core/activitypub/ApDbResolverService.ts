@@ -15,6 +15,7 @@ import type { MiNote } from '@/models/Note.js';
 import { bindThis } from '@/decorators.js';
 import type { MiLocalUser, MiRemoteUser } from '@/models/User.js';
 import { ApLoggerService } from '@/core/activitypub/ApLoggerService.js';
+import { IdService } from '@/core/IdService.js';
 import { getApId } from './type.js';
 import { ApPersonService } from './models/ApPersonService.js';
 import type { IObject } from './type.js';
@@ -40,6 +41,7 @@ export class ApDbResolverService implements OnApplicationShutdown {
 		private apPersonService: ApPersonService,
 		private apLoggerService: ApLoggerService,
 		private utilityService: UtilityService,
+		private readonly idService: IdService,
 	) {
 		// Caches moved to ApPersonService to avoid circular dependency
 	}
@@ -125,8 +127,19 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	 */
 	@bindThis
 	public async refetchPublicKeyForApId(user: MiRemoteUser): Promise<MiUserPublickey | null> {
-		this.apLoggerService.logger.debug(`Updating public key for user ${user.id} (${user.uri})`);
+		// Don't re-fetch if we've updated the user recently
+		const maxUpdatedTime = Date.now() - 60_000; // 1 minute ago
+		if (
+			(user.lastFetchedAt && user.lastFetchedAt.valueOf() > maxUpdatedTime) ||
+			(user.updatedAt && user.updatedAt.valueOf() > maxUpdatedTime) ||
+			this.idService.parse(user.id).date.valueOf() > maxUpdatedTime
+		) {
+			this.apLoggerService.logger.debug(`Not updating public key for user ${user.id} (${user.uri}): already checked recently`);
+		} else {
+			this.apLoggerService.logger.debug(`Updating public key for user ${user.id} (${user.uri})`);
+		}
 
+		// findPublicKeyByUserId pulls from a cache, but updatePerson also updates that cache if there's any changes.
 		const oldKey = await this.apPersonService.findPublicKeyByUserId(user.id);
 		await this.apPersonService.updatePerson(user.uri);
 		const newKey = await this.apPersonService.findPublicKeyByUserId(user.id);
