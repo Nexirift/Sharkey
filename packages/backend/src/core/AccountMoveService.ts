@@ -183,14 +183,17 @@ export class AccountMoveService {
 	public async copyBlocking(src: ThinUser, dst: ThinUser): Promise<void> {
 		// Followers shouldn't overlap with blockers, but the destination account, different from the blockee (i.e., old account), may have followed the local user before moving.
 		// So block the destination account here.
-		const srcBlockings = await this.blockingsRepository.findBy({ blockeeId: src.id });
-		const dstBlockings = await this.blockingsRepository.findBy({ blockeeId: dst.id });
-		const blockerIds = dstBlockings.map(blocking => blocking.blockerId);
+		const [srcBlockers, dstBlockers, dstFollowers] = await Promise.all([
+			this.cacheService.userBlockedCache.fetch(src.id),
+			this.cacheService.userBlockedCache.fetch(dst.id),
+			this.cacheService.userFollowersCache.fetch(dst.id),
+		]);
 		// reblock the destination account
 		const blockJobs: RelationshipJobData[] = [];
-		for (const blocking of srcBlockings) {
-			if (blockerIds.includes(blocking.blockerId)) continue; // skip if already blocked
-			blockJobs.push({ from: { id: blocking.blockerId }, to: { id: dst.id } });
+		for (const blockerId of srcBlockers) {
+			if (dstBlockers.has(blockerId)) continue; // skip if already blocked
+			if (dstFollowers.has(blockerId)) continue; // skip if already following
+			blockJobs.push({ from: { id: blockerId }, to: { id: dst.id } });
 		}
 		// no need to unblock the old account because it may be still functional
 		await this.queueService.createBlockJob(blockJobs);
