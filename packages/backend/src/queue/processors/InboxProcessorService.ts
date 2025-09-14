@@ -164,7 +164,12 @@ export class InboxProcessorService implements OnApplicationShutdown {
 
 		// publicKey がなくても終了
 		if (authUser.key == null) {
-			throw new Bull.UnrecoverableError(`skip: failed to resolve user publicKey ${actorId}`);
+			// See if a key has become available since we fetched the actor
+			authUser.key = await this.apDbResolverService.refetchPublicKeyForApId(authUser.user);
+			if (authUser.key == null) {
+				// If it's still missing, then give up
+				throw new Bull.UnrecoverableError(`skip: failed to resolve user publicKey ${actorId}`);
+			}
 		}
 
 		// HTTP-Signatureの検証
