@@ -13633,6 +13633,46 @@ export interface Locale extends ILocale {
      * Enable all write/edit permissions
      */
     "enableAllWrite": string;
+    /**
+     * New account
+     */
+    "newAccount": string;
+    /**
+     * Previous accounts
+     */
+    "previousAccounts": string;
+    /**
+     * Previous account IDs:
+     */
+    "previousAccountIds": string;
+    /**
+     * Previous account URIs:
+     */
+    "previousAccountUris": string;
+    /**
+     * Note: this list is provided by the user and is not verified.
+     */
+    "previousAccountsNotVerified": string;
+    /**
+     * Migrated at
+     */
+    "accountMovedAt": string;
+    /**
+     * Migrated to
+     */
+    "accountMovedTo": string;
+    /**
+     * Restart account migration
+     */
+    "restartMigration": string;
+    /**
+     * Account migration was last attempted on {date}. If the migration failed or was incomplete, then you may click this button to restart the process.
+     */
+    "restartMigrationDescription": ParameterizedString<"date">;
+    /**
+     * Are you sure you want to restart this account migration?
+     */
+    "restartMigrationConfirm": string;
 }
 declare const locales: {
     [lang: string]: Locale;

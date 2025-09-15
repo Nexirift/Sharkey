@@ -8,6 +8,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 	<FormSuspense v-if="init" :p="init">
 		<div v-if="user && info">
 			<div v-if="tab === 'overview'" class="_gaps">
+				<MkAccountMoved v-if="user.movedToUri" :movedTo="user.movedTo" :movedToUri="user.movedToUri"/>
+
 				<div class="aeakzknw">
 					<MkAvatar class="avatar" :user="user" indicator link preview/>
 					<div class="body">
@@ -104,6 +106,44 @@ SPDX-License-Identifier: AGPL-3.0-only
 					</div>
 				</MkFolder>
 
+				<MkFolder v-if="info.movedTo || info.alsoKnownAs" :sticky="false">
+					<template #icon><i class="ph-airplane ph-bold ph-lg"></i></template>
+					<template #label>{{ i18n.ts.accountMigration }}</template>
+
+					<FormSection v-if="info.movedTo" first>
+						<template #label>{{ i18n.ts.newAccount }}</template>
+
+						<div style="display: flex; flex-direction: column; gap: 1em;">
+							<MkKeyValue v-if="info.movedAt" oneline>
+								<template #key>{{ i18n.ts.accountMigratedOn }}</template>
+								<template #value><MkTime :time="info.movedAt" :mode="'detail'"/></template>
+							</MkKeyValue>
+							<MkKeyValue oneline>
+								<template #key>{{ i18n.ts.accountMigratedTo }}</template>
+								<template #value>
+									<MkMention v-if="info.movedTo.user" :username="info.movedTo.user.username" :host="info.movedTo.user.host ?? localHost"/>
+									<MkLink v-else :url="info.movedTo.uri"/>
+								</template>
+							</MkKeyValue>
+							<div v-if="iAmAdmin" class="_gaps_s">
+								<MkInfo>{{ i18n.ts.restartMigrationDescription }}</MkInfo>
+								<MkButton inline @click="restartMigration"><i class="ph-airplane-takeoff ph-bold ph-lg"></i> {{ i18n.ts.restartMigration }}</MkButton>
+							</div>
+						</div>
+					</FormSection>
+
+					<FormSection v-if="info.alsoKnownAs.length > 0">
+						<template #label>{{ i18n.ts.previousAccounts }}</template>
+
+						<ul style="display: flex; flex-direction: column; gap: 1em;">
+							<li v-for="aka of info.alsoKnownAs">
+								<MkMention v-if="aka.user" :username="aka.user.username" :host="aka.user.host ?? localHost"/>
+								<MkLink v-else :url="aka.uri"/>
+							</li>
+						</ul>
+					</FormSection>
+				</MkFolder>
+
 				<MkFolder v-if="iAmModerator" :defaultOpen="moderationNote.length > 0" :sticky="false">
 					<template #icon><i class="ph-stamp ph-bold ph-lg"></i></template>
 					<template #label>{{ i18n.ts.moderationNote }}</template>
@@ -116,17 +156,15 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<FormSection v-if="user?.host">
 					<template #label>{{ i18n.ts.activityPub }}</template>
 
-					<div class="_gaps_m">
-						<div style="display: flex; flex-direction: column; gap: 1em;">
-							<MkKeyValue oneline>
-								<template #key>{{ i18n.ts.instanceInfo }}</template>
-								<template #value><MkA :to="`/instance-info/${user.host}`" class="_link">{{ user.host }} <i class="ti ti-chevron-right"></i></MkA></template>
-							</MkKeyValue>
-							<MkKeyValue oneline>
-								<template #key>{{ i18n.ts.updatedAt }}</template>
-								<template #value><MkTime mode="detail" :time="user.lastFetchedAt"/></template>
-							</MkKeyValue>
-						</div>
+					<div style="display: flex; flex-direction: column; gap: 1em;">
+						<MkKeyValue oneline>
+							<template #key>{{ i18n.ts.instanceInfo }}</template>
+							<template #value><MkA :to="`/instance-info/${user.host}`" class="_link">{{ user.host }} <i class="ti ti-chevron-right"></i></MkA></template>
+						</MkKeyValue>
+						<MkKeyValue oneline>
+							<template #key>{{ i18n.ts.updatedAt }}</template>
+							<template #value><MkTime mode="detail" :time="user.lastFetchedAt"/></template>
+						</MkKeyValue>
 					</div>
 				</FormSection>
 
@@ -279,7 +317,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 <script lang="ts" setup>
 import { computed, defineAsyncComponent, watch, ref } from 'vue';
 import * as Misskey from 'misskey-js';
-import { url } from '@@/js/config.js';
+import { host as localHost, url } from '@@/js/config.js';
 import type { Badge } from '@/components/SkBadgeStrip.vue';
 import type { ChartSrc } from '@/components/MkChart.vue';
 import MkChart from '@/components/MkChart.vue';
@@ -307,6 +345,9 @@ import MkInput from '@/components/MkInput.vue';
 import MkNumber from '@/components/MkNumber.vue';
 import { copyToClipboard } from '@/utility/copy-to-clipboard';
 import SkBadgeStrip from '@/components/SkBadgeStrip.vue';
+import MkAccountMoved from '@/components/MkAccountMoved.vue';
+import MkLink from '@/components/MkLink.vue';
+import MkMention from '@/components/MkMention.vue';
 
 const props = withDefaults(defineProps<{
 	userId: string;
@@ -727,6 +768,19 @@ function editAnnouncement(announcement) {
 		announcement,
 	}, {
 		closed: () => dispose(),
+	});
+}
+
+async function restartMigration() {
+	const confirm = await os.confirm({
+		type: 'question',
+		title: i18n.ts.restartMigration,
+		text: i18n.ts.restartMigrationConfirm,
+	});
+	if (confirm.canceled) return;
+	await os.promiseDialog(async () => {
+		await misskeyApi('admin/restart-migration', { userId: props.userId });
+		await refreshUser();
 	});
 }
 
