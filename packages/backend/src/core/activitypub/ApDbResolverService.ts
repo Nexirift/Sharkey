@@ -75,31 +75,8 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	 */
 	@bindThis
 	public async getUserFromApId(value: string | IObject | [string | IObject]): Promise<MiLocalUser | MiRemoteUser | null> {
-		const parsed = this.parseUri(value);
-
-		if (parsed.local) {
-			if (parsed.type !== 'users') return null;
-
-			const u = await this.cacheService.findOptionalUserById(parsed.id);
-
-			if (u == null || u.isDeleted) {
-				return null;
-			}
-
-			return u as MiLocalUser | MiRemoteUser;
-		} else {
-			const uid = await this.apPersonService.uriPersonCache.fetchMaybe(parsed.uri);
-			if (uid == null) {
-				return null;
-			}
-
-			const u = await this.cacheService.findOptionalUserById(uid);
-			if (u == null || u.isDeleted) {
-				return null;
-			}
-
-			return u as MiLocalUser | MiRemoteUser;
-		}
+		const uri = getApId(value);
+		return await this.apPersonService.fetchPerson(uri);
 	}
 
 	/**
