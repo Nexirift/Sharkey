@@ -13,6 +13,8 @@ import { IdService } from '@/core/IdService.js';
 import { notificationRecieveConfig } from '@/models/json-schema/user.js';
 import { isSystemAccount } from '@/misc/is-system-account.js';
 import { CacheService } from '@/core/CacheService.js';
+import { UserEntityService } from '@/core/entities/UserEntityService.js';
+import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -225,6 +227,46 @@ export const meta = {
 				type: 'string',
 				optional: false, nullable: true,
 			},
+			movedAt: {
+				type: 'string',
+				optional: true, nullable: true,
+			},
+			movedTo: {
+				type: 'object',
+				optional: true, nullable: true,
+				properties: {
+					uri: {
+						type: 'string',
+						format: 'uri',
+						nullable: false, optional: false,
+					},
+					user: {
+						type: 'object',
+						ref: 'UserDetailed',
+						nullable: true, optional: true,
+					},
+				},
+			},
+			alsoKnownAs: {
+				type: 'array',
+				nullable: true, optional: true,
+				items: {
+					type: 'object',
+					nullable: false, optional: false,
+					properties: {
+						uri: {
+							type: 'string',
+							format: 'uri',
+							nullable: false, optional: false,
+						},
+						user: {
+							type: 'object',
+							ref: 'UserDetailed',
+							nullable: true, optional: true,
+						},
+					},
+				},
+			},
 		},
 	},
 } as const;
@@ -253,6 +295,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private roleEntityService: RoleEntityService,
 		private idService: IdService,
 		private readonly cacheService: CacheService,
+		private readonly apPersonService: ApPersonService,
+		private readonly userEntityService: UserEntityService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const [user, profile] = await Promise.all([
@@ -279,6 +323,22 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			const roles = await this.roleService.getUserRoles(user.id);
 
 			const followStats = await this.cacheService.getFollowStats(user.id);
+
+			const movedAt = user.movedAt?.toISOString();
+
+			const movedToUser = user.movedToUri ? await this.apPersonService.resolvePerson(user.movedToUri) : null;
+			const movedTo = user.movedToUri ? {
+				uri: user.movedToUri,
+				user: movedToUser ? await this.userEntityService.pack(movedToUser, me, { schema: 'UserDetailed' }) : undefined,
+			} : null;
+
+			// This is kinda heavy, but it's an admin endpoint so ok.
+			const aka = await this.userEntityService.resolveAlsoKnownAs(user);
+			const akaUsers = aka ? await this.userEntityService.packMany(aka.map(aka => aka.id).filter(id => id != null), me, { schema: 'UserDetailed' }) : [];
+			const alsoKnownAs = aka?.map(aka => ({
+				uri: aka.uri,
+				user: aka.id ? akaUsers.find(u => u.id === aka.id) : undefined,
+			}));
 
 			return {
 				email: profile.email,
@@ -318,6 +378,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					totalFollowers: Math.max(user.followersCount, followStats.localFollowers + followStats.remoteFollowers),
 					totalFollowing: Math.max(user.followingCount, followStats.localFollowing + followStats.remoteFollowing),
 				},
+				movedAt,
+				movedTo,
+				alsoKnownAs,
 			};
 		});
 	}
