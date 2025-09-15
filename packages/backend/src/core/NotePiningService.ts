@@ -84,7 +84,7 @@ export class NotePiningService {
 
 		// Deliver to remote followers
 		if (this.userEntityService.isLocalUser(user) && !note.localOnly && ['public', 'home'].includes(note.visibility)) {
-			this.deliverPinnedChange(user, note.id, true);
+			await this.deliverPinnedChange(user, note.id, true);
 		}
 	}
 
@@ -105,14 +105,14 @@ export class NotePiningService {
 			throw new IdentifiableError('b302d4cf-c050-400a-bbb3-be208681f40c', `Note ${noteId} does not exist`);
 		}
 
-		this.userNotePiningsRepository.delete({
+		await this.userNotePiningsRepository.delete({
 			userId: user.id,
 			noteId: note.id,
 		});
 
 		// Deliver to remote followers
 		if (this.userEntityService.isLocalUser(user) && !note.localOnly && ['public', 'home'].includes(note.visibility)) {
-			this.deliverPinnedChange(user, noteId, false);
+			await this.deliverPinnedChange(user, noteId, false);
 		}
 	}
 

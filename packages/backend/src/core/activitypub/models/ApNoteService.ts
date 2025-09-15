@@ -32,6 +32,7 @@ import { renderInlineError } from '@/misc/render-inline-error.js';
 import { extractMediaFromHtml } from '@/core/activitypub/misc/extract-media-from-html.js';
 import { extractMediaFromMfm } from '@/core/activitypub/misc/extract-media-from-mfm.js';
 import { getContentByType } from '@/core/activitypub/misc/get-content-by-type.js';
+import { trackPromise } from '@/misc/promise-tracker.js';
 import { CustomEmojiService, encodeEmojiKey, isValidEmojiName } from '@/core/CustomEmojiService.js';
 import { TimeService } from '@/global/TimeService.js';
 import { getOneApId, getApId, validPost, isEmoji, getApType, isApObject, isDocument, IApDocument, isLink } from '../type.js';
@@ -300,7 +301,7 @@ export class ApNoteService implements OnModuleInit {
 					await this.pollService.vote(actor, reply, index);
 
 					// リモートフォロワーにUpdate配信
-					this.pollService.deliverQuestionUpdate(reply);
+					trackPromise(this.pollService.deliverQuestionUpdate(reply));
 				}
 				return null;
 			};
@@ -479,7 +480,7 @@ export class ApNoteService implements OnModuleInit {
 					await this.pollService.vote(actor, reply, index);
 
 					// リモートフォロワーにUpdate配信
-					this.pollService.deliverQuestionUpdate(reply);
+					trackPromise(this.pollService.deliverQuestionUpdate(reply));
 				}
 				return null;
 			};

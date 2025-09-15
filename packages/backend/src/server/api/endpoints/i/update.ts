@@ -35,6 +35,7 @@ import { AvatarDecorationService } from '@/core/AvatarDecorationService.js';
 import { notificationRecieveConfig } from '@/models/json-schema/user.js';
 import { userUnsignedFetchOptions } from '@/const.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
+import { trackPromise } from '@/misc/promise-tracker.js';
 import { ApiLoggerService } from '../../ApiLoggerService.js';
 import { ApiError } from '../../error.js';
 
@@ -640,12 +641,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			// 鍵垢を解除したとき、溜まっていたフォローリクエストがあるならすべて承認
 			if (user.isLocked && ps.isLocked === false) {
-				this.userFollowingService.acceptAllFollowRequests(user);
+				await this.userFollowingService.acceptAllFollowRequests(user);
 			}
 
 			// フォロワーにUpdateを配信
 			if (this.userNeedsPublishing(user, updates) || this.profileNeedsPublishing(profile, updatedProfile)) {
-				this.accountUpdateService.publishToFollowers(user);
+				trackPromise(this.accountUpdateService.publishToFollowers(user));
 			}
 
 			return iObj;

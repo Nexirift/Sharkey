@@ -27,6 +27,7 @@ import { LatestNoteService } from '@/core/LatestNoteService.js';
 import { ApLogService } from '@/core/ApLogService.js';
 import type Logger from '@/logger.js';
 import { TimeService } from '@/global/TimeService.js';
+import { trackPromise } from '@/misc/promise-tracker.js';
 import { LoggerService } from '@/core/LoggerService.js';
 
 @Injectable()
@@ -108,7 +109,7 @@ export class NoteDeleteService {
 					? this.apRendererService.renderUndo(this.apRendererService.renderAnnounce(renote.uri ?? `${this.config.url}/notes/${renote.id}`, note), user)
 					: this.apRendererService.renderDelete(this.apRendererService.renderTombstone(`${this.config.url}/notes/${note.id}`), user));
 
-				this.deliverToConcerned(user, note, content);
+				trackPromise(this.deliverToConcerned(user, note, content));
 			}
 
 			// also deliver delete activity to cascaded notes
@@ -117,7 +118,7 @@ export class NoteDeleteService {
 				if (!cascadingNote.user) continue;
 				if (!isLocalUser(cascadingNote.user)) continue;
 				const content = this.apRendererService.addContext(this.apRendererService.renderDelete(this.apRendererService.renderTombstone(`${this.config.url}/notes/${cascadingNote.id}`), cascadingNote.user));
-				this.deliverToConcerned(cascadingNote.user, cascadingNote, content);
+				trackPromise(this.deliverToConcerned(cascadingNote.user, cascadingNote, content));
 			}
 			//#endregion
 
