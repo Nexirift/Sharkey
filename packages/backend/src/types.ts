@@ -108,6 +108,7 @@ export const moderationLogTypes = [
 	'deleteGlobalAnnouncement',
 	'deleteUserAnnouncement',
 	'resetPassword',
+	'restartMigration',
 	'setMandatoryCW',
 	'setMandatoryCWForNote',
 	'setMandatoryCWForInstance',
@@ -286,6 +287,11 @@ export type ModerationLogPayloads = {
 		userHost: string | null;
 	};
 	resetPassword: {
+		userId: string;
+		userUsername: string;
+		userHost: string | null;
+	};
+	restartMigration: {
 		userId: string;
 		userUsername: string;
 		userHost: string | null;

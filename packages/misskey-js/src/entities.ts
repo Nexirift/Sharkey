@@ -140,6 +140,9 @@ export type ModerationLog = {
 	type: 'setMandatoryCWForInstance';
 	info: ModerationLogPayloads['setMandatoryCWForInstance'];
 } | {
+	type: 'restartMigration';
+	info: ModerationLogPayloads['restartMigration'];
+} | {
 	type: 'resetPassword';
 	info: ModerationLogPayloads['resetPassword'];
 } | {
