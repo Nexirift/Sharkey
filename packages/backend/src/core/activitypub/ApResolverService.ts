@@ -24,6 +24,7 @@ import { isPureRenote } from '@/misc/is-renote.js';
 import { CacheService } from '@/core/CacheService.js';
 import { trackPromise } from '@/misc/promise-tracker.js';
 import { promiseMap } from '@/misc/promise-map.js';
+import { renderInlineError } from '@/misc/render-inline-error.js';
 import { AnyCollection, getApId, getNullableApId, IObjectWithId, isCollection, isCollectionOrOrderedCollection, isCollectionPage, isOrderedCollection, isOrderedCollectionPage } from './type.js';
 import { ApDbResolverService } from './ApDbResolverService.js';
 import { ApRendererService } from './ApRendererService.js';
@@ -94,9 +95,10 @@ export class Resolver {
 	 * @param allowAnonymous If true, collection items can be anonymous (lack an ID). If false (default), then an error is thrown when reaching an item without ID.
 	 * @param sentFromUri If collection is an object, this is the URI where it was sent from.
 	 * @param concurrency Maximum number of items to resolve at once. (default: 4)
+	 * @param ignoreErrors If true (default), inaccessible items will be skipped instead of causing an exception. Inaccessible collections will still throw.
 	 */
 	@bindThis
-	public async resolveCollectionItems(collection: string | IObject, allowAnonymous = false, sentFromUri?: string, limit?: number | null, concurrency = 4): Promise<IObject[]> {
+	public async resolveCollectionItems(collection: string | IObject, allowAnonymous = false, sentFromUri?: string, limit?: number | null, concurrency = 4, ignoreErrors = true): Promise<IObject[]> {
 		const resolvedItems: IObject[] = [];
 
 		// This is pulled up to avoid code duplication below
@@ -104,7 +106,7 @@ export class Resolver {
 			const sentFrom = current.id;
 			const itemArr = toArray(items);
 			const itemLimit = limit ?? Number.MAX_SAFE_INTEGER;
-			await this.resolveItemArray(itemArr, sentFrom, itemLimit, concurrency, allowAnonymous, resolvedItems);
+			await this.resolveItemArray(itemArr, sentFrom, itemLimit, concurrency, allowAnonymous, resolvedItems, ignoreErrors);
 		};
 
 		let current: AnyCollection | null = await this.resolveCollection(collection, allowAnonymous, sentFromUri);
@@ -138,29 +140,38 @@ export class Resolver {
 		return resolvedItems;
 	}
 
-	private async resolveItemArray(source: (string | IObject)[], sentFrom: undefined, itemLimit: number, concurrency: number, allowAnonymousItems: true, destination: IAnonymousObject[]): Promise<void>;
-	private async resolveItemArray(source: (string | IObject)[], sentFrom: string, itemLimit: number, concurrency: number, allowAnonymousItems: boolean, destination: IObjectWithId[]): Promise<void>;
-	private async resolveItemArray(source: (string | IObject)[], sentFrom: string | undefined, itemLimit: number, concurrency: number, allowAnonymousItems: boolean, destination: IObject[]): Promise<void>;
-	private async resolveItemArray(source: (string | IObject)[], sentFrom: string | undefined, itemLimit: number, concurrency: number, allowAnonymousItems: boolean, destination: IObject[]): Promise<void> {
+	private async resolveItemArray(source: (string | IObject)[], sentFrom: string | undefined, itemLimit: number, concurrency: number, allowAnonymousItems: boolean, destination: IObject[], ignoreErrors?: boolean): Promise<void> {
 		const recursionLimit = this.recursionLimit - this.history.size;
 		const batchLimit = Math.min(source.length, recursionLimit, itemLimit);
 
 		const batch = await promiseMap(source.slice(0, batchLimit), async item => {
-			if (sentFrom) {
-				// Use secureResolve to avoid re-fetching items that were included inline.
-				return await this.secureResolve(item, sentFrom, allowAnonymousItems);
-			} else if (allowAnonymousItems) {
-				return await this.resolveAnonymous(item);
-			} else {
-				// ID is required if we have neither sentFrom not allowAnonymousItems
-				const id = getApId(item);
-				return await this.resolve(id);
+			try {
+				if (sentFrom) {
+					// Use secureResolve to avoid re-fetching items that were included inline.
+					return await this.secureResolve(item, sentFrom, allowAnonymousItems);
+				} else if (allowAnonymousItems) {
+					return await this.resolveAnonymous(item);
+				} else {
+					// ID is required if we have neither sentFrom not allowAnonymousItems
+					const id = getApId(item);
+					return await this.resolve(id);
+				}
+			} catch (err) {
+				if (ignoreErrors) {
+					this.logger.warn(`Ignoring error in collection item ${getNullableApId(item)}: ${renderInlineError(err)}`);
+					return null;
+				} else {
+					throw err;
+				}
 			}
 		}, {
 			limit: concurrency,
 		});
 
-		destination.push(...batch);
+		// Items will be null if a request fails and ignoreErrors is true
+		const batchItems = batch.filter(item => item != null);
+
+		destination.push(...batchItems);
 	};
 
 	/**
