@@ -138,7 +138,7 @@ export class QueueStatsService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async stop(): void {
+	public async stop(): Promise<void> {
 		if (this.intervalId) {
 			this.timeService.stopTimer(this.intervalId);
 		}
@@ -157,11 +157,6 @@ export class QueueStatsService implements OnApplicationShutdown {
 		this.activeDeliverJobs = 0;
 		this.activeInboxJobs = 0;
 		this.activeBackgroundJobs = 0;
-	}
-
-	@bindThis
-	public async dispose(): void {
-		await this.stop();
 	}
 
 	@bindThis
