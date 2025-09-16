@@ -67,6 +67,10 @@ describe(SkRateLimiterService, () => {
 		mockEnvService.env.NODE_ENV = 'production';
 	});
 
+	afterEach(() => {
+		serviceUnderTest().dispose();
+	});
+
 	describe('limit', () => {
 		const actor = 'actor';
 		const key = 'test';
