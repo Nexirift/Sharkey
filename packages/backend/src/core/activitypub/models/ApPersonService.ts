@@ -916,23 +916,19 @@ export class ApPersonService implements OnModuleInit {
 	 * Duplicate updates are automatically skipped.
 	 */
 	@bindThis
-	public async updateFeaturedLazy(userOrId: MiUser | MiUser['id']): Promise<void> {
-		const userId = typeof(userOrId) === 'object' ? userOrId.id : userOrId;
-		const user = typeof(userOrId) === 'object' ? userOrId : await this.usersRepository.findOneByOrFail({ id: userId, isDeleted: false });
+	public async updateFeaturedLazy(userOrId: MiRemoteUser | MiUser['id']): Promise<void> {
+		const user = await this.resolveUserForFeatured(userOrId);
+		if (!user) return;
 
-		if (isRemoteUser(user) && user.featured) {
-			await this.queueService.createUpdateFeaturedJob(userId);
-		}
+		await this.queueService.createUpdateFeaturedJob(user.id);
 	}
 
 	@bindThis
-	public async updateFeatured(userOrId: MiUser | MiUser['id'], resolver?: Resolver): Promise<void> {
-		const userId = typeof(userOrId) === 'object' ? userOrId.id : userOrId;
-		const user = typeof(userOrId) === 'object' ? userOrId : await this.usersRepository.findOneByOrFail({ id: userId, isDeleted: false });
-		if (!isRemoteUser(user)) return;
-		if (!user.featured) return;
+	public async updateFeatured(userOrId: MiRemoteUser | MiUser['id'], resolver?: Resolver): Promise<void> {
+		const user = await this.resolveUserForFeatured(userOrId);
+		if (!user) return;
 
-		this.logger.info(`Updating the featured: ${user.uri}`);
+		this.logger.info(`Updating featured notes for: ${user.uri}`);
 
 		resolver ??= this.apResolverService.createResolver();
 
@@ -948,8 +944,8 @@ export class ApPersonService implements OnModuleInit {
 						sentFrom: itemId, // resolveCollectionItems has already verified this, so we can re-use it to avoid double fetch
 					});
 
-					if (note && note.userId !== userId) {
-						this.logger.warn(`Ignoring cross-note pin: user ${userId} tried to pin note ${note.id} belonging to user ${note.userId}`);
+					if (note && note.userId !== user.id) {
+						this.logger.warn(`Ignoring cross-note pin: user ${user.id} tried to pin note ${note.id} belonging to other user ${note.userId}`);
 						return null;
 					}
 
@@ -977,6 +973,25 @@ export class ApPersonService implements OnModuleInit {
 				});
 			}
 		});
+	}
+
+	@bindThis
+	private async resolveUserForFeatured(userOrId: MiRemoteUser | MiUser['id']): Promise<(MiRemoteUser & { featured: string }) | null> {
+		const userId = typeof(userOrId) === 'object' ? userOrId.id : userOrId;
+		const user = typeof(userOrId) === 'object' ? userOrId : await this.cacheService.findRemoteUserById(userId);
+
+		if (user.isDeleted || user.isSuspended) {
+			this.logger.debug(`Not updating featured for ${userId}: user is deleted`);
+			return null;
+		}
+
+		if (!user.featured) {
+			this.logger.debug(`Not updating featured for ${userId}: no featured collection`);
+			return null;
+		}
+
+		// For some reason TS doesn't recognize the type check above.
+		return user as MiRemoteUser & { featured: string };
 	}
 
 	/**
