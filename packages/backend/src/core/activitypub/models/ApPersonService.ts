@@ -701,13 +701,16 @@ export class ApPersonService implements OnModuleInit {
 
 		const profileUrls = url ? [url, person.id] : [person.id];
 		const verifiedLinks = await verifyFieldLinks(fields, profileUrls, this.httpRequestService);
+		const featuredUri = person.featured ? getApId(person.featured) : undefined;
 
 		const updates = {
 			lastFetchedAt: this.timeService.date,
 			inbox: person.inbox,
 			sharedInbox: person.sharedInbox ?? person.endpoints?.sharedInbox ?? null,
 			followersUri: person.followers ? getApId(person.followers) : undefined,
-			featured: person.featured ? getApId(person.featured) : undefined,
+			// If the featured collection changes, then reset the fetch timeout.
+			lastFetchedFeaturedAt: featuredUri !== exist.featured ? null : undefined,
+			featured: featuredUri,
 			emojis: emojiNames,
 			name: truncate(person.name, nameLength),
 			tags,
@@ -947,6 +950,10 @@ export class ApPersonService implements OnModuleInit {
 		this.logger.info(`Updating featured notes for: ${user.uri}`);
 
 		resolver ??= this.apResolverService.createResolver();
+
+		// Mark as updated
+		await this.usersRepository.update({ id: userId }, { lastFetchedFeaturedAt: new Date() });
+		await this.internalEventService.emit('remoteUserUpdated', { id: userId });
 
 		// Resolve and regist Notes
 		const maxPinned = (await this.roleService.getUserPolicies(user.id)).pinLimit;

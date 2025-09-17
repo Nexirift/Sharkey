@@ -129,7 +129,7 @@ export class BackgroundTaskProcessorService {
 		if (!isRemoteUser(user)) return `Skipping update-featured task: user ${task.userId} is local`;
 		if (!user.featured) return `Skipping update-featured task: user ${task.userId} has no featured collection`;
 
-		if (user.lastFetchedAt && Date.now() - user.lastFetchedAt.getTime() < 1000 * 60 * 60 * 24) {
+		if (user.lastFetchedFeaturedAt && Date.now() - user.lastFetchedFeaturedAt.getTime() < 1000 * 60 * 60 * 24) {
 			return `Skipping update-featured task: user ${task.userId} was recently updated`;
 		}
 
