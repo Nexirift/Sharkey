@@ -594,10 +594,8 @@ export class ApPersonService implements OnModuleInit {
 		try {
 			const updates = await this.resolveAvatarAndBanner(user, person.icon, person.image, person.backgroundUrl);
 			await this.usersRepository.update(user.id, updates);
+			await this.internalEventService.emit('remoteUserUpdated', { id: user.id });
 			user = { ...user, ...updates };
-
-			// Register to the cache
-			await this.uriPersonCache.set(user.uri, user.id);
 		} catch (err) {
 			// Permanent error implies hidden or inaccessible, which is a normal thing.
 			if (isRetryableError(err)) {
@@ -1013,6 +1011,7 @@ export class ApPersonService implements OnModuleInit {
 		let dst = await this.fetchPerson(src.movedToUri);
 
 		if (dst && isLocalUser(dst)) {
+			// TODO this branch should not be possible
 			// targetがローカルユーザーだった場合データベースから引っ張ってくる
 			dst = await this.usersRepository.findOneByOrFail({ uri: src.movedToUri }) as MiLocalUser;
 		} else if (dst) {
