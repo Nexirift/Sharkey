@@ -765,9 +765,12 @@ export class ApPersonService implements OnModuleInit {
 			return `skip: user ${exist.id} is deleted`;
 		}
 
+		// Do not use "exist" after this point!!
+		const updated = { ...exist, ...updates };
+
 		if (person.publicKey) {
 			const publicKey = new MiUserPublickey({
-				userId: exist.id,
+				userId: updated.id,
 				keyId: person.publicKey.id,
 				keyPem: person.publicKey.publicKeyPem,
 			});
@@ -781,7 +784,7 @@ export class ApPersonService implements OnModuleInit {
 				this.publicKeyByUserIdCache.set(publicKey.userId, publicKey),
 			]);
 		} else {
-			const existingPublicKey = await this.userPublickeysRepository.findOneBy({ userId: exist.id });
+			const existingPublicKey = await this.userPublickeysRepository.findOneBy({ userId: updated.id });
 			if (existingPublicKey) {
 				// Delete key
 				await Promise.all([
@@ -800,7 +803,7 @@ export class ApPersonService implements OnModuleInit {
 			_description = this.apMfmService.htmlToMfm(truncate(person.summary, this.config.maxRemoteBioLength), person.tag);
 		}
 
-		await this.userProfilesRepository.update({ userId: exist.id }, {
+		await this.userProfilesRepository.update({ userId: updated.id }, {
 			url,
 			fields,
 			verifiedLinks,
@@ -813,27 +816,25 @@ export class ApPersonService implements OnModuleInit {
 			listenbrainz: person.listenbrainz ?? null,
 		});
 
-		this.globalEventService.publishInternalEvent('remoteUserUpdated', { id: exist.id });
+		this.globalEventService.publishInternalEvent('remoteUserUpdated', { id: updated.id });
 
 		// 該当ユーザーが既にフォロワーになっていた場合はFollowingもアップデートする
-		if (exist.inbox !== person.inbox || exist.sharedInbox !== (person.sharedInbox ?? person.endpoints?.sharedInbox)) {
+		if (updated.inbox !== person.inbox || updated.sharedInbox !== (person.sharedInbox ?? person.endpoints?.sharedInbox)) {
 			await this.followingsRepository.update(
-				{ followerId: exist.id },
+				{ followerId: updated.id },
 				{
 					followerInbox: person.inbox,
 					followerSharedInbox: person.sharedInbox ?? person.endpoints?.sharedInbox ?? null,
 				},
 			);
 
-			await this.cacheService.refreshFollowRelationsFor(exist.id);
+			await this.cacheService.refreshFollowRelationsFor(updated.id);
 		}
 
 		// ハッシュタグ更新
-		await this.queueService.createUpdateUserTagsJob(exist.id);
+		await this.queueService.createUpdateUserTagsJob(updated.id);
 
-		await this.updateFeaturedLazy(exist);
-
-		const updated = { ...exist, ...updates };
+		await this.updateFeaturedLazy(updated);
 
 		// 移行処理を行う
 		if (updated.movedAt && (
