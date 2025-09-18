@@ -70,9 +70,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			// TODO inline this into the above query
 			for (const note of renotes) {
 				if (ps.quote) {
-					if (isQuote(note)) await this.noteDeleteService.delete(me, note, false);
+					if (isQuote(note)) await this.noteDeleteService.delete(me, note);
 				} else {
-					if (!isQuote(note)) await this.noteDeleteService.delete(me, note, false);
+					if (!isQuote(note)) await this.noteDeleteService.delete(me, note);
 				}
 			}
 		});

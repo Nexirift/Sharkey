@@ -28,7 +28,6 @@ import { ApLogService } from '@/core/ApLogService.js';
 import { TimeService } from '@/global/TimeService.js';
 import { trackTask } from '@/misc/promise-tracker.js';
 import { CollapsedQueueService } from '@/core/CollapsedQueueService.js';
-import { CacheService } from '@/core/CacheService.js';
 
 @Injectable()
 export class NoteDeleteService {
@@ -62,15 +61,12 @@ export class NoteDeleteService {
 		private readonly apLogService: ApLogService,
 		private readonly timeService: TimeService,
 		private readonly collapsedQueueService: CollapsedQueueService,
-		private readonly cacheService: CacheService,
 	) {}
 
 	/**
 	 * 投稿を削除します。
-	 * @param user 投稿者
-	 * @param note 投稿
 	 */
-	async delete(user: { id: MiUser['id']; uri: MiUser['uri']; host: MiUser['host']; isBot: MiUser['isBot']; }, note: MiNote, quiet = false, deleter?: MiUser) {
+	async delete(user: MiUser, note: MiNote, deleter?: MiUser, immediate = false) {
 		// This kicks off lots of things that can run in parallel, but we should still wait for completion to ensure consistent state and to avoid task flood when calling in a loop.
 		const promises: Promise<unknown>[] = [];
 
@@ -91,7 +87,8 @@ export class NoteDeleteService {
 			}
 		}
 
-		if (!quiet) {
+		// Braces preserved to avoid merge conflicts
+		{
 			promises.push(this.globalEventService.publishNoteStream(note.id, 'deleted', {
 				deletedAt: deletedAt,
 			}));
@@ -188,13 +185,16 @@ export class NoteDeleteService {
 		});
 
 		// Update the Latest Note index / following feed *after* note is deleted
-		promises.push(this.latestNoteService.handleDeletedNoteDeferred(note));
+		promises.push(immediate
+			? this.latestNoteService.handleDeletedNote(note)
+			: this.latestNoteService.handleDeletedNoteDeferred(note));
 		for (const cascadingNote of cascadingNotes) {
-			promises.push(this.latestNoteService.handleDeletedNoteDeferred(cascadingNote));
+			promises.push(immediate
+				? this.latestNoteService.handleDeletedNote(cascadingNote)
+				: this.latestNoteService.handleDeletedNoteDeferred(cascadingNote));
 		}
 
-		if (deleter && (note.userId !== deleter.id)) {
-			const user = await this.cacheService.findUserById(note.userId);
+		if (deleter && (user.id !== deleter.id)) {
 			promises.push(this.moderationLogService.log(deleter, 'deleteNote', {
 				noteId: note.id,
 				noteUserId: note.userId,
@@ -207,11 +207,22 @@ export class NoteDeleteService {
 			.map(n => n.uri)
 			.filter((u): u is string => u != null);
 		if (deletedUris.length > 0) {
-			promises.push(this.apLogService.deleteObjectLogsDeferred(deletedUris));
+			promises.push(immediate
+				? this.apLogService.deleteObjectLogs(deletedUris)
+				: this.apLogService.deleteObjectLogsDeferred(deletedUris));
 		}
 
 		await trackTask(async () => {
 			await Promise.allSettled(promises);
+
+			// This is deferred to make sure we don't race the enqueue() calls
+			if (immediate) {
+				await Promise.allSettled([
+					this.collapsedQueueService.updateNoteQueue.performAllNow(),
+					this.collapsedQueueService.updateUserQueue.performAllNow(),
+					this.collapsedQueueService.updateInstanceQueue.performAllNow(),
+				]);
+			}
 		});
 	}
 
