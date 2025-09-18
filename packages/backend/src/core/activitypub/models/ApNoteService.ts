@@ -280,13 +280,6 @@ export class ApNoteService {
 			processErrors.push('quoteUnavailable');
 		}
 
-		if (reply && reply.userHost == null && reply.localOnly) {
-			throw new IdentifiableError('12e23cec-edd9-442b-aa48-9c21f0c3b215', 'Cannot reply to local-only note');
-		}
-		if (quote && quote.userHost == null && quote.localOnly) {
-			throw new IdentifiableError('12e23cec-edd9-442b-aa48-9c21f0c3b215', 'Cannot quote a local-only note');
-		}
-
 		// vote
 		if (reply && reply.hasPoll) {
 			const poll = await this.pollsRepository.findOneByOrFail({ noteId: reply.id });
@@ -464,10 +457,6 @@ export class ApNoteService {
 		const quote = await this.getQuote(note, entryUri, resolver);
 		if (quote === null) {
 			processErrors.push('quoteUnavailable');
-		}
-
-		if (quote && quote.userHost == null && quote.localOnly) {
-			throw new IdentifiableError('12e23cec-edd9-442b-aa48-9c21f0c3b215', 'Cannot quote a local-only note');
 		}
 
 		// vote
