@@ -57,6 +57,7 @@ import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { LatestNoteService } from '@/core/LatestNoteService.js';
 import { CollapsedQueue } from '@/misc/collapsed-queue.js';
 import { CacheService } from '@/core/CacheService.js';
+import { isPureRenote } from '@/misc/is-renote.js';
 
 type NotificationType = 'reply' | 'renote' | 'quote' | 'mention';
 
@@ -284,6 +285,10 @@ export class NoteCreateService implements OnApplicationShutdown {
 		}
 
 		if (data.renote) {
+			if (isPureRenote(data.renote)) {
+				throw new IdentifiableError('fd4cc33e-2a37-48dd-99cc-9b806eb2031a', 'Cannot renote a pure renote (boost)');
+			}
+
 			switch (data.renote.visibility) {
 				case 'public':
 					// public noteは無条件にrenote可能

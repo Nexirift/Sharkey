@@ -52,6 +52,7 @@ import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { LatestNoteService } from '@/core/LatestNoteService.js';
 import { CollapsedQueue } from '@/misc/collapsed-queue.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
+import { isPureRenote } from '@/misc/is-renote.js';
 
 type NotificationType = 'reply' | 'renote' | 'quote' | 'mention' | 'edited';
 
@@ -303,6 +304,10 @@ export class NoteEditService implements OnApplicationShutdown {
 		}
 
 		if (this.isRenote(data)) {
+			if (isPureRenote(data.renote)) {
+				throw new IdentifiableError('fd4cc33e-2a37-48dd-99cc-9b806eb2031a', 'Cannot renote a pure renote (boost)');
+			}
+
 			// Check for recursion
 			let renoteId: string | null = data.renote.id;
 			while (renoteId) {

@@ -428,6 +428,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 						throw new ApiError(meta.errors.containsTooManyMentions);
 					} else if (e.id === '1c0ea108-d1e3-4e8e-aa3f-4d2487626153') {
 						throw new ApiError(meta.errors.quoteDisabledForUser);
+					} else if (e.id === 'fd4cc33e-2a37-48dd-99cc-9b806eb2031a') {
+						throw new ApiError(meta.errors.cannotReRenote);
 					}
 				}
 				throw e;

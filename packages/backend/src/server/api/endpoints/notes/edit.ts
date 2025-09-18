@@ -358,8 +358,6 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 				if (renote == null) {
 					throw new ApiError(meta.errors.noSuchRenoteTarget);
-				} else if (isRenote(renote) && !isQuote(renote)) {
-					throw new ApiError(meta.errors.cannotReRenote);
 				}
 
 				// Check blocking
@@ -481,6 +479,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 						throw new ApiError(meta.errors.quoteDisabledForUser);
 					} else if (e.id === 'ea93b7c2-3d6c-4e10-946b-00d50b1a75cb') {
 						throw new ApiError(meta.errors.cannotQuoteaQuoteOfCurrentPost);
+					} else if (e.id === 'fd4cc33e-2a37-48dd-99cc-9b806eb2031a') {
+						throw new ApiError(meta.errors.cannotReRenote);
 					}
 				}
 				throw e;
