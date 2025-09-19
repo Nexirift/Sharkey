@@ -95,7 +95,10 @@ export class NotificationService implements OnApplicationShutdown {
 		data: Omit<FilterUnionByProperty<MiNotification, 'type', T>, 'type' | 'id' | 'createdAt' | 'notifierId'>,
 		notifierId?: MiUser['id'] | null,
 	): Promise<MiNotification | null> {
-		const profile = await this.cacheService.userProfileCache.fetch(notifieeId);
+		const [profile, notifiee] = await Promise.all([
+			this.cacheService.userProfileCache.fetch(notifieeId),
+			this.cacheService.findUserById(notifieeId),
+		]);
 
 		// 古いMisskeyバージョンのキャッシュが残っている可能性がある
 		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -179,7 +182,7 @@ export class NotificationService implements OnApplicationShutdown {
 			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 		} while (true);
 
-		const packed = await this.notificationEntityService.pack(notification, notifieeId, {});
+		const packed = await this.notificationEntityService.pack(notification, notifiee, {});
 
 		if (packed == null) return null;
 
@@ -196,8 +199,8 @@ export class NotificationService implements OnApplicationShutdown {
 			this.globalEventService.publishMainStream(notifieeId, 'unreadNotification', packed);
 			this.pushNotificationService.pushNotification(notifieeId, 'notification', packed);
 
-			if (type === 'follow') this.emailNotificationFollow(notifieeId, await this.usersRepository.findOneByOrFail({ id: notifierId! }));
-			if (type === 'receiveFollowRequest') this.emailNotificationReceiveFollowRequest(notifieeId, await this.usersRepository.findOneByOrFail({ id: notifierId! }));
+			if (type === 'follow') this.emailNotificationFollow(notifieeId, await this.cacheService.findUserById(notifierId!));
+			if (type === 'receiveFollowRequest') this.emailNotificationReceiveFollowRequest(notifieeId, await this.cacheService.findUserById(notifierId!));
 		}, () => { /* aborted, ignore it */ });
 
 		return notification;
