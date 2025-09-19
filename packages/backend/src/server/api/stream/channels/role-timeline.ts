@@ -34,7 +34,7 @@ class RoleTimelineChannel extends Channel {
 		if (typeof params.roleId !== 'string') return;
 		this.roleId = params.roleId;
 
-		this.subscriber.on(`roleTimelineStream:${this.roleId}`, this.onEvent);
+		this.subscriber?.on(`roleTimelineStream:${this.roleId}`, this.onEvent);
 	}
 
 	@bindThis
@@ -80,7 +80,7 @@ class RoleTimelineChannel extends Channel {
 	@bindThis
 	public dispose() {
 		// Unsubscribe events
-		this.subscriber.off(`roleTimelineStream:${this.roleId}`, this.onEvent);
+		this.subscriber?.off(`roleTimelineStream:${this.roleId}`, this.onEvent);
 	}
 }
 
