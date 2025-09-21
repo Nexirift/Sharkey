@@ -236,7 +236,7 @@ describe('API', () => {
 					},
 					'homeTimeline',
 					() => { },
-				), (err: IncomingMessage) => {
+				), (err: { statusCode: string, reason: string }) => {
 					assert.strictEqual(err.statusCode, 4000);
 					assert.ok(err.reason?.startsWith('Failed to authenticate'));
 					return true;
