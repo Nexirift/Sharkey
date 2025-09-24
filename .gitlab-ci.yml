@@ -145,11 +145,7 @@ include:
   - template: Jobs/SAST.latest.gitlab-ci.yml
   - template: Jobs/Secret-Detection.latest.gitlab-ci.yml
   # https://docs.gitlab.com/user/application_security/dependency_scanning/experiment_libbehave_dependency/
-  # https://gitlab.com/gitlab-org/security-products/demos/experiments/libbehave/npm-demo/-/blob/add_dependencies/.gitlab-ci.yml?ref_type=heads#L6
-  # https://stackoverflow.com/a/70360201
   - component: $CI_SERVER_FQDN/TransFem-org/libbehave/libbehave@v0.1.0
-    rules:
-      - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
 
 variables:
   # https://docs.gitlab.com/user/application_security/sast/gitlab_advanced_sast
@@ -158,6 +154,7 @@ variables:
   # https://docs.gitlab.com/user/application_security/sast/#vulnerability-filters
   # https://stackoverflow.com/a/71111784
   SAST_EXCLUDED_PATHS: 'spec,test,test-d,test-federation,test-server,tests,tmp,cypress,coverage,node_modules,build,built,built-js,*.min.js,megalodon/lib,libopenmpt'
+  DS_EXCLUDED_PATHS: 'spec,test,test-d,test-federation,test-server,tests,tmp,cypress,coverage,node_modules,build,built,built-js,*.min.js,megalodon/lib,libopenmpt'
 
   # https://docs.gitlab.com/user/application_security/dependency_scanning/migration_guide_to_sbom_based_scans/
   DS_ENFORCE_NEW_ANALYZER: 'true'
@@ -175,3 +172,14 @@ container_scanning:
     AST_ENABLE_MR_PIPELINES: 'false'
     CS_IMAGE: ${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_TAG}
   stage: deploy
+  dependencies:
+    - merge_image_manifests
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'push' || ($CI_COMMIT_BRANCH != 'develop' && $CI_COMMIT_BRANCH != 'stable' && $CI_COMMIT_TAG != '')
+      when: never
+
+libbehave-experiment:
+  # https://gitlab.com/gitlab-org/security-products/demos/experiments/libbehave/npm-demo/-/blob/add_dependencies/.gitlab-ci.yml?ref_type=heads#L6
+  # https://stackoverflow.com/a/70360201
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
