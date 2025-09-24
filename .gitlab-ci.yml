@@ -3,7 +3,7 @@ include:
   - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
   - template: Jobs/Container-Scanning.latest.gitlab-ci.yml
     rules:
-      - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      - if: $CI_PIPELINE_SOURCE != 'merge_request_event'
   - template: Jobs/SAST.latest.gitlab-ci.yml
   - template: Jobs/Secret-Detection.latest.gitlab-ci.yml
   # https://docs.gitlab.com/user/application_security/dependency_scanning/experiment_libbehave_dependency/
