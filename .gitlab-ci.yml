@@ -19,7 +19,7 @@ stages:
     - git submodule update --init
     - pnpm install --frozen-lockfile
   cache:
-    key: node_modules
+    key: build
     policy: pull-push
     when: on_success
     paths:
@@ -38,6 +38,8 @@ build:
 .test_common: &test_common
   <<: *build_common
   stage: test
+  cache:
+    key: test
 
 lint:
   <<: *test_common
