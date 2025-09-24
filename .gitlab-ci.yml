@@ -1,9 +1,10 @@
 stages:
+  - build
   - test
   - deploy
 
-.test_common: &test_common
-  stage: test
+.build_common: &build_common
+  stage: build
   image: docker.io/node:22
   variables:
     POSTGRES_PASSWORD: ci
@@ -18,7 +19,7 @@ stages:
     - git submodule update --init
     - pnpm install --frozen-lockfile
   cache:
-    key: test
+    key: build
     policy: pull-push
     when: on_success
     paths:
@@ -28,6 +29,17 @@ stages:
     - develop
     - merge_requests
     - stable
+
+build:
+  <<: *build_common
+  script:
+    - pnpm run build
+
+.test_common: &test_common
+  <<: *build_common
+  stage: test
+  cache:
+    key: test
 
 lint:
   <<: *test_common
@@ -150,6 +162,7 @@ include:
 variables:
   # https://docs.gitlab.com/user/application_security/sast/gitlab_advanced_sast
   GITLAB_ADVANCED_SAST_ENABLED: 'true'
+  SEARCH_MAX_DEPTH: 32
 
   # https://docs.gitlab.com/user/application_security/sast/#vulnerability-filters
   # https://stackoverflow.com/a/71111784
