@@ -14,6 +14,8 @@ variables:
   # https://docs.gitlab.com/user/application_security/dependency_scanning/migration_guide_to_sbom_based_scans/
   DS_ENFORCE_NEW_ANALYZER: 'true'
   DS_MAX_DEPTH: 8
+  # https://docs.gitlab.com/user/application_security/dependency_scanning/static_reachability/
+  DS_STATIC_REACHABILITY_ENABLED: true
 
   # https://docs.gitlab.com/user/application_security/detect/security_configuration/#use-security-scanning-tools-with-merge-request-pipelines
   AST_ENABLE_MR_PIPELINES: 'true'
