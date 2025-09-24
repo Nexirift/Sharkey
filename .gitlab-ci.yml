@@ -154,11 +154,11 @@ variables:
   # https://docs.gitlab.com/user/application_security/sast/#vulnerability-filters
   # https://stackoverflow.com/a/71111784
   SAST_EXCLUDED_PATHS: 'spec,test,test-d,test-federation,test-server,tests,tmp,cypress,coverage,node_modules,build,built,built-js,*.min.js,megalodon/lib,libopenmpt'
-  DS_EXCLUDED_PATHS: 'spec,test,test-d,test-federation,test-server,tests,tmp,cypress,coverage,node_modules,build,built,built-js,*.min.js,megalodon/lib,libopenmpt'
+  DS_EXCLUDED_PATHS: 'spec,test,test-d,test-federation,test-server,tests,tmp,cypress,coverage,node_modules,build,built,built-js,*.min.js,megalodon/lib,libopenmpt,packages/*/src' # save time: skip source directories
 
   # https://docs.gitlab.com/user/application_security/dependency_scanning/migration_guide_to_sbom_based_scans/
   DS_ENFORCE_NEW_ANALYZER: 'true'
-  DS_MAX_DEPTH: 8
+  DS_MAX_DEPTH: -1
   # https://docs.gitlab.com/user/application_security/dependency_scanning/static_reachability/
   DS_STATIC_REACHABILITY_ENABLED: true
 
