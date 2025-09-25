@@ -41,7 +41,8 @@ class AntennaChannel extends Channel {
 		if (data.type === 'note') {
 			const note = await this.noteEntityService.pack(data.body.id, this.user, { detail: true });
 
-			if (this.isNoteMutedOrBlocked(note)) return;
+			const { accessible, silence } = await this.checkNoteVisibility(note, { includeReplies: true });
+			if (!accessible || silence) return;
 
 			this.send('note', note);
 		} else {

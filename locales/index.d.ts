@@ -9217,6 +9217,14 @@ export interface Locale extends ILocale {
          */
         "write:admin:cw-user": string;
         /**
+         * Apply mandatory CW on notes
+         */
+        "write:admin:cw-note": string;
+        /**
+         * Apply mandatory CW on instances
+         */
+        "write:admin:cw-instance": string;
+        /**
          * Silence users
          */
         "write:admin:silence-user": string;
@@ -10953,13 +10961,13 @@ export interface Locale extends ILocale {
          */
         "setMandatoryCW": string;
         /**
-         * Set remote instance as NSFW
+         * Set content warning for note
          */
-        "setRemoteInstanceNSFW": string;
+        "setMandatoryCWForNote": string;
         /**
-         * Unset remote instance as NSFW
+         * Set content warning for instance
          */
-        "unsetRemoteInstanceNSFW": string;
+        "setMandatoryCWForInstance": string;
         /**
          * Rejected reports from remote instance
          */
@@ -12089,6 +12097,26 @@ export interface Locale extends ILocale {
      */
     "userSaysSomethingInMutedThread": ParameterizedString<"name">;
     /**
+     * {name} has been silenced by {host} staff
+     */
+    "silencedUserSaysSomething": ParameterizedString<"name" | "host">;
+    /**
+     * {name} has been silenced by {host} staff
+     */
+    "silencedInstanceSaysSomething": ParameterizedString<"name" | "host">;
+    /**
+     * {name} is flagged: "{cw}"
+     */
+    "userIsFlaggedAs": ParameterizedString<"name" | "cw">;
+    /**
+     * Note is flagged: "{cw}"
+     */
+    "noteIsFlaggedAs": ParameterizedString<"cw">;
+    /**
+     * {name} is flagged: "{cw}"
+     */
+    "instanceIsFlaggedAs": ParameterizedString<"name" | "cw">;
+    /**
      * Mark all media from user as NSFW
      */
     "markAsNSFW": string;
@@ -13038,9 +13066,25 @@ export interface Locale extends ILocale {
      */
     "mandatoryCW": string;
     /**
-     * Applies a content warning to all posts created by this user. If the post already has a CW, then this is appended to the end.
+     * Applies a content warning to all posts created by this user. The forced warnings will appear like a word mute to distinguish them from the author's own content warnings.
      */
     "mandatoryCWDescription": string;
+    /**
+     * Force content warning
+     */
+    "mandatoryCWForNote": string;
+    /**
+     * Applies an additional content warning to this post. The new warning will appear like a word mute to distinguish it from the author's own content warning.
+     */
+    "mandatoryCWForNoteDescription": string;
+    /**
+     * Force content warning
+     */
+    "mandatoryCWForInstance": string;
+    /**
+     * Applies a content warning to all posts originating from this instance. The forced warnings will appear like a word mute to distinguish them from the notes' own content warnings.
+     */
+    "mandatoryCWForInstanceDescription": string;
     /**
      * Fetch linked note
      */

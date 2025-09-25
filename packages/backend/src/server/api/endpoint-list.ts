@@ -34,6 +34,8 @@ export * as 'admin/avatar-decorations/list' from './endpoints/admin/avatar-decor
 export * as 'admin/avatar-decorations/update' from './endpoints/admin/avatar-decorations/update.js';
 export * as 'admin/captcha/current' from './endpoints/admin/captcha/current.js';
 export * as 'admin/captcha/save' from './endpoints/admin/captcha/save.js';
+export * as 'admin/cw-instance' from './endpoints/admin/cw-instance.js';
+export * as 'admin/cw-note' from './endpoints/admin/cw-note.js';
 export * as 'admin/cw-user' from './endpoints/admin/cw-user.js';
 export * as 'admin/decline-user' from './endpoints/admin/decline-user.js';
 export * as 'admin/delete-account' from './endpoints/admin/delete-account.js';

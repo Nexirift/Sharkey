@@ -35,24 +35,19 @@ class MainChannel extends Channel {
 					if (isUserFromMutedInstance(data.body, this.userMutedInstances)) return;
 					if (data.body.userId && this.userIdsWhoMeMuting.has(data.body.userId)) return;
 
-					if (data.body.note && data.body.note.isHidden) {
-						if (this.isNoteMutedOrBlocked(data.body.note)) return;
-						if (!this.isNoteVisibleToMe(data.body.id)) return;
-						const note = await this.noteEntityService.pack(data.body.note.id, this.user, {
-							detail: true,
-						});
-						data.body.note = note;
+					if (data.body.note) {
+						const { accessible, silence } = await this.checkNoteVisibility(data.body.note, { includeReplies: true });
+						if (!accessible || silence) return;
+
+						data.body.note = await this.rePackNote(data.body.note);
 					}
 					break;
 				}
 				case 'mention': {
-					if (this.isNoteMutedOrBlocked(data.body)) return;
-					if (data.body.isHidden) {
-						const note = await this.noteEntityService.pack(data.body.id, this.user, {
-							detail: true,
-						});
-						data.body = note;
-					}
+					const { accessible, silence } = await this.checkNoteVisibility(data.body, { includeReplies: true });
+					if (!accessible || silence) return;
+
+					data.body = await this.rePackNote(data.body);
 					break;
 				}
 			}

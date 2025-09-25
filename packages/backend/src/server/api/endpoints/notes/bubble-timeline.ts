@@ -93,9 +93,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				.leftJoin('(select "host" from "instance" where "isBubbled" = true)', 'bubbleInstance', '"bubbleInstance"."host" = "note"."userHost"')
 				.andWhere('"bubbleInstance" IS NOT NULL');
 			this.queryService
-				.leftJoinInstance(query, 'note.userInstance', 'userInstance', '"userInstance"."host" = "bubbleInstance"."host"');
+				.leftJoin(query, 'note.userInstance', 'userInstance');
 
+			this.queryService.generateExcludedRepliesQueryForNotes(query, me);
 			this.queryService.generateBlockedHostQueryForNote(query);
+			this.queryService.generateSuspendedUserQueryForNote(query);
 			this.queryService.generateSilencedUserQueryForNotes(query, me);
 			if (me) {
 				this.queryService.generateMutedUserQueryForNotes(query, me);

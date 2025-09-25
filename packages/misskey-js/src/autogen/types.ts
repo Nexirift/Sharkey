@@ -233,6 +233,24 @@ export type paths = {
      */
     post: operations['admin___captcha___save'];
   };
+  '/admin/cw-instance': {
+    /**
+     * admin/cw-instance
+     * @description No description provided.
+     *
+     * **Credential required**: *Yes* / **Permission**: *write:admin:cw-instance*
+     */
+    post: operations['admin___cw-instance'];
+  };
+  '/admin/cw-note': {
+    /**
+     * admin/cw-note
+     * @description No description provided.
+     *
+     * **Credential required**: *Yes* / **Permission**: *write:admin:cw-note*
+     */
+    post: operations['admin___cw-note'];
+  };
   '/admin/cw-user': {
     /**
      * admin/cw-user
@@ -4289,6 +4307,7 @@ export type components = {
       isCat?: boolean;
       speakAsCat?: boolean;
       isSilenced: boolean;
+      bypassSilence: boolean;
       requireSigninToViewContents?: boolean;
       makeNotesFollowersOnlyBefore?: number | null;
       makeNotesHiddenBefore?: number | null;
@@ -4300,6 +4319,7 @@ export type components = {
         faviconUrl: string | null;
         themeColor: string | null;
         isSilenced: boolean;
+        mandatoryCW: string | null;
       };
       followersCount: number;
       followingCount: number;
@@ -4671,8 +4691,10 @@ export type components = {
       deletedAt?: string | null;
       text: string | null;
       cw?: string | null;
+      mandatoryCW?: string | null;
       /** Format: id */
       userId: string;
+      userHost: string | null;
       user: components['schemas']['UserLite'];
       /**
        * Format: id
@@ -4711,6 +4733,7 @@ export type components = {
       isMutingNote: boolean;
       isFavorited: boolean;
       isRenoted: boolean;
+      bypassSilence: boolean;
       emojis?: {
         [key: string]: string;
       };
@@ -5326,11 +5349,11 @@ export type components = {
       infoUpdatedAt: string | null;
       /** Format: date-time */
       latestRequestReceivedAt: string | null;
-      isNSFW: boolean;
       rejectReports: boolean;
       rejectQuotes: boolean;
       moderationNote?: string | null;
       isBubbled: boolean;
+      mandatoryCW: string | null;
     };
     GalleryPost: {
       /**
@@ -7390,6 +7413,115 @@ export type operations = {
     };
   };
   /**
+   * admin/cw-instance
+   * @description No description provided.
+   *
+   * **Credential required**: *Yes* / **Permission**: *write:admin:cw-instance*
+   */
+  'admin___cw-instance': {
+    requestBody: {
+      content: {
+        'application/json': {
+          host: string;
+          cw: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description OK (with results) */
+      200: {
+        content: {
+          'application/json': unknown;
+        };
+      };
+      /** @description Client error */
+      400: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Authentication error */
+      401: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden error */
+      403: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description I'm Ai */
+      418: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  /**
+   * admin/cw-note
+   * @description No description provided.
+   *
+   * **Credential required**: *Yes* / **Permission**: *write:admin:cw-note*
+   */
+  'admin___cw-note': {
+    requestBody: {
+      content: {
+        'application/json': {
+          /** Format: misskey:id */
+          noteId: string;
+          cw: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description OK (with results) */
+      200: {
+        content: {
+          'application/json': unknown;
+        };
+      };
+      /** @description Client error */
+      400: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Authentication error */
+      401: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden error */
+      403: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description I'm Ai */
+      418: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  /**
    * admin/cw-user
    * @description No description provided.
    *
@@ -7406,9 +7538,11 @@ export type operations = {
       };
     };
     responses: {
-      /** @description OK (without any results) */
-      204: {
-        content: never;
+      /** @description OK (with results) */
+      200: {
+        content: {
+          'application/json': unknown;
+        };
       };
       /** @description Client error */
       400: {
@@ -8783,7 +8917,6 @@ export type operations = {
         'application/json': {
           host: string;
           isSuspended?: boolean;
-          isNSFW?: boolean;
           rejectReports?: boolean;
           moderationNote?: string;
           rejectQuotes?: boolean;
