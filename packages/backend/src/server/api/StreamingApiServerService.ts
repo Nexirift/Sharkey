@@ -35,7 +35,7 @@ const MAX_CONNECTIONS_PER_CLIENT = 32;
 
 @Injectable()
 export class StreamingApiServerService implements OnApplicationShutdown {
-	#wss: WebSocket.WebSocketServer;
+	#wss?: WebSocket.WebSocketServer;
 	#connections = new Map<WebSocket.WebSocket, number>();
 	#connectionsByClient = new Map<string, Set<WebSocket.WebSocket>>(); // key: IP / user ID -> value: connection
 	#cleanConnectionsIntervalId: NodeJS.Timeout | null = null;
@@ -100,7 +100,7 @@ export class StreamingApiServerService implements OnApplicationShutdown {
 
 	@bindThis
 	public attach(server: http.Server): void {
-		this.#wss = new WebSocket.WebSocketServer({
+		const wss = this.#wss = new WebSocket.WebSocketServer({
 			noServer: true,
 			perMessageDeflate: this.config.websocketCompression,
 		});
@@ -212,7 +212,7 @@ export class StreamingApiServerService implements OnApplicationShutdown {
 
 			await stream.init();
 
-			this.#wss.handleUpgrade(request, socket, head, (ws) => {
+			wss.handleUpgrade(request, socket, head, (ws) => {
 				connectionsForClient.add(ws);
 
 				// Call before emit() in case it throws an error.
@@ -241,7 +241,7 @@ export class StreamingApiServerService implements OnApplicationShutdown {
 				};
 
 				ws.on('error', onWsInitError);
-				this.#wss.emit('connection', ws, request, {
+				wss.emit('connection', ws, request, {
 					stream, user, app,
 				});
 				ws.off('error', onWsInitError);
@@ -321,14 +321,18 @@ export class StreamingApiServerService implements OnApplicationShutdown {
 		this.#connectionsByClient.clear();
 
 		await new Promise<void>((resolve, reject) => {
-			this.#wss.close(err => {
-				if (err) reject(err);
-				else resolve();
-			});
+			if (this.#wss) {
+				this.#wss.close(err => {
+					// according to the documentation, this callback only receives an error if the server was already closed: we can ignore that
+					resolve();
+				});
+			} else {
+				resolve();
+			}
 		});
 
 		// Don't disconnect this until *after* close returns
-		this.#wss.off('error', this.onWsError);
+		this.#wss?.off('error', this.onWsError);
 	}
 
 	@bindThis

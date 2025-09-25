@@ -42,7 +42,7 @@ class BubbleTimelineChannel extends Channel {
 		this.withBots = !!(params.withBots ?? true);
 
 		// Subscribe events
-		this.subscriber.on('notesStream', this.onNote);
+		this.subscriber?.on('notesStream', this.onNote);
 	}
 
 	@bindThis
@@ -85,7 +85,7 @@ class BubbleTimelineChannel extends Channel {
 	@bindThis
 	public dispose() {
 		// Unsubscribe events
-		this.subscriber.off('notesStream', this.onNote);
+		this.subscriber?.off('notesStream', this.onNote);
 	}
 }
 

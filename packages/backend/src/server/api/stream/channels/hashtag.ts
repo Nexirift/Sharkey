@@ -34,7 +34,7 @@ class HashtagChannel extends Channel {
 		this.q = params.q;
 
 		// Subscribe stream
-		this.subscriber.on('notesStream', this.onNote);
+		this.subscriber?.on('notesStream', this.onNote);
 	}
 
 	@bindThis
@@ -52,7 +52,7 @@ class HashtagChannel extends Channel {
 	@bindThis
 	public dispose() {
 		// Unsubscribe events
-		this.subscriber.off('notesStream', this.onNote);
+		this.subscriber?.off('notesStream', this.onNote);
 	}
 }
 

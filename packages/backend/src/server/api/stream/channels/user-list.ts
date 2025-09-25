@@ -54,9 +54,9 @@ class UserListChannel extends Channel {
 		if (!listExist) return;
 
 		// Subscribe stream
-		this.subscriber.on(`userListStream:${this.listId}`, this.send);
+		this.subscriber?.on(`userListStream:${this.listId}`, this.send);
 
-		this.subscriber.on('notesStream', this.onNote);
+		this.subscriber?.on('notesStream', this.onNote);
 
 		this.updateListUsers();
 		this.listUsersClock = setInterval(this.updateListUsers, 5000);
@@ -121,8 +121,8 @@ class UserListChannel extends Channel {
 	@bindThis
 	public dispose() {
 		// Unsubscribe events
-		this.subscriber.off(`userListStream:${this.listId}`, this.send);
-		this.subscriber.off('notesStream', this.onNote);
+		this.subscriber?.off(`userListStream:${this.listId}`, this.send);
+		this.subscriber?.off('notesStream', this.onNote);
 
 		clearInterval(this.listUsersClock);
 	}

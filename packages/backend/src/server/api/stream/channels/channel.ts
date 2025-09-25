@@ -36,7 +36,7 @@ class ChannelChannel extends Channel {
 		this.withRenotes = !!(params.withRenotes ?? true);
 
 		// Subscribe stream
-		this.subscriber.on('notesStream', this.onNote);
+		this.subscriber?.on('notesStream', this.onNote);
 	}
 
 	@bindThis
@@ -56,7 +56,7 @@ class ChannelChannel extends Channel {
 	@bindThis
 	public dispose() {
 		// Unsubscribe events
-		this.subscriber.off('notesStream', this.onNote);
+		this.subscriber?.off('notesStream', this.onNote);
 	}
 }
 

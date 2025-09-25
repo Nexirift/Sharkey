@@ -33,7 +33,7 @@ class AntennaChannel extends Channel {
 		this.antennaId = params.antennaId;
 
 		// Subscribe stream
-		this.subscriber.on(`antennaStream:${this.antennaId}`, this.onEvent);
+		this.subscriber?.on(`antennaStream:${this.antennaId}`, this.onEvent);
 	}
 
 	@bindThis
@@ -52,7 +52,7 @@ class AntennaChannel extends Channel {
 	@bindThis
 	public dispose() {
 		// Unsubscribe events
-		this.subscriber.off(`antennaStream:${this.antennaId}`, this.onEvent);
+		this.subscriber?.off(`antennaStream:${this.antennaId}`, this.onEvent);
 	}
 }
 
