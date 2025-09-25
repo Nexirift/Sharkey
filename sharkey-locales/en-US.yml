@@ -675,3 +675,5 @@ clearCachedFilesOptions:
   keepFilesInUseDescription: "this option requires more complicated database queries, you may need to increase the value of db.extra.statement_timeout in the configuration file"
 
 customFontSize: "Custom font size"
+
+hideAds: "Hide ads"
