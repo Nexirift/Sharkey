@@ -55,7 +55,7 @@ describe('DriveService', () => {
 			s3Mock.on(DeleteObjectCommand)
 				.rejects(new InvalidObjectState({ $metadata: {}, message: '' }));
 
-			await expect(driveService.deleteObjectStorageFile('unexpected')).rejects.toThrowError(Error);
+			await expect(driveService.deleteObjectStorageFile('unexpected')).rejects.toBeInstanceOf(Error);
 		});
 
 		test('delete a file with no valid key', async () => {

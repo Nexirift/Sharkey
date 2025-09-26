@@ -17,7 +17,7 @@ import { FileInfo, FileInfoService } from '@/core/FileInfoService.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import type { TestingModule } from '@nestjs/testing';
 import { CoreModule } from '@/core/CoreModule.js';
-import type { MockFunctionMetadata } from 'jest-mock';
+import type { MockMetadata } from 'jest-mock';
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
@@ -47,7 +47,7 @@ describe('FileInfoService', () => {
 		})
 			.useMocker((token) => {
 				if (typeof token === 'function') {
-					const mockMetadata = moduleMocker.getMetadata(token) as MockFunctionMetadata<any, any>;
+					const mockMetadata = moduleMocker.getMetadata(token) as MockMetadata<any, any>;
 					const Mock = moduleMocker.generateFromMetadata(mockMetadata);
 					return new Mock();
 				}

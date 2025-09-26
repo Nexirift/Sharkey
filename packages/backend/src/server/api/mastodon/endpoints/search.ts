@@ -112,7 +112,7 @@ export class ApiSearchMastodon {
 				{
 					method: 'POST',
 					headers: {
-						...request.headers,
+						...request.headers as Record<string, string>,
 						'Accept': 'application/json',
 						'Content-Type': 'application/json',
 					},
@@ -135,7 +135,7 @@ export class ApiSearchMastodon {
 				{
 					method: 'POST',
 					headers: {
-						...request.headers,
+						...request.headers as Record<string, string>,
 						'Accept': 'application/json',
 						'Content-Type': 'application/json',
 					},
