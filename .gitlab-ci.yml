@@ -14,10 +14,11 @@ include:
 
 # https://docs.gitlab.com/ci/yaml/#default
 default:
-  only:
-    - develop
-    - merge_requests
-    - stable
+  # "only" has been removed, so we use rules.
+  # This runs in MR pipelines *or* push to develop/stable
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_PIPELINE_SOURCE == 'push' && ($CI_COMMIT_BRANCH == 'develop' || $CI_COMMIT_BRANCH == 'stable')
 
 # Cache node_modules and share build artifacts for the pipeline.
 # This shares the same cache definition, but it's the only place that actually *pushes* to the cache.
@@ -125,6 +126,13 @@ frontend_tests:
 
 .deploy_common: &deploy_common
   stage: deploy
+  # Only run when pushing to stable, develop, or tags
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'push'
+      when: never
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH == 'stable'
+    - if: $CI_COMMIT_TAG
 
 get_image_tag:
   <<: *deploy_common
@@ -225,9 +233,6 @@ container_scanning:
   needs:
     - job: merge_image_manifests
       artifacts: true
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'push' || ($CI_COMMIT_BRANCH != 'develop' && $CI_COMMIT_BRANCH != 'stable' && $CI_COMMIT_TAG != '')
-      when: never
 
 dependency_scanning:
   <<: *sast_common
