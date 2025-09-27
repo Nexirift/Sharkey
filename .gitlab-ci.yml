@@ -31,8 +31,7 @@ variables:
   AST_ENABLE_MR_PIPELINES: 'true'
 
 .common: &common
-  # "only" has been removed, so we use rules.
-  # This runs in MR pipelines *or* push to develop/stable
+  # Only run in MR pipelines *or* push to develop/stable
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_PIPELINE_SOURCE == 'push' && ($CI_COMMIT_BRANCH == 'develop' || $CI_COMMIT_BRANCH == 'stable')
@@ -213,17 +212,29 @@ merge_image_manifests:
         --target ${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_TAG}
 
 .sast_common: &sast_common
-  <<: *common
   stage: test
   # SAST tools only support x64
   tags:
     - amd64
+  # Only run in MR pipelines *or* push to develop/stable.
+  # This is the same as in common, but inverted to always include "when: never".
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'merge_request_event' && $CI_PIPELINE_SOURCE != 'push'
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_BRANCH != 'develop' && $CI_COMMIT_BRANCH != 'stable'
+      when: never
 
 # https://docs.gitlab.com/user/application_security/container_scanning/#scanning-archives-built-in-a-previous-job
 # https://docs.gitlab.com/user/application_security/detect/security_configuration/#error-chosen-stage-test-does-not-exist
 container_scanning:
   <<: *sast_common
-  <<: *deploy_common
+  # Only run when pushing to stable, develop, or tags.
+  # This is the same as in deploy, but inverted to always include "when: never".
+  rules:
+    - if: $CI_PIPELINE_SOURCE != 'push'
+      when: never
+    - if: $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != 'develop' && $CI_COMMIT_BRANCH != 'stable'
+      when: never
   variables:
     AST_ENABLE_MR_PIPELINES: 'false'
     CS_IMAGE: ${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_TAG}
@@ -231,11 +242,11 @@ container_scanning:
     - job: merge_image_manifests
       artifacts: true
 
-dependency-scanning:
+dependency_scanning:
   <<: *sast_common
 
-#sast:
-#  <<: *sast_common
+sast:
+  <<: *sast_common
 
 gitlab-advanced-sast:
   <<: *sast_common
