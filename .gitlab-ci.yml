@@ -1,3 +1,8 @@
+stages:
+  - build
+  - test
+  - deploy
+
 # https://docs.gitlab.com/user/application_security/sast/
 include:
   - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
@@ -7,34 +12,26 @@ include:
   # https://docs.gitlab.com/user/application_security/dependency_scanning/experiment_libbehave_dependency/
   - component: $CI_SERVER_FQDN/TransFem-org/libbehave/libbehave@v0.2.4
 
-variables:
-  # https://docs.gitlab.com/user/application_security/sast/gitlab_advanced_sast
-  GITLAB_ADVANCED_SAST_ENABLED: 'true'
+# https://docs.gitlab.com/ci/yaml/#default
+default:
+  only:
+    - develop
+    - merge_requests
+    - stable
 
-  # https://docs.gitlab.com/user/application_security/sast/#vulnerability-filters
-  # https://stackoverflow.com/a/71111784
-  SAST_EXCLUDED_PATHS: 'spec,test,test-d,test-federation,test-server,tests,tmp,cypress,coverage,node_modules,build,built,built-js,*.min.js,megalodon/lib,libopenmpt'
-  DS_EXCLUDED_PATHS: 'spec,test,test-d,test-federation,test-server,tests,tmp,cypress,coverage,node_modules,build,built,built-js,*.min.js,megalodon/lib,libopenmpt,packages/*/src' # save time: skip source directories
-
-  # https://docs.gitlab.com/user/application_security/dependency_scanning/migration_guide_to_sbom_based_scans/
-  DS_ENFORCE_NEW_ANALYZER: 'true'
-  DS_MAX_DEPTH: -1
-  # https://docs.gitlab.com/user/application_security/dependency_scanning/static_reachability/
-  DS_STATIC_REACHABILITY_ENABLED: true
-
-  # https://docs.gitlab.com/user/application_security/detect/security_configuration/#use-security-scanning-tools-with-merge-request-pipelines
-  AST_ENABLE_MR_PIPELINES: 'true'
-
-stages:
-  - test
-  - deploy
-
-.test_common: &test_common
-  stage: test
-  image: docker.io/node:22
+# Cache node_modules and share build artifacts for the pipeline.
+# This shares the same cache definition, but it's the only place that actually *pushes* to the cache.
+# https://docs.gitlab.com/ci/caching/
+# https://github.com/pnpm/pnpm/issues/1174#issuecomment-996719439
+# https://github.com/pnpm/pnpm/issues/1174#issuecomment-1641267133
+build: &build
+  stage: build
   variables:
-    POSTGRES_PASSWORD: ci
-    COREPACK_DEFAULT_TO_LATEST: 0
+    POSTGRES_PASSWORD: 'ci'
+    COREPACK_DEFAULT_TO_LATEST: '0'
+  # Arm64 is recommended for CI
+  tags:
+    - arm64
   before_script:
     - apt-get update && apt-get install -y git wget curl build-essential python3 ffmpeg libcairo2-dev libpango1.0-dev libpangocairo-1.0
     - 'echo "clusterLimit: $(nproc)" >> .config/ci.yml'
@@ -42,19 +39,57 @@ stages:
     - cp .config/ci.yml .config/test.yml
     - corepack enable
     - corepack install
+    - pnpm config set store-dir .pnpm-store
     - git submodule update --init
-    - pnpm install --frozen-lockfile
+  script:
+    - pnpm run build
   cache:
-    key: test
-    policy: pull-push
-    when: on_success
-    paths:
-     - node_modules/
-     - packages/*/node_modules/
-  only:
-    - develop
-    - merge_requests
-    - stable
+    - &cache-pnpm
+      key:
+        files:
+          - pnpm-lock.yaml
+      paths:
+        - .pnpm-store/
+        - node_modules/
+        - packages/backend/node_modules/
+        - packages/frontend/node_modules/
+        - packages/frontend-embed/node_modules/
+        - packages/frontend-shared/node_modules/
+        - packages/megalodon/node_modules/
+        - packages/misskey-bubble-game/node_modules/
+        - packages/misskey-js/node_modules/
+        - packages/misskey-js/generator/node_modules/
+        - packages/misskey-reversi/node_modules/
+        - packages/sw/node_modules/
+        # Not sure if this really works
+        - '**/node_modules/'
+      policy: push-pull
+      when: on_success
+    - &cache-build
+      key: "$CI_COMMIT_REF_SLUG"
+      paths:
+        - built/
+        - packages/backend/built/
+        - packages/backend/test_federation/built/
+        - packages/megalodon/lib/
+        - packages/misskey-bubble-game/built/
+        - packages/misskey-js/built/
+        - packages/misskey-reversi/built/
+      policy: push-pull
+      when: on_success
+  image: docker.io/node:22
+
+.test_common: &test_common:
+  <<: *build
+  stage: test
+  script: []
+  cache:
+    -
+      <<: *cache-pnpm
+      policy: pull
+    -
+      <<: *cache-build
+      policy: pull
 
 lint:
   <<: *test_common
@@ -88,8 +123,11 @@ frontend_tests:
         --filter=misskey-js
     - pnpm run test --filter=frontend --filter=misskey-js
 
-get_image_tag:
+.deploy_common: &deploy_common
   stage: deploy
+
+get_image_tag:
+  <<: *deploy_common
   image: docker.io/alpine:latest
   script:
     - apk add jq
@@ -109,13 +147,9 @@ get_image_tag:
   artifacts:
     reports:
       dotenv: build.env
-  only:
-    - stable
-    - develop
-    - tags
 
 build_image:
-  stage: deploy
+  <<: *deploy_common
   needs:
     - job: get_image_tag
       artifacts: true
@@ -135,13 +169,9 @@ build_image:
         --dockerfile "${CI_PROJECT_DIR}/Dockerfile" \
         --single-snapshot \
         --destination "${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_VERSION}-${ARCH}"
-  only:
-    - stable
-    - develop
-    - tags
 
 merge_image_manifests:
-  stage: deploy
+  <<: *deploy_common
   needs:
     - job: build_image
       artifacts: false
@@ -160,43 +190,56 @@ merge_image_manifests:
         --tags ${REGISTRY_PUSH_VERSION} \
         --template ${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_VERSION}-ARCH \
         --target ${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_TAG}
-  only:
-    - stable
-    - develop
-    - tags
 
-dependency_scanning:
+.sast_common: &sast_common
+  stage: test
+  # SAST tools only support x64
   tags:
     - amd64
+  variables:
+    # https://docs.gitlab.com/user/application_security/sast/gitlab_advanced_sast
+    GITLAB_ADVANCED_SAST_ENABLED: 'true'
+
+    # https://docs.gitlab.com/user/application_security/sast/#vulnerability-filters
+    # https://stackoverflow.com/a/71111784
+    SAST_EXCLUDED_PATHS: 'spec,test,test-d,test-federation,test-server,tests,tmp,cypress,coverage,node_modules,build,built,built-js,*.min.js,megalodon/lib,libopenmpt'
+    DS_EXCLUDED_PATHS: 'spec,test,test-d,test-federation,test-server,tests,tmp,cypress,coverage,node_modules,build,built,built-js,*.min.js,megalodon/lib,libopenmpt,packages/*/src' # save time: skip source directories
+
+    # https://docs.gitlab.com/user/application_security/dependency_scanning/migration_guide_to_sbom_based_scans/
+    DS_ENFORCE_NEW_ANALYZER: 'true'
+    DS_MAX_DEPTH: -1
+    # https://docs.gitlab.com/user/application_security/dependency_scanning/static_reachability/
+    DS_STATIC_REACHABILITY_ENABLED: true
+
+    # https://docs.gitlab.com/user/application_security/detect/security_configuration/#use-security-scanning-tools-with-merge-request-pipelines
+    AST_ENABLE_MR_PIPELINES: 'true'
 
 # https://docs.gitlab.com/user/application_security/container_scanning/#scanning-archives-built-in-a-previous-job
 # https://docs.gitlab.com/user/application_security/detect/security_configuration/#error-chosen-stage-test-does-not-exist
 container_scanning:
+  <<: *deploy_common
+  <<: *sast_common
   variables:
     AST_ENABLE_MR_PIPELINES: 'false'
     CS_IMAGE: ${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_TAG}
-  stage: deploy
-  dependencies:
-    - merge_image_manifests
+  needs:
+    - job: merge_image_manifests
+      artifacts: true
   rules:
     - if: $CI_PIPELINE_SOURCE != 'push' || ($CI_COMMIT_BRANCH != 'develop' && $CI_COMMIT_BRANCH != 'stable' && $CI_COMMIT_TAG != '')
       when: never
-  tags:
-    - amd64
+
+dependency_scanning:
+  <<: *sast_common
 
 sast:
-  tags:
-    - amd64
+  <<: *sast_common
 
 gitlab-advanced-sast:
-  tags:
-    - amd64
+  <<: *sast_common
 
 secret_detection:
-  tags:
-    - amd64
+  <<: *sast_common
 
 libbehave-experiment:
-  tags:
-    - amd64
-
+  <<: *sast_common
