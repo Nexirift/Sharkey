@@ -231,7 +231,7 @@ container_scanning:
     - job: merge_image_manifests
       artifacts: true
 
-dependency_scanning:
+dependency-scanning:
   <<: *sast_common
 
 sast:
