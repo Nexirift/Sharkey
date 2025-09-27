@@ -57,7 +57,7 @@ build: &build
         - packages/sw/node_modules/
         # Not sure if this really works
         - '**/node_modules/'
-      policy: push-pull
+      policy: pull-push
       when: on_success
     - &cache-build
       key: "$CI_COMMIT_REF_SLUG"
@@ -69,7 +69,7 @@ build: &build
         - packages/misskey-bubble-game/built/
         - packages/misskey-js/built/
         - packages/misskey-reversi/built/
-      policy: push-pull
+      policy: pull-push
       when: on_success
   # "only" has been removed, so we use rules.
   # This runs in MR pipelines *or* push to develop/stable
