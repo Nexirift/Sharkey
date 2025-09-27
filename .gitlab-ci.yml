@@ -224,6 +224,7 @@ merge_image_manifests:
 container_scanning:
   <<: *deploy_common
   <<: *sast_common
+  stage: deploy
   variables:
     AST_ENABLE_MR_PIPELINES: 'false'
     CS_IMAGE: ${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_TAG}
