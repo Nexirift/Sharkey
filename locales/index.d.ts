@@ -12521,6 +12521,14 @@ export interface Locale extends ILocale {
      * Failed to load note
      */
     "cannotLoadNote": string;
+    /**
+     * Please click [OK] to unsubscribe from announcement e-mails.
+     */
+    "clickToUnsubscribe": string;
+    /**
+     * There was a problem unsubscribing.
+     */
+    "unsubscribeError": string;
     "_flash": {
         /**
          * Flash Content Hidden
