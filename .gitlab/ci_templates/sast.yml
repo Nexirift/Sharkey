@@ -11,7 +11,7 @@ sast: &sast
 
   # Don't wait, since this has no dependencies.
   # https://docs.gitlab.com/ci/yaml/#needs
-  needs: [ ]
+  needs: []
 
 gitlab-advanced-sast:
   <<: *sast
