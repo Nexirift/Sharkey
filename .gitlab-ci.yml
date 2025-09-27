@@ -19,7 +19,9 @@ include:
 # https://github.com/pnpm/pnpm/issues/1174#issuecomment-1641267133
 build: &build
   stage: build
-  image: docker.io/node:22
+  image:
+    name: docker.io/node:22
+    pull_policy: if-not-present
   variables:
     POSTGRES_PASSWORD: 'ci'
     COREPACK_DEFAULT_TO_LATEST: '0'
@@ -134,7 +136,9 @@ frontend_tests:
 
 get_image_tag:
   <<: *deploy_common
-  image: docker.io/alpine:latest
+  image:
+    name: docker.io/alpine:latest
+    pull_policy: if-not-present
   script:
     - apk add jq
     - |
@@ -167,6 +171,7 @@ build_image:
     - ${ARCH}
   image:
     name: gcr.io/kaniko-project/executor:debug
+    pull_policy: if-not-present
     entrypoint: [""]
   script:
     - >-
@@ -185,6 +190,7 @@ merge_image_manifests:
       artifacts: true
   image:
     name: mplatform/manifest-tool:alpine
+    pull_policy: if-not-present
     entrypoint: [""]
   script:
     - >-
