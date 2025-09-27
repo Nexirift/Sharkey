@@ -348,6 +348,12 @@ type AdminResetPasswordResponse = operations['admin___reset-password']['response
 type AdminResolveAbuseUserReportRequest = operations['admin___resolve-abuse-user-report']['requestBody']['content']['application/json'];
 
 // @public (undocumented)
+type AdminRolesAnnotateConditionRequest = operations['admin___roles___annotate-condition']['requestBody']['content']['application/json'];
+
+// @public (undocumented)
+type AdminRolesAnnotateConditionResponse = operations['admin___roles___annotate-condition']['responses']['200']['content']['application/json'];
+
+// @public (undocumented)
 type AdminRolesAssignRequest = operations['admin___roles___assign']['requestBody']['content']['application/json'];
 
 // @public (undocumented)
@@ -1622,6 +1628,8 @@ declare namespace entities {
         AdminResetPasswordRequest,
         AdminResetPasswordResponse,
         AdminResolveAbuseUserReportRequest,
+        AdminRolesAnnotateConditionRequest,
+        AdminRolesAnnotateConditionResponse,
         AdminRolesAssignRequest,
         AdminRolesCloneRequest,
         AdminRolesCloneResponse,

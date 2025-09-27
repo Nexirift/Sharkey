@@ -720,6 +720,15 @@ export type paths = {
      */
     post: operations['admin___resolve-abuse-user-report'];
   };
+  '/admin/roles/annotate-condition': {
+    /**
+     * admin/roles/annotate-condition
+     * @description No description provided.
+     *
+     * **Credential required**: *Yes* / **Permission**: *read:admin:roles*
+     */
+    post: operations['admin___roles___annotate-condition'];
+  };
   '/admin/roles/assign': {
     /**
      * admin/roles/assign
@@ -10488,6 +10497,63 @@ export type operations = {
       /** @description OK (without any results) */
       204: {
         content: never;
+      };
+      /** @description Client error */
+      400: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Authentication error */
+      401: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden error */
+      403: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description I'm Ai */
+      418: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  /**
+   * admin/roles/annotate-condition
+   * @description No description provided.
+   *
+   * **Credential required**: *Yes* / **Permission**: *read:admin:roles*
+   */
+  'admin___roles___annotate-condition': {
+    requestBody: {
+      content: {
+        'application/json': {
+          /** Format: misskey:id */
+          userId: string;
+          condFormula: Record<string, never>;
+        };
+      };
+    };
+    responses: {
+      /** @description OK (with results) */
+      200: {
+        content: {
+          'application/json': {
+            [key: string]: boolean;
+          };
+        };
       };
       /** @description Client error */
       400: {
