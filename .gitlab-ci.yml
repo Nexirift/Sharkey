@@ -33,8 +33,9 @@ build: &build
     - cp .config/ci.yml .config/test.yml
     - corepack enable
     - corepack install
-    - pnpm config set store-dir .pnpm-store
     - git submodule update --init
+    - pnpm config set store-dir .pnpm-store
+    - pnpm install --frozen-lockfile
   script:
     - pnpm run build
   cache:
