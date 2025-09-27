@@ -79,7 +79,7 @@ build: &build
       when: on_success
   image: docker.io/node:22
 
-.test_common: &test_common:
+.test_common: &test_common
   <<: *build
   stage: test
   script: []
