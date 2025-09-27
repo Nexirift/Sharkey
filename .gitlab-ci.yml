@@ -6,24 +6,34 @@ stages:
 .common: &common
   # "only" has been removed, so we use rules.
   # This runs in MR pipelines *or* push to develop/stable
-  rules:
+  rules: &common-rules
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_PIPELINE_SOURCE == 'push' && ($CI_COMMIT_BRANCH == 'develop' || $CI_COMMIT_BRANCH == 'stable')
+
+.deploy_common: &deploy_common
+  stage: deploy
+  # Only run when pushing to stable, develop, or tags
+  rules: &deploy-rules
+    - if: $CI_PIPELINE_SOURCE != 'push'
+      when: never
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH == 'stable'
+    - if: $CI_COMMIT_TAG
 
 # https://docs.gitlab.com/user/application_security/sast/
 # We have to define the rules here because the imported template can't be filtered properly.
 include:
   - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
-    <<: *common
+    rules: *common-rules
   - template: Jobs/Container-Scanning.latest.gitlab-ci.yml
-    <<: *common
+    rules: *deploy-rules
   - template: Jobs/SAST.latest.gitlab-ci.yml
-    <<: *common
+    rules: *common-rules
   - template: Jobs/Secret-Detection.latest.gitlab-ci.yml
-    <<: *common
+    rules: *common-rules
   # https://docs.gitlab.com/user/application_security/dependency_scanning/experiment_libbehave_dependency/
   - component: $CI_SERVER_FQDN/TransFem-org/libbehave/libbehave@v0.2.4
-    <<: *common
+    rules: *common-rules
 
 # Cache node_modules and share build artifacts for the pipeline.
 # This shares the same cache definition, but it's the only place that actually *pushes* to the cache.
@@ -121,16 +131,6 @@ frontend_tests:
         --filter=megalogon \
         --filter=misskey-js
     - pnpm run test --filter=frontend --filter=misskey-js
-
-.deploy_common: &deploy_common
-  stage: deploy
-  # Only run when pushing to stable, develop, or tags
-  rules:
-    - if: $CI_PIPELINE_SOURCE != 'push'
-      when: never
-    - if: $CI_COMMIT_BRANCH == 'develop'
-    - if: $CI_COMMIT_BRANCH == 'stable'
-    - if: $CI_COMMIT_TAG
 
 get_image_tag:
   <<: *deploy_common
@@ -230,7 +230,7 @@ merge_image_manifests:
 # https://docs.gitlab.com/user/application_security/detect/security_configuration/#error-chosen-stage-test-does-not-exist
 container_scanning:
   <<: *sast_common
-  <<: *deploy_common
+  stage: deploy
   variables:
     AST_ENABLE_MR_PIPELINES: 'false'
     CS_IMAGE: ${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_TAG}
