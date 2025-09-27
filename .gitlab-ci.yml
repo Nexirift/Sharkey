@@ -116,7 +116,7 @@ build: &build
 lint:
   <<: *test_common
   script:
-    - pnpm run build
+    - pnpm run build-assets
     - pnpm run eslint
 
 backend_tests:
