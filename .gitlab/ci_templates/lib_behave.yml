@@ -1,7 +1,7 @@
 # https://docs.gitlab.com/user/application_security/sast/
 include:
   # https://docs.gitlab.com/user/application_security/dependency_scanning/experiment_libbehave_dependency/
-  - component: $CI_SERVER_FQDN/TransFem-org/libbehave/libbehave@v0.2.4
+  - component: $CI_SERVER_FQDN/TransFem-org/libbehave/libbehave@v0.3.0
 
 libbehave-experiment:
   stage: test
