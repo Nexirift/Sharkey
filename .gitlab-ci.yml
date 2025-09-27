@@ -3,27 +3,21 @@ stages:
   - test
   - deploy
 
+# https://docs.gitlab.com/user/application_security/sast/
+include:
+  - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
+  - template: Jobs/Container-Scanning.latest.gitlab-ci.yml
+  - template: Jobs/SAST.latest.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.latest.gitlab-ci.yml
+  # https://docs.gitlab.com/user/application_security/dependency_scanning/experiment_libbehave_dependency/
+  - component: $CI_SERVER_FQDN/TransFem-org/libbehave/libbehave@v0.2.4
+
 .common: &common
   # "only" has been removed, so we use rules.
   # This runs in MR pipelines *or* push to develop/stable
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_PIPELINE_SOURCE == 'push' && ($CI_COMMIT_BRANCH == 'develop' || $CI_COMMIT_BRANCH == 'stable')
-
-# https://docs.gitlab.com/user/application_security/sast/
-# We have to define the rules here because the imported template can't be filtered properly.
-include:
-  - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
-    <<: *common
-  - template: Jobs/Container-Scanning.latest.gitlab-ci.yml
-    <<: *common
-  - template: Jobs/SAST.latest.gitlab-ci.yml
-    <<: *common
-  - template: Jobs/Secret-Detection.latest.gitlab-ci.yml
-    <<: *common
-  # https://docs.gitlab.com/user/application_security/dependency_scanning/experiment_libbehave_dependency/
-  - component: $CI_SERVER_FQDN/TransFem-org/libbehave/libbehave@v0.2.4
-    <<: *common
 
 # Cache node_modules and share build artifacts for the pipeline.
 # This shares the same cache definition, but it's the only place that actually *pushes* to the cache.
@@ -201,9 +195,8 @@ merge_image_manifests:
         --template ${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_VERSION}-ARCH \
         --target ${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_TAG}
 
-# Note: do not extend any other configs here!
-# Doing so may break the SAST templates.
 .sast_common: &sast_common
+  <<: *common
   stage: test
   # SAST tools only support x64
   tags:
