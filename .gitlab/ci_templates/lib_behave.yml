@@ -16,3 +16,6 @@ libbehave-experiment:
   # Don't wait, since this has no dependencies.
   # https://docs.gitlab.com/ci/yaml/#needs
   needs: []
+
+  # Gitlab issue currently causes error when upload final artifacts
+  allow_failure: true
