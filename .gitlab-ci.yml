@@ -234,9 +234,8 @@ merge_image_manifests:
 # https://docs.gitlab.com/user/application_security/container_scanning/#scanning-archives-built-in-a-previous-job
 # https://docs.gitlab.com/user/application_security/detect/security_configuration/#error-chosen-stage-test-does-not-exist
 container_scanning:
-  <<: *deploy_common
   <<: *sast_common
-  stage: deploy
+  <<: *deploy_common
   variables:
     AST_ENABLE_MR_PIPELINES: 'false'
     CS_IMAGE: ${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_TAG}
