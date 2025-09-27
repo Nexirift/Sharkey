@@ -2,6 +2,9 @@
 include:
   # https://docs.gitlab.com/user/application_security/dependency_scanning/experiment_libbehave_dependency/
   - component: $CI_SERVER_FQDN/TransFem-org/libbehave/libbehave@v0.3.0
+    inputs:
+      include-lang: 'js'
+
 
 libbehave-experiment:
   stage: test
