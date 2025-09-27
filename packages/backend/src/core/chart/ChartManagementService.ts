@@ -8,6 +8,7 @@ import { Injectable } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
 import { ChartLoggerService } from '@/core/chart/ChartLoggerService.js';
 import Logger from '@/logger.js';
+import { renderInlineError } from '@/misc/render-inline-error.js';
 import FederationChart from './charts/federation.js';
 import NotesChart from './charts/notes.js';
 import UsersChart from './charts/users.js';
@@ -77,7 +78,9 @@ export class ChartManagementService implements OnApplicationShutdown {
 		if (process.env.NODE_ENV !== 'test') {
 			this.logger.info('Saving charts for shutdown...');
 			for (const chart of this.charts) {
-				await chart.save();
+				await chart.save().catch(err => {
+					this.logger.error(`Error saving chart: ${renderInlineError(err)}`);
+				});
 			}
 			this.logger.info('All charts saved');
 		}
