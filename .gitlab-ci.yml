@@ -22,16 +22,15 @@ stages:
 
 # https://docs.gitlab.com/user/application_security/sast/
 include:
-  - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
+  - local: '.gitlab/ci_templates/dependency_scanning.yml'
     rules: *common-rules
-  - template: Jobs/Container-Scanning.latest.gitlab-ci.yml
+  - local: '.gitlab/ci_templates/container_scanning.yml'
     rules: *deploy-rules
-  - template: Jobs/SAST.latest.gitlab-ci.yml
+  - local: '.gitlab/ci_templates/sast.yml'
     rules: *common-rules
-  - template: Jobs/Secret-Detection.latest.gitlab-ci.yml
+  - local: '.gitlab/ci_templates/secret_detection.yml'
     rules: *common-rules
-  # https://docs.gitlab.com/user/application_security/dependency_scanning/experiment_libbehave_dependency/
-  - component: $CI_SERVER_FQDN/TransFem-org/libbehave/libbehave@v0.2.4
+  - local: '.gitlab/ci_templates/lib_behave.yml'
     rules: *common-rules
 
 variables:
@@ -216,39 +215,3 @@ merge_image_manifests:
         --tags ${REGISTRY_PUSH_VERSION} \
         --template ${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_VERSION}-ARCH \
         --target ${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_TAG}
-
-.sast_common: &sast_common
-  stage: test
-  # SAST tools only support x64
-  tags:
-    - amd64
-  # Don't wait for the build stage to complete, since we don't use it.
-  # https://docs.gitlab.com/ci/yaml/#needs
-  needs: []
-
-# https://docs.gitlab.com/user/application_security/container_scanning/#scanning-archives-built-in-a-previous-job
-# https://docs.gitlab.com/user/application_security/detect/security_configuration/#error-chosen-stage-test-does-not-exist
-container_scanning:
-  <<: *sast_common
-  stage: deploy
-  variables:
-    AST_ENABLE_MR_PIPELINES: 'false'
-    CS_IMAGE: "${CI_REGISTRY_IMAGE}:${REGISTRY_PUSH_TAG}"
-  needs:
-    - job: merge_image_manifests
-      artifacts: true
-
-dependency_scanning:
-  <<: *sast_common
-
-sast:
-  <<: *sast_common
-
-gitlab-advanced-sast:
-  <<: *sast_common
-
-secret_detection:
-  <<: *sast_common
-
-libbehave-experiment:
-  <<: *sast_common

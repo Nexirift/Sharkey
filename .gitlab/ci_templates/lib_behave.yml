@@ -1,0 +1,15 @@
+# https://docs.gitlab.com/user/application_security/sast/
+include:
+  # https://docs.gitlab.com/user/application_security/dependency_scanning/experiment_libbehave_dependency/
+  - component: $CI_SERVER_FQDN/TransFem-org/libbehave/libbehave@v0.2.4
+
+libbehave-experiment:
+  stage: test
+
+  # SAST tools only support x64
+  tags:
+    - amd64
+
+  # Don't wait, since this has no dependencies.
+  # https://docs.gitlab.com/ci/yaml/#needs
+  needs: []
