@@ -334,6 +334,7 @@ _notification:
     edited: "Edits"
     scheduledNoteFailed: "Posting scheduled note failed"
     scheduledNotePosted: "Scheduled note was posted"
+    importCompleted: "The import has been completed"
   _actions:
     renote: "Boost"
 _webhookSettings:

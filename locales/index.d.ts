@@ -10399,6 +10399,10 @@ export interface Locale extends ILocale {
              * Scheduled note was posted
              */
             "scheduledNotePosted": string;
+            /**
+             * The import has been completed
+             */
+            "importCompleted": string;
         };
         "_actions": {
             /**
