@@ -6006,6 +6006,22 @@ export interface Locale extends ILocale {
          */
         "new": string;
         /**
+         * Restrict to roles
+         */
+        "onlyForRoles": string;
+        /**
+         * Change role restrictions
+         */
+        "onlyForRolesChange": string;
+        /**
+         * Shown to everyone
+         */
+        "onlyForRolesUnrestricted": string;
+        /**
+         * Shown to members of {roles} roles
+         */
+        "onlyForRolesRestricted": ParameterizedString<"roles">;
+        /**
          * Throw confetti
          */
         "confetti": string;
@@ -10367,6 +10383,10 @@ export interface Locale extends ILocale {
              * Scheduled note was posted
              */
             "scheduledNotePosted": string;
+            /**
+             * The import has been completed
+             */
+            "importCompleted": string;
         };
         "_actions": {
             /**
