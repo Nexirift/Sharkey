@@ -3,10 +3,13 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { InternalEventService } from '@/core/InternalEventService.js';
 import { bindThis } from '@/decorators.js';
-import { InternalEventTypes } from '@/core/GlobalEventService.js';
-import { MemoryKVCache } from '@/misc/cache.js';
+import { InternalEventService } from '@/core/InternalEventService.js';
+import type { InternalEventTypes } from '@/core/GlobalEventService.js';
+import { MemoryKVCache, type MemoryCacheServices } from '@/misc/cache.js';
+import { makeKVPArray, type KVPArray } from '@/misc/kvp-array.js';
+import { renderInlineError } from '@/misc/render-inline-error.js';
+import { isRetryableSymbol } from '@/misc/is-retryable-error.js';
 
 export interface QuantumKVOpts<T> {
 	/**
@@ -35,6 +38,16 @@ export interface QuantumKVOpts<T> {
 	 * Implementations may be synchronous or async.
 	 */
 	onChanged?: (keys: string[], cache: QuantumKVCache<T>) => void | Promise<void>;
+
+	// TODO equality comparer
+}
+
+export interface QuantumCacheServices extends MemoryCacheServices {
+	/**
+	 * Event bus to attach to.
+	 * This can be mocked for easier testing under DI.
+	 */
+	readonly internalEventService: InternalEventService;
 }
 
 /**
@@ -42,7 +55,9 @@ export interface QuantumKVOpts<T> {
  * All nodes in the cluster are guaranteed to have a *subset* view of the current accurate state, though individual processes may have different items in their local cache.
  * This ensures that a call to get() will never return stale data.
  */
-export class QuantumKVCache<T> implements Iterable<[key: string, value: T]> {
+export class QuantumKVCache<T> implements Iterable<readonly [key: string, value: T]> {
+	private readonly internalEventService: InternalEventService;
+
 	private readonly memoryCache: MemoryKVCache<T>;
 
 	public readonly fetcher: QuantumKVOpts<T>['fetcher'];
@@ -50,20 +65,22 @@ export class QuantumKVCache<T> implements Iterable<[key: string, value: T]> {
 	public readonly onChanged: QuantumKVOpts<T>['onChanged'];
 
 	/**
-	 * @param internalEventService Service bus to synchronize events.
 	 * @param name Unique name of the cache - must be the same in all processes.
+	 * @param services DI services - internalEventService is required
 	 * @param opts Cache options
 	 */
 	constructor(
-		private readonly internalEventService: InternalEventService,
-		private readonly name: string,
+		// TODO validate to make sure this is unique
+		public readonly name: string,
+		services: QuantumCacheServices,
 		opts: QuantumKVOpts<T>,
 	) {
-		this.memoryCache = new MemoryKVCache(opts.lifetime);
+		this.memoryCache = new MemoryKVCache(opts.lifetime, services);
 		this.fetcher = opts.fetcher;
 		this.bulkFetcher = opts.bulkFetcher;
 		this.onChanged = opts.onChanged;
 
+		this.internalEventService = services.internalEventService;
 		this.internalEventService.on('quantumCacheUpdated', this.onQuantumCacheUpdated, {
 			// Ignore our own events, otherwise we'll immediately erase any set value.
 			ignoreLocal: true,
