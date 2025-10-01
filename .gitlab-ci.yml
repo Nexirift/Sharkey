@@ -190,6 +190,12 @@ misskey-js_tests:
     - pnpm run --filter misskey-js build
     - pnpm run --filter misskey-js test
 
+misskey-js_tests:
+  <<: *test_common
+  script:
+    - pnpm run --filter misskey-js build
+    - pnpm run --filter misskey-js test
+
 get_image_tag:
   <<: *deploy_common
   image:
