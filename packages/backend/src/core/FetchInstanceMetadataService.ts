@@ -15,6 +15,7 @@ import { LoggerService } from '@/core/LoggerService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { bindThis } from '@/decorators.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
+import { TimeService } from '@/core/TimeService.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
 import type { CheerioAPI } from 'cheerio/slim';
 
@@ -47,6 +48,8 @@ export class FetchInstanceMetadataService {
 		private federatedInstanceService: FederatedInstanceService,
 		@Inject(DI.redis)
 		private redisClient: Redis.Redis,
+
+		private readonly timeService: TimeService,
 	) {
 		this.logger = this.loggerService.getLogger('metadata', 'cyan');
 	}
@@ -84,7 +87,7 @@ export class FetchInstanceMetadataService {
 		try {
 			if (!force) {
 				const _instance = await this.federatedInstanceService.fetchOrRegister(host);
-				const now = Date.now();
+				const now = this.timeService.now;
 				if (_instance && _instance.infoUpdatedAt && (now - _instance.infoUpdatedAt.getTime() < 1000 * 60 * 60 * 24)) {
 					// unlock at the finally caluse
 					return;
@@ -110,7 +113,7 @@ export class FetchInstanceMetadataService {
 			this.logger.debug(`Successfuly fetched metadata of ${instance.host}`);
 
 			const updates = {
-				infoUpdatedAt: new Date(),
+				infoUpdatedAt: this.timeService.date,
 			} as Record<string, any>;
 
 			if (info) {
