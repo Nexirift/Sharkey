@@ -9,6 +9,7 @@ import * as assert from 'assert';
 import { generateKeyPair } from 'crypto';
 import { Test, TestingModule } from '@nestjs/testing';
 import { jest } from '@jest/globals';
+import { MockApResolverService } from '../misc/MockApResolverService.js';
 import { MockLoggerService } from '../misc/MockLoggerService.js';
 import type { Config } from '@/config.js';
 import type { MiLocalUser, MiRemoteUser } from '@/models/User.js';
@@ -25,15 +26,13 @@ import { LoggerService } from '@/core/LoggerService.js';
 import { CacheManagementService } from '@/core/CacheManagementService.js';
 import { ApResolverService } from '@/core/activitypub/ApResolverService.js';
 import type { IActor, IApDocument, ICollection, IObject, IPost } from '@/core/activitypub/type.js';
-import { MiMeta, MiNote, MiUser, MiUserKeypair, UserProfilesRepository, UserPublickeysRepository } from '@/models/_.js';
+import { MiMeta, MiNote, MiUser, MiUserKeypair, UserProfilesRepository, UserPublickeysRepository, UserKeypairsRepository, UsersRepository, NotesRepository } from '@/models/_.js';
 import { DI } from '@/di-symbols.js';
 import { secureRndstr } from '@/misc/secure-rndstr.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { genAidx } from '@/misc/id/aidx.js';
 import { IdService } from '@/core/IdService.js';
 import { MockResolver } from '../misc/mock-resolver.js';
-import { UserKeypairService } from '@/core/UserKeypairService.js';
-import { MemoryKVCache } from '@/misc/cache.js';
 
 const host = 'https://host1.test';
 
@@ -103,10 +102,12 @@ describe('ActivityPub', () => {
 	let resolver: MockResolver;
 	let idService: IdService;
 	let userPublickeysRepository: UserPublickeysRepository;
-	let userKeypairService: UserKeypairService;
+	let userKeypairsRepository: UserKeypairsRepository;
+	let usersRepository: UsersRepository;
 	let config: Config;
 	let cacheManagementService: CacheManagementService;
 	let mockLoggerService: MockLoggerService;
+	let notesRepository: NotesRepository;
 
 	const metaInitial = {
 		id: 'x',
@@ -160,6 +161,7 @@ describe('ActivityPub', () => {
 				},
 			})
 			.overrideProvider(DI.meta).useValue(meta)
+			.overrideProvider(ApResolverService).useClass(MockApResolverService)
 			.overrideProvider(LoggerService).useClass(MockLoggerService)
 			.compile();
 
@@ -173,10 +175,11 @@ describe('ActivityPub', () => {
 		rendererService = app.get<ApRendererService>(ApRendererService);
 		imageService = app.get<ApImageService>(ApImageService);
 		jsonLdService = app.get<JsonLdService>(JsonLdService);
-		resolver = new MockResolver(await app.resolve<LoggerService>(LoggerService));
+		resolver = app.get<MockApResolverService>(ApResolverService).resolver;
 		idService = app.get<IdService>(IdService);
 		userPublickeysRepository = app.get<UserPublickeysRepository>(DI.userPublickeysRepository);
-		userKeypairService = app.get<UserKeypairService>(UserKeypairService);
+		userKeypairsRepository = app.get<UserKeypairsRepository>(DI.userKeypairsRepository);
+		usersRepository = app.get<UsersRepository>(DI.usersRepository);
 		config = app.get<Config>(DI.config);
 		cacheManagementService = app.get(CacheManagementService);
 		mockLoggerService = app.get<MockLoggerService>(LoggerService);
@@ -188,6 +191,9 @@ describe('ActivityPub', () => {
 	});
 
 	beforeEach(async () => {
+		// This will cascade-delete everything else
+		await usersRepository.delete({});
+
 		// Clear all caches app-wide
 		cacheManagementService.clear();
 
@@ -213,6 +219,7 @@ describe('ActivityPub', () => {
 
 			const user = await personService.createPerson(actor.id, resolver);
 
+			mockLoggerService.assertNoErrors();
 			assert.deepStrictEqual(user.uri, actor.id);
 			assert.deepStrictEqual(user.username, actor.preferredUsername);
 			assert.deepStrictEqual(user.inbox, actor.inbox);
@@ -224,6 +231,7 @@ describe('ActivityPub', () => {
 
 			const note = await noteService.createNote(post.id, undefined, resolver, true);
 
+			mockLoggerService.assertNoErrors();
 			assert.deepStrictEqual(note?.uri, post.id);
 			assert.deepStrictEqual(note.visibility, 'public');
 			assert.deepStrictEqual(note.text, post.content);
@@ -259,30 +267,45 @@ describe('ActivityPub', () => {
 	});
 
 	describe('Collection visibility', () => {
-		test('Public following/followers', async () => {
-			const actor = createRandomActor();
-			actor.following = {
-				id: `${actor.id}/following`,
-				type: 'OrderedCollection',
-				totalItems: 0,
-				first: `${actor.id}/following?page=1`,
+		function createPublicTest(inline: boolean) {
+			return async () => {
+				const actor = createRandomActor();
+				const following = {
+					id: `${actor.id}/following`,
+					type: 'OrderedCollection',
+					totalItems: 0,
+					first: `${actor.id}/following?page=1`,
+				} as const;
+				const followers = {
+					id: `${actor.id}/followers`,
+					type: 'OrderedCollection',
+					totalItems: 0,
+					first: `${actor.id}/followers?page=1`,
+				} as const;
+
+				if (inline) {
+					actor.following = following;
+					actor.followers = followers;
+				} else {
+					actor.following = following.id;
+					actor.followers = followers.id;
+				}
+
+				resolver.register(actor.id, actor);
+				resolver.register(following.id, following);
+				resolver.register(followers.id, followers);
+
+				const user = await personService.createPerson(actor.id, resolver);
+				const userProfile = await userProfilesRepository.findOneByOrFail({ userId: user.id });
+
+				mockLoggerService.assertNoErrors();
+				assert.deepStrictEqual(userProfile.followingVisibility, 'public');
+				assert.deepStrictEqual(userProfile.followersVisibility, 'public');
 			};
-			actor.followers = `${actor.id}/followers`;
+		}
 
-			resolver.register(actor.id, actor);
-			resolver.register(actor.followers, {
-				id: actor.followers,
-				type: 'OrderedCollection',
-				totalItems: 0,
-				first: `${actor.followers}?page=1`,
-			});
-
-			const user = await personService.createPerson(actor.id, resolver);
-			const userProfile = await userProfilesRepository.findOneByOrFail({ userId: user.id });
-
-			assert.deepStrictEqual(userProfile.followingVisibility, 'public');
-			assert.deepStrictEqual(userProfile.followersVisibility, 'public');
-		});
+		test('Public following/followers (URI)', createPublicTest(false));
+		test('Public following/followers (inline)', createPublicTest(true));
 
 		test('Private following/followers', async () => {
 			const actor = createRandomActor();
@@ -336,6 +359,8 @@ describe('ActivityPub', () => {
 				assert.strictEqual(note.text, 'test test foo');
 				assert.strictEqual(note.uri, item.id);
 			}
+
+			mockLoggerService.assertNoErrors();
 		});
 
 		test('Fetch featured notes from IActor pointing to another remote server', async () => {
@@ -537,15 +562,15 @@ describe('ActivityPub', () => {
 				name: 'Test Author',
 				isCat: true,
 				requireSigninToViewContents: true,
-				makeNotesFollowersOnlyBefore: new Date(2025, 2, 20).valueOf(),
-				makeNotesHiddenBefore: new Date(2025, 2, 21).valueOf(),
+				makeNotesFollowersOnlyBefore: new Date(2025, 2, 20).valueOf() / 1000,
+				makeNotesHiddenBefore: new Date(2025, 2, 21).valueOf() / 1000,
 				isLocked: true,
 				isExplorable: true,
 				hideOnlineStatus: true,
 				noindex: true,
 				enableRss: true,
-
 			}) as MiLocalUser;
+			await usersRepository.insert(author);
 
 			const [publicKey, privateKey] = await new Promise<[string, string]>((res, rej) =>
 				generateKeyPair('rsa', {
@@ -569,7 +594,7 @@ describe('ActivityPub', () => {
 				publicKey,
 				privateKey,
 			});
-			(userKeypairService as unknown as { cache: MemoryKVCache<MiUserKeypair> }).cache.set(author.id, keypair);
+			await userKeypairsRepository.insert(keypair);
 
 			note = new MiNote({
 				id: idService.gen(),
@@ -594,6 +619,7 @@ describe('ActivityPub', () => {
 				tags: [],
 				hasPoll: false,
 			});
+			await notesRepository.insert(note);
 		});
 
 		describe('renderNote', () => {
@@ -832,6 +858,7 @@ describe('ActivityPub', () => {
 
 				expect(publicKey).not.toBeNull();
 				expect(publicKey?.keyPem).toBe('key material');
+				mockLoggerService.assertNoErrors();
 			});
 
 			it('should accept SocialHome actor', async () => {
@@ -880,6 +907,7 @@ describe('ActivityPub', () => {
 
 				expect(user.uri).toBe(actor.id);
 				expect(publicKey).not.toBeNull();
+				mockLoggerService.assertNoErrors();
 			});
 		});
 	});
