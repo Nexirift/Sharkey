@@ -3,12 +3,11 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
-import * as Redis from 'ioredis';
+import { Inject, Injectable } from '@nestjs/common';
 import type { MiMeta } from '@/models/_.js';
 import { DI } from '@/di-symbols.js';
-import { RedisKVCache } from '@/misc/cache.js';
 import { bindThis } from '@/decorators.js';
+import { CacheManagementService, type ManagedRedisKVCache } from '@/core/CacheManagementService.js';
 
 export interface Sponsor {
 	MemberId: number;
@@ -34,17 +33,16 @@ export interface Sponsor {
 }
 
 @Injectable()
-export class SponsorsService implements OnApplicationShutdown {
-	private readonly cache: RedisKVCache<Sponsor[]>;
+export class SponsorsService {
+	private readonly cache: ManagedRedisKVCache<Sponsor[]>;
 
 	constructor(
 		@Inject(DI.meta)
 		private readonly meta: MiMeta,
 
-		@Inject(DI.redis)
-		redisClient: Redis.Redis,
+		cacheManagementService: CacheManagementService,
 	) {
-		this.cache = new RedisKVCache<Sponsor[]>(redisClient, 'sponsors', {
+		this.cache = cacheManagementService.createRedisKVCache<Sponsor[]>('sponsors', {
 			lifetime: 1000 * 60 * 60,
 			memoryCacheLifetime: 1000 * 60,
 			fetcher: (key) => {
@@ -101,10 +99,5 @@ export class SponsorsService implements OnApplicationShutdown {
 	public async sharkeySponsors(forceUpdate: boolean) {
 		if (forceUpdate) await this.cache.refresh('sharkey');
 		return this.cache.fetch('sharkey');
-	}
-
-	@bindThis
-	public onApplicationShutdown(): void {
-		this.cache.dispose();
 	}
 }
