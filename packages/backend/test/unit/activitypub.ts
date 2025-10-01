@@ -2,19 +2,16 @@
  * SPDX-FileCopyrightText: syuilo and misskey-project
  * SPDX-License-Identifier: AGPL-3.0-only
  */
+
 process.env.NODE_ENV = 'test';
 
 import * as assert from 'assert';
 import { generateKeyPair } from 'crypto';
 import { Test, TestingModule } from '@nestjs/testing';
 import { jest } from '@jest/globals';
-
-import { NoOpCacheService } from '../misc/noOpCaches.js';
-import { FakeInternalEventService } from '../misc/FakeInternalEventService.js';
+import { MockLoggerService } from '../misc/MockLoggerService.js';
 import type { Config } from '@/config.js';
 import type { MiLocalUser, MiRemoteUser } from '@/models/User.js';
-import { InternalEventService } from '@/core/InternalEventService.js';
-import { CacheService } from '@/core/CacheService.js';
 import { ApImageService } from '@/core/activitypub/models/ApImageService.js';
 import { ApNoteService } from '@/core/activitypub/models/ApNoteService.js';
 import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
@@ -25,6 +22,8 @@ import { GlobalModule } from '@/GlobalModule.js';
 import { CoreModule } from '@/core/CoreModule.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { LoggerService } from '@/core/LoggerService.js';
+import { CacheManagementService } from '@/core/CacheManagementService.js';
+import { ApResolverService } from '@/core/activitypub/ApResolverService.js';
 import type { IActor, IApDocument, ICollection, IObject, IPost } from '@/core/activitypub/type.js';
 import { MiMeta, MiNote, MiUser, MiUserKeypair, UserProfilesRepository, UserPublickeysRepository } from '@/models/_.js';
 import { DI } from '@/di-symbols.js';
@@ -106,6 +105,8 @@ describe('ActivityPub', () => {
 	let userPublickeysRepository: UserPublickeysRepository;
 	let userKeypairService: UserKeypairService;
 	let config: Config;
+	let cacheManagementService: CacheManagementService;
+	let mockLoggerService: MockLoggerService;
 
 	const metaInitial = {
 		id: 'x',
@@ -158,9 +159,8 @@ describe('ActivityPub', () => {
 					};
 				},
 			})
-			.overrideProvider(DI.meta).useFactory({ factory: () => meta })
-			.overrideProvider(CacheService).useClass(NoOpCacheService)
-			.overrideProvider(InternalEventService).useClass(FakeInternalEventService)
+			.overrideProvider(DI.meta).useValue(meta)
+			.overrideProvider(LoggerService).useClass(MockLoggerService)
 			.compile();
 
 		await app.init();
@@ -178,18 +178,22 @@ describe('ActivityPub', () => {
 		userPublickeysRepository = app.get<UserPublickeysRepository>(DI.userPublickeysRepository);
 		userKeypairService = app.get<UserKeypairService>(UserKeypairService);
 		config = app.get<Config>(DI.config);
-
-		// Prevent ApPersonService from fetching instance, as it causes Jest import-after-test error
-		const federatedInstanceService = app.get<FederatedInstanceService>(FederatedInstanceService);
-		jest.spyOn(federatedInstanceService, 'fetch').mockImplementation(() => new Promise(() => { }));
-	});
-
-	beforeEach(() => {
-		resolver.clear();
+		cacheManagementService = app.get(CacheManagementService);
+		mockLoggerService = app.get<MockLoggerService>(LoggerService);
+		notesRepository = app.get<NotesRepository>(DI.notesRepository);
 	});
 
 	afterAll(async () => {
 		await app.close();
+	});
+
+	beforeEach(async () => {
+		// Clear all caches app-wide
+		cacheManagementService.clear();
+
+		// Reset mocks
+		mockLoggerService.reset();
+		resolver.clear();
 	});
 
 	describe('Parse minimum object', () => {

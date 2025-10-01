@@ -5,17 +5,16 @@
 
 process.env.NODE_ENV = 'test';
 
-import { setTimeout } from 'node:timers/promises';
 import { jest } from '@jest/globals';
 import { ModuleMocker } from 'jest-mock';
 import { Test } from '@nestjs/testing';
-import * as lolex from '@sinonjs/fake-timers';
-import { NoOpCacheService } from '../misc/noOpCaches.js';
-import { FakeInternalEventService } from '../misc/FakeInternalEventService.js';
 import type { TestingModule } from '@nestjs/testing';
 import type { MockFunctionMetadata } from 'jest-mock';
+import { GodOfTimeService } from '../misc/GodOfTimeService.js';
+import { CacheManagementService } from '@/core/CacheManagementService.js';
 import { GlobalModule } from '@/GlobalModule.js';
 import { RoleService } from '@/core/RoleService.js';
+import { CoreModule } from '@/core/CoreModule.js';
 import {
 	InstancesRepository,
 	MetasRepository,
@@ -38,6 +37,7 @@ import { NotificationService } from '@/core/NotificationService.js';
 import { RoleCondFormulaValue } from '@/models/Role.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { InternalEventService } from '@/core/InternalEventService.js';
+import { TimeService } from '@/core/TimeService.js';
 
 const moduleMocker = new ModuleMocker(global);
 
@@ -51,7 +51,8 @@ describe('RoleService', () => {
 	let meta: jest.Mocked<MiMeta>;
 	let metasRepository: MetasRepository;
 	let notificationService: jest.Mocked<NotificationService>;
-	let clock: lolex.InstalledClock;
+	let cacheManagementService: CacheManagementService;
+	let timeService: GodOfTimeService;
 
 	async function createUser(data: Partial<MiUser> = {}) {
 		if (data.host != null) {
@@ -59,8 +60,8 @@ describe('RoleService', () => {
 				.createQueryBuilder('instance')
 				.insert()
 				.values({
-					id: genAidx(Date.now()),
-					firstRetrievedAt: new Date(),
+					id: genAidx(timeService.now),
+					firstRetrievedAt: timeService.date,
 					host: data.host,
 				})
 				.orIgnore()
@@ -69,7 +70,7 @@ describe('RoleService', () => {
 
 		const un = secureRndstr(16);
 		const x = await usersRepository.insert({
-			id: genAidx(Date.now()),
+			id: genAidx(timeService.now),
 			username: un,
 			usernameLower: un,
 			...data,
@@ -85,9 +86,9 @@ describe('RoleService', () => {
 
 	async function createRole(data: Partial<MiRole> = {}) {
 		const x = await rolesRepository.insert({
-			id: genAidx(Date.now()),
-			updatedAt: new Date(),
-			lastUsedAt: new Date(),
+			id: genAidx(timeService.now),
+			updatedAt: timeService.date,
+			lastUsedAt: timeService.date,
 			name: '',
 			description: '',
 			...data,
@@ -105,8 +106,8 @@ describe('RoleService', () => {
 	}
 
 	async function assignRole(args: Partial<MiRoleAssignment>) {
-		const id = genAidx(Date.now());
-		const expiresAt = new Date();
+		const id = genAidx(timeService.now);
+		const expiresAt = timeService.date;
 		expiresAt.setDate(expiresAt.getDate() + 1);
 
 		await roleAssignmentsRepository.insert({
@@ -119,37 +120,14 @@ describe('RoleService', () => {
 	}
 
 	function aidx() {
-		return genAidx(Date.now());
+		return genAidx(timeService.now);
 	}
 
-	beforeEach(async () => {
-		clock = lolex.install({
-			now: new Date(),
-			shouldClearNativeTimers: true,
-		});
-
+	beforeAll(async () => {
 		app = await Test.createTestingModule({
 			imports: [
 				GlobalModule,
-			],
-			providers: [
-				RoleService,
-				CacheService,
-				IdService,
-				GlobalEventService,
-				UserEntityService,
-				{
-					provide: NotificationService,
-					useFactory: () => ({
-						createNotification: jest.fn(),
-					}),
-				},
-				{
-					provide: NotificationService.name,
-					useExisting: NotificationService,
-				},
-				MetaService,
-				InternalEventService,
+				CoreModule,
 			],
 		})
 			.useMocker((token) => {
@@ -160,10 +138,11 @@ describe('RoleService', () => {
 				}
 			})
 			.overrideProvider(MetaService).useValue({ fetch: jest.fn() })
-			.overrideProvider(InternalEventService).useClass(FakeInternalEventService)
-			.overrideProvider(CacheService).useClass(NoOpCacheService)
+			.overrideProvider(TimeService).useClass(GodOfTimeService)
+			.overrideProvider(NotificationService).useValue({ createNotification: jest.fn() })
 			.compile();
 
+		await app.init();
 		app.enableShutdownHooks();
 
 		roleService = app.get<RoleService>(RoleService);
@@ -172,16 +151,25 @@ describe('RoleService', () => {
 		rolesRepository = app.get<RolesRepository>(DI.rolesRepository);
 		roleAssignmentsRepository = app.get<RoleAssignmentsRepository>(DI.roleAssignmentsRepository);
 		metasRepository = app.get<MetasRepository>(DI.metasRepository);
+		cacheManagementService = app.get(CacheManagementService);
+
+		timeService = app.get<GodOfTimeService>(TimeService);
+		timeService.resetToNow();
 
 		meta = app.get<MiMeta>(DI.meta) as jest.Mocked<MiMeta>;
 		notificationService = app.get<NotificationService>(NotificationService) as jest.Mocked<NotificationService>;
+	});
 
-		await roleService.onModuleInit();
+	afterAll(async () => {
+		await app.close();
+	});
+
+	beforeEach(() => {
+		notificationService.createNotification.mockReset();
+		timeService.resetToNow();
 	});
 
 	afterEach(async () => {
-		clock.uninstall();
-
 		await Promise.all([
 			metasRepository.delete({}),
 			usersRepository.delete({}),
@@ -189,7 +177,7 @@ describe('RoleService', () => {
 			roleAssignmentsRepository.delete({}),
 		]);
 
-		await app.close();
+		cacheManagementService.clear();
 	});
 
 	describe('getUserPolicies', () => {
@@ -282,25 +270,28 @@ describe('RoleService', () => {
 					},
 				},
 			});
-			await roleService.assign(user.id, role.id, new Date(Date.now() + (1000 * 60 * 60 * 24)));
+			await roleService.assign(user.id, role.id, new Date(timeService.now + (1000 * 60 * 60 * 24)));
 			meta.policies = {
 				canManageCustomEmojis: false,
 			};
 
+			// Condition 1: user has role immediately after assigning
 			const result = await roleService.getUserPolicies(user.id);
 			expect(result.canManageCustomEmojis).toBe(true);
 
-			clock.tick('25:00:00');
+			timeService.now += 1000 * 60 * 60 * 25; // 25h
 
+			// Condition 2: user loses role within 1hr after expiration
 			const resultAfter25h = await roleService.getUserPolicies(user.id);
 			expect(resultAfter25h.canManageCustomEmojis).toBe(false);
 
 			await roleService.assign(user.id, role.id);
 
 			// ストリーミング経由で反映されるまでちょっと待つ
-			clock.uninstall();
-			await setTimeout(100);
+			// Wait 100ms for the task queue to complete.
+			await new Promise(r => setTimeout(r, 100));
 
+			// Condition 3: user regains role within 100ms after assigning again
 			const resultAfter25hAgain = await roleService.getUserPolicies(user.id);
 			expect(resultAfter25hAgain.canManageCustomEmojis).toBe(true);
 		});
@@ -318,11 +309,11 @@ describe('RoleService', () => {
 
 			await Promise.all([
 				assignRole({ userId: adminUser1.id, roleId: role1.id }),
-				assignRole({ userId: adminUser2.id, roleId: role1.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: adminUser2.id, roleId: role1.id, expiresAt: new Date(timeService.now - 1000) }),
 				assignRole({ userId: modeUser1.id, roleId: role2.id }),
-				assignRole({ userId: modeUser2.id, roleId: role2.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: modeUser2.id, roleId: role2.id, expiresAt: new Date(timeService.now - 1000) }),
 				assignRole({ userId: normalUser1.id, roleId: role3.id }),
-				assignRole({ userId: normalUser2.id, roleId: role3.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: normalUser2.id, roleId: role3.id, expiresAt: new Date(timeService.now - 1000) }),
 			]);
 
 			const result = await roleService.getModeratorIds({
@@ -344,11 +335,11 @@ describe('RoleService', () => {
 
 			await Promise.all([
 				assignRole({ userId: adminUser1.id, roleId: role1.id }),
-				assignRole({ userId: adminUser2.id, roleId: role1.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: adminUser2.id, roleId: role1.id, expiresAt: new Date(timeService.now - 1000) }),
 				assignRole({ userId: modeUser1.id, roleId: role2.id }),
-				assignRole({ userId: modeUser2.id, roleId: role2.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: modeUser2.id, roleId: role2.id, expiresAt: new Date(timeService.now - 1000) }),
 				assignRole({ userId: normalUser1.id, roleId: role3.id }),
-				assignRole({ userId: normalUser2.id, roleId: role3.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: normalUser2.id, roleId: role3.id, expiresAt: new Date(timeService.now - 1000) }),
 			]);
 
 			const result = await roleService.getModeratorIds({
@@ -370,11 +361,11 @@ describe('RoleService', () => {
 
 			await Promise.all([
 				assignRole({ userId: adminUser1.id, roleId: role1.id }),
-				assignRole({ userId: adminUser2.id, roleId: role1.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: adminUser2.id, roleId: role1.id, expiresAt: new Date(timeService.now - 1000) }),
 				assignRole({ userId: modeUser1.id, roleId: role2.id }),
-				assignRole({ userId: modeUser2.id, roleId: role2.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: modeUser2.id, roleId: role2.id, expiresAt: new Date(timeService.now - 1000) }),
 				assignRole({ userId: normalUser1.id, roleId: role3.id }),
-				assignRole({ userId: normalUser2.id, roleId: role3.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: normalUser2.id, roleId: role3.id, expiresAt: new Date(timeService.now - 1000) }),
 			]);
 
 			const result = await roleService.getModeratorIds({
@@ -396,11 +387,11 @@ describe('RoleService', () => {
 
 			await Promise.all([
 				assignRole({ userId: adminUser1.id, roleId: role1.id }),
-				assignRole({ userId: adminUser2.id, roleId: role1.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: adminUser2.id, roleId: role1.id, expiresAt: new Date(timeService.now - 1000) }),
 				assignRole({ userId: modeUser1.id, roleId: role2.id }),
-				assignRole({ userId: modeUser2.id, roleId: role2.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: modeUser2.id, roleId: role2.id, expiresAt: new Date(timeService.now - 1000) }),
 				assignRole({ userId: normalUser1.id, roleId: role3.id }),
-				assignRole({ userId: normalUser2.id, roleId: role3.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: normalUser2.id, roleId: role3.id, expiresAt: new Date(timeService.now - 1000) }),
 			]);
 
 			const result = await roleService.getModeratorIds({
@@ -422,11 +413,11 @@ describe('RoleService', () => {
 
 			await Promise.all([
 				assignRole({ userId: adminUser1.id, roleId: role1.id }),
-				assignRole({ userId: adminUser2.id, roleId: role1.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: adminUser2.id, roleId: role1.id, expiresAt: new Date(timeService.now - 1000) }),
 				assignRole({ userId: modeUser1.id, roleId: role2.id }),
-				assignRole({ userId: modeUser2.id, roleId: role2.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: modeUser2.id, roleId: role2.id, expiresAt: new Date(timeService.now - 1000) }),
 				assignRole({ userId: normalUser1.id, roleId: role3.id }),
-				assignRole({ userId: normalUser2.id, roleId: role3.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: normalUser2.id, roleId: role3.id, expiresAt: new Date(timeService.now - 1000) }),
 			]);
 
 			const result = await roleService.getModeratorIds({
@@ -496,8 +487,8 @@ describe('RoleService', () => {
 
 			await Promise.all([
 				assignRole({ userId: adminUser1.id, roleId: role1.id }),
-				assignRole({ userId: modeUser1.id, roleId: role2.id, expiresAt: new Date(Date.now() - 1000) }),
-				assignRole({ userId: rootUser.id, roleId: role2.id, expiresAt: new Date(Date.now() - 1000) }),
+				assignRole({ userId: modeUser1.id, roleId: role2.id, expiresAt: new Date(timeService.now - 1000) }),
+				assignRole({ userId: rootUser.id, roleId: role2.id, expiresAt: new Date(timeService.now - 1000) }),
 				assignRole({ userId: normalUser1.id, roleId: role3.id }),
 			]);
 
@@ -745,7 +736,7 @@ describe('RoleService', () => {
 		});
 
 		test('ユーザが作成されてから指定期間経過した', async () => {
-			const base = new Date();
+			const base = timeService.date;
 			base.setMinutes(base.getMinutes() - 5);
 
 			const d1 = new Date(base);
@@ -778,7 +769,7 @@ describe('RoleService', () => {
 		});
 
 		test('ユーザが作成されてから指定期間経っていない', async () => {
-			const base = new Date();
+			const base = timeService.date;
 			base.setMinutes(base.getMinutes() - 5);
 
 			const d1 = new Date(base);
@@ -941,8 +932,7 @@ describe('RoleService', () => {
 
 			await roleService.assign(user.id, role.id);
 
-			clock.uninstall();
-			await setTimeout(100);
+			timeService.now += 100;
 
 			const assignments = await roleAssignmentsRepository.find({
 				where: {
@@ -969,8 +959,7 @@ describe('RoleService', () => {
 
 			await roleService.assign(user.id, role.id);
 
-			clock.uninstall();
-			await setTimeout(100);
+			timeService.now += 100;
 
 			const assignments = await roleAssignmentsRepository.find({
 				where: {
