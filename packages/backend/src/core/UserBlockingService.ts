@@ -50,6 +50,7 @@ export class UserBlockingService implements OnModuleInit {
 		private webhookService: UserWebhookService,
 		private apRendererService: ApRendererService,
 		private loggerService: LoggerService,
+		private readonly userListService: UserListService,
 	) {
 		this.logger = this.loggerService.getLogger('user-block');
 	}
