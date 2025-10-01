@@ -17,12 +17,12 @@ export abstract class TimeService<TTimer extends Timer = Timer> implements OnApp
 	protected constructor() {}
 
 	/**
-	 * Returns Date.now()
+	 * Returns the current time, in milliseconds since the Unix epoch.
 	 */
 	public abstract get now(): number;
 
 	/**
-	 * Returns a new Date instance.
+	 * Returns a new Date instance representing the current time.
 	 */
 	public get date(): Date {
 		return new Date(this.now);

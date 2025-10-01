@@ -5,6 +5,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { TimeService, Timer } from '@/core/TimeService.js';
+import { addPatch, type DatePatch } from '@/misc/patch-date.js';
 
 /**
  * Fake implementation of TimeService that allows manual control of time.
@@ -50,6 +51,28 @@ export class GodOfTimeService extends TimeService<GodsOwnTimer> {
 
 		// Bump up to the final target value
 		this._now = value;
+	}
+
+	/**
+	 * Get or set the current time, as a JavaScript Date object.
+	 */
+	get date(): Date {
+		return super.date;
+	}
+	set date(value: Date) {
+		this.now = value.getTime();
+	}
+
+	/**
+	 * Moves time by a relative "tick" amount.
+	 * Ticks can be a raw number of milliseconds, or an inline object containing time and/or date increments.
+	 */
+	public tick(tick: number | DatePatch) {
+		if (typeof(tick) === 'number') {
+			this.now += tick;
+		} else {
+			this.date = addPatch(this.date, tick);
+		}
 	}
 
 	/**
