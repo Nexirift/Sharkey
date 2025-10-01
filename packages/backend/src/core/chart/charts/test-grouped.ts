@@ -6,6 +6,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { AppLockService } from '@/core/AppLockService.js';
+import { TimeService } from '@/core/TimeService.js';
 import { DI } from '@/di-symbols.js';
 import Logger from '@/logger.js';
 import { bindThis } from '@/decorators.js';
@@ -25,9 +26,15 @@ export default class TestGroupedChart extends Chart<typeof schema> { // eslint-d
 		private db: DataSource,
 
 		private appLockService: AppLockService,
+		private readonly timeService: TimeService,
+
 		logger: Logger,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), logger, name, schema, true);
+	}
+
+	protected getCurrentDate(): Date {
+		return this.timeService.date;
 	}
 
 	protected async tickMajor(group: string): Promise<Partial<KVs<typeof schema>>> {

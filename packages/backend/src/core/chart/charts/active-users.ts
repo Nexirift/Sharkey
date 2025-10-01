@@ -10,6 +10,7 @@ import type { MiUser } from '@/models/User.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { IdService } from '@/core/IdService.js';
+import { TimeService } from '@/core/TimeService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/active-users.js';
@@ -31,8 +32,13 @@ export default class ActiveUsersChart extends Chart<typeof schema> { // eslint-d
 		private appLockService: AppLockService,
 		private chartLoggerService: ChartLoggerService,
 		private idService: IdService,
+		private readonly timeService: TimeService,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema);
+	}
+
+	protected getCurrentDate(): Date {
+		return this.timeService.date;
 	}
 
 	protected async tickMajor(): Promise<Partial<KVs<typeof schema>>> {

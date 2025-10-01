@@ -7,6 +7,8 @@ import { Injectable, Inject } from '@nestjs/common';
 import { Not, IsNull, DataSource } from 'typeorm';
 import type { MiUser } from '@/models/User.js';
 import { AppLockService } from '@/core/AppLockService.js';
+import { CacheService } from '@/core/CacheService.js';
+import { TimeService } from '@/core/TimeService.js';
 import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import type { FollowingsRepository } from '@/models/_.js';
@@ -15,7 +17,6 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-following.js';
 import type { KVs } from '../core.js';
-import { CacheService } from '@/core/CacheService.js';
 
 /**
  * ユーザーごとのフォローに関するチャート
@@ -33,8 +34,13 @@ export default class PerUserFollowingChart extends Chart<typeof schema> { // esl
 		private userEntityService: UserEntityService,
 		private chartLoggerService: ChartLoggerService,
 		private readonly cacheService: CacheService,
+		private readonly timeService: TimeService,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema, true);
+	}
+
+	protected getCurrentDate(): Date {
+		return this.timeService.date;
 	}
 
 	protected async tickMajor(group: string): Promise<Partial<KVs<typeof schema>>> {

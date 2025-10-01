@@ -8,6 +8,7 @@ import { DataSource } from 'typeorm';
 import type { MiUser } from '@/models/User.js';
 import type { MiNote } from '@/models/Note.js';
 import { AppLockService } from '@/core/AppLockService.js';
+import { TimeService } from '@/core/TimeService.js';
 import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
@@ -28,8 +29,13 @@ export default class PerUserReactionsChart extends Chart<typeof schema> { // esl
 		private appLockService: AppLockService,
 		private userEntityService: UserEntityService,
 		private chartLoggerService: ChartLoggerService,
+		private readonly timeService: TimeService,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema, true);
+	}
+
+	protected getCurrentDate(): Date {
+		return this.timeService.date;
 	}
 
 	protected async tickMajor(group: string): Promise<Partial<KVs<typeof schema>>> {

@@ -6,6 +6,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { AppLockService } from '@/core/AppLockService.js';
+import { TimeService } from '@/core/TimeService.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import Chart from '../core.js';
@@ -24,8 +25,13 @@ export default class ApRequestChart extends Chart<typeof schema> { // eslint-dis
 
 		private appLockService: AppLockService,
 		private chartLoggerService: ChartLoggerService,
+		private readonly timeService: TimeService,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema);
+	}
+
+	protected getCurrentDate(): Date {
+		return this.timeService.date;
 	}
 
 	protected async tickMajor(): Promise<Partial<KVs<typeof schema>>> {

@@ -8,6 +8,7 @@ import { Not, IsNull, DataSource } from 'typeorm';
 import type { NotesRepository } from '@/models/_.js';
 import type { MiNote } from '@/models/Note.js';
 import { AppLockService } from '@/core/AppLockService.js';
+import { TimeService } from '@/core/TimeService.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import Chart from '../core.js';
@@ -29,8 +30,13 @@ export default class NotesChart extends Chart<typeof schema> { // eslint-disable
 
 		private appLockService: AppLockService,
 		private chartLoggerService: ChartLoggerService,
+		private readonly timeService: TimeService,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema);
+	}
+
+	protected getCurrentDate(): Date {
+		return this.timeService.date;
 	}
 
 	protected async tickMajor(): Promise<Partial<KVs<typeof schema>>> {

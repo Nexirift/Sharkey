@@ -7,8 +7,9 @@ process.env.NODE_ENV = 'test';
 
 import * as assert from 'assert';
 import { jest } from '@jest/globals';
-import * as lolex from '@sinonjs/fake-timers';
 import { DataSource } from 'typeorm';
+import { GodOfTimeService } from '../misc/GodOfTimeService.js';
+import { MockLoggerService } from '../misc/MockLoggerService.js';
 import TestChart from '@/core/chart/charts/test.js';
 import TestGroupedChart from '@/core/chart/charts/test-grouped.js';
 import TestUniqueChart from '@/core/chart/charts/test-unique.js';
@@ -33,7 +34,7 @@ describe('Chart', () => {
 	let testGroupedChart: TestGroupedChart;
 	let testUniqueChart: TestUniqueChart;
 	let testIntersectionChart: TestIntersectionChart;
-	let clock: lolex.InstalledClock;
+	let clock: GodOfTimeService;
 
 	beforeEach(async () => {
 		if (db) await db.destroy();
@@ -63,20 +64,14 @@ describe('Chart', () => {
 
 		await db.initialize();
 
-		const logger = new Logger('chart'); // TODO: モックにする
-		testChart = new TestChart(db, appLockService, logger);
-		testGroupedChart = new TestGroupedChart(db, appLockService, logger);
-		testUniqueChart = new TestUniqueChart(db, appLockService, logger);
-		testIntersectionChart = new TestIntersectionChart(db, appLockService, logger);
+		clock = new GodOfTimeService();
+		clock.resetTo(Date.UTC(2000, 0, 1, 0, 0, 0));
 
-		clock = lolex.install({
-			now: new Date(Date.UTC(2000, 0, 1, 0, 0, 0)),
-			shouldClearNativeTimers: true,
-		});
-	});
-
-	afterEach(() => {
-		clock.uninstall();
+		const logger = new MockLoggerService(config).getLogger('chart');
+		testChart = new TestChart(db, appLockService, clock, logger);
+		testGroupedChart = new TestGroupedChart(db, appLockService, clock, logger);
+		testUniqueChart = new TestUniqueChart(db, appLockService, clock, logger);
+		testIntersectionChart = new TestIntersectionChart(db, appLockService, clock, logger);
 	});
 
 	afterAll(async () => {
@@ -208,7 +203,7 @@ describe('Chart', () => {
 		await testChart.increment();
 		await testChart.save();
 
-		clock.tick('01:00:00');
+		clock.tick({ hours: 1 });
 
 		await testChart.increment();
 		await testChart.save();
@@ -268,7 +263,7 @@ describe('Chart', () => {
 		await testChart.increment();
 		await testChart.save();
 
-		clock.tick('02:00:00');
+		clock.tick({ hours: 2 });
 
 		await testChart.increment();
 		await testChart.save();
@@ -298,7 +293,7 @@ describe('Chart', () => {
 		await testChart.increment();
 		await testChart.save();
 
-		clock.tick('05:00:00');
+		clock.tick({ hours: 5 });
 
 		const chartHours = await testChart.getChart('hour', 3, null);
 		const chartDays = await testChart.getChart('day', 3, null);
@@ -326,7 +321,7 @@ describe('Chart', () => {
 		await testChart.increment();
 		await testChart.save();
 
-		clock.tick('05:00:00');
+		clock.tick({ hours: 5 });
 
 		await testChart.increment();
 		await testChart.save();
@@ -355,7 +350,7 @@ describe('Chart', () => {
 		await testChart.increment();
 		await testChart.save();
 
-		clock.tick('01:00:00');
+		clock.tick({ hours: 1 });
 
 		await testChart.increment();
 		await testChart.save();
@@ -381,12 +376,12 @@ describe('Chart', () => {
 	});
 
 	test('Can specify offset (floor time)', async () => {
-		clock.tick('00:30:00');
+		clock.tick({ minutes: 30 });
 
 		await testChart.increment();
 		await testChart.save();
 
-		clock.tick('01:30:00');
+		clock.tick({ hours: 1, minutes: 30 });
 
 		await testChart.increment();
 		await testChart.save();
@@ -552,7 +547,7 @@ describe('Chart', () => {
 			await testChart.increment();
 			await testChart.save();
 
-			clock.tick('01:00:00');
+			clock.tick({ hours: 1 });
 
 			testChart.total = 100;
 

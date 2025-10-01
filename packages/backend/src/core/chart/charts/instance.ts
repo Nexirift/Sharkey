@@ -9,6 +9,7 @@ import type { DriveFilesRepository, FollowingsRepository, UsersRepository, Notes
 import type { MiDriveFile } from '@/models/DriveFile.js';
 import type { MiNote } from '@/models/Note.js';
 import { AppLockService } from '@/core/AppLockService.js';
+import { TimeService } from '@/core/TimeService.js';
 import { DI } from '@/di-symbols.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
@@ -41,8 +42,13 @@ export default class InstanceChart extends Chart<typeof schema> { // eslint-disa
 		private utilityService: UtilityService,
 		private appLockService: AppLockService,
 		private chartLoggerService: ChartLoggerService,
+		private readonly timeService: TimeService,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema, true);
+	}
+
+	protected getCurrentDate(): Date {
+		return this.timeService.date;
 	}
 
 	protected async tickMajor(group: string): Promise<Partial<KVs<typeof schema>>> {
