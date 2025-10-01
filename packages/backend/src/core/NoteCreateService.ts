@@ -19,6 +19,7 @@ import type { MiApp } from '@/models/App.js';
 import { concat } from '@/misc/prelude/array.js';
 import { IdService } from '@/core/IdService.js';
 import type { MiUser, MiLocalUser, MiRemoteUser } from '@/models/User.js';
+import { isLocalUser, isRemoteUser } from '@/models/User.js';
 import type { IPoll } from '@/models/Poll.js';
 import { MiPoll } from '@/models/Poll.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
@@ -39,7 +40,6 @@ import { HashtagService } from '@/core/HashtagService.js';
 import { AntennaService } from '@/core/AntennaService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
@@ -525,7 +525,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		if (mentionedUsers.length > 0) {
 			insert.mentions = mentionedUsers.map(u => u.id);
 			const profiles = await this.userProfilesRepository.findBy({ userId: In(insert.mentions) });
-			insert.mentionedRemoteUsers = JSON.stringify(mentionedUsers.filter(u => this.userEntityService.isRemoteUser(u)).map(u => {
+			insert.mentionedRemoteUsers = JSON.stringify(mentionedUsers.filter(u => isRemoteUser(u)).map(u => {
 				const profile = profiles.find(p => p.userId === u.id);
 				const url = profile != null ? profile.url : null;
 				return {
@@ -591,7 +591,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 		// Register host
 		if (this.meta.enableStatsForFederatedInstances) {
-			if (this.userEntityService.isRemoteUser(user)) {
+			if (isRemoteUser(user)) {
 				this.federatedInstanceService.fetchOrRegister(user.host).then(async i => {
 					if (!this.isRenote(note) || this.isQuote(note)) {
 						this.updateNotesCountQueue.enqueue(i.id, 1);
@@ -676,7 +676,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		}
 
 		if (!silent) {
-			if (this.userEntityService.isLocalUser(user)) this.activeUsersChart.write(user);
+			if (this.isLocalUser(user)) this.activeUsersChart.write(user);
 
 			// Pack the note
 			const noteObj = await this.noteEntityService.pack(note, null, { skipHide: true, withReactionAndUserPairCache: true });
@@ -752,26 +752,26 @@ export class NoteCreateService implements OnApplicationShutdown {
 			nm.notify();
 
 			//#region AP deliver
-			if (!data.localOnly && this.userEntityService.isLocalUser(user)) {
+			if (!data.localOnly && isLocalUser(user)) {
 				trackTask(async () => {
 					const noteActivity = await this.apRendererService.renderNoteOrRenoteActivity(note, user, { renote: data.renote });
 					const dm = this.apDeliverManagerService.createDeliverManager(user, noteActivity);
 
 					// メンションされたリモートユーザーに配送
-					for (const u of mentionedUsers.filter(u => this.userEntityService.isRemoteUser(u))) {
+					for (const u of mentionedUsers.filter(u => isRemoteUser(u))) {
 						dm.addDirectRecipe(u as MiRemoteUser);
 					}
 
 					// 投稿がリプライかつ投稿者がローカルユーザーかつリプライ先の投稿の投稿者がリモートユーザーなら配送
 					if (data.reply && data.reply.userHost !== null) {
 						const u = await this.usersRepository.findOneBy({ id: data.reply.userId });
-						if (u && this.userEntityService.isRemoteUser(u)) dm.addDirectRecipe(u);
+						if (u && isRemoteUser(u)) dm.addDirectRecipe(u);
 					}
 
 					// 投稿がRenoteかつ投稿者がローカルユーザーかつRenote元の投稿の投稿者がリモートユーザーなら配送
 					if (data.renote && data.renote.userHost !== null) {
 						const u = await this.usersRepository.findOneBy({ id: data.renote.userId });
-						if (u && this.userEntityService.isRemoteUser(u)) dm.addDirectRecipe(u);
+						if (u && isRemoteUser(u)) dm.addDirectRecipe(u);
 					}
 
 					// フォロワーに配送
@@ -814,27 +814,20 @@ export class NoteCreateService implements OnApplicationShutdown {
 		if (!user.noindex) this.index(note);
 	}
 
-	@bindThis
-	public isPureRenote(note: Option): note is PureRenoteOption {
-		return this.isRenote(note) && !this.isQuote(note);
-	}
+	/**
+	 * @deprecated Use the exported function instead
+	 */
+	readonly isPureRenote = isPureRenote;
 
-	@bindThis
-	private isRenote(note: Option): note is Option & { renote: MiNote } {
-		return note.renote != null;
-	}
+	/**
+	 * @deprecated Use the exported function instead
+	 */
+	readonly isRenote = isRenote;
 
-	@bindThis
-	private isQuote(note: Option & { renote: MiNote }): note is Option & { renote: MiNote } & (
-		{ text: string } | { cw: string } | { reply: MiNote } | { poll: IPoll } | { files: MiDriveFile[] }
-	) {
-		// NOTE: SYNC WITH misc/is-quote.ts
-		return note.text != null ||
-			note.reply != null ||
-			note.cw != null ||
-			note.poll != null ||
-			(note.files != null && note.files.length > 0);
-	}
+	/**
+	 * @deprecated Use the exported function instead
+	 */
+	readonly isQuote = isQuote;
 
 	@bindThis
 	private async incRenoteCount(renote: MiNote, user: MiUser) {
@@ -874,7 +867,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		]);
 
 		// Only create mention events for local users, and users for whom the note is visible
-		for (const u of mentionedUsers.filter(u => (note.visibility !== 'specified' || note.visibleUserIds.some(x => x === u.id)) && this.userEntityService.isLocalUser(u))) {
+		for (const u of mentionedUsers.filter(u => (note.visibility !== 'specified' || note.visibleUserIds.some(x => x === u.id)) && isLocalUser(u))) {
 			const threadId = note.threadId ?? note.id;
 			const isThreadMuted = threadMutings.get(u.id)?.has(threadId);
 
@@ -1156,4 +1149,23 @@ export class NoteCreateService implements OnApplicationShutdown {
 			}
 		}
 	}
+}
+
+export function isPureRenote(note: Option): note is PureRenoteOption {
+	return isRenote(note) && !isQuote(note);
+}
+
+export function isRenote(note: Option): note is Option & { renote: MiNote } {
+	return note.renote != null;
+}
+
+export function isQuote(note: Option & { renote: MiNote }): note is Option & { renote: MiNote } & (
+	{ text: string } | { cw: string } | { reply: MiNote } | { poll: IPoll } | { files: MiDriveFile[] }
+) {
+	// NOTE: SYNC WITH misc/is-quote.ts
+	return note.text != null ||
+		note.reply != null ||
+		note.cw != null ||
+		note.poll != null ||
+		(note.files != null && note.files.length > 0);
 }

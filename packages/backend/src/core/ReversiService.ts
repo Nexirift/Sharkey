@@ -16,11 +16,10 @@ import type {
 import type { MiUser } from '@/models/User.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
-import { CacheService } from '@/core/CacheService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { IdService } from '@/core/IdService.js';
-import { NotificationService } from '@/core/NotificationService.js';
+import type { NotificationService } from '@/core/NotificationService.js';
 import { Serialized } from '@/types.js';
 import { ReversiGameEntityService } from './entities/ReversiGameEntityService.js';
 import type { OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
@@ -40,7 +39,6 @@ export class ReversiService implements OnApplicationShutdown, OnModuleInit {
 		@Inject(DI.reversiGamesRepository)
 		private reversiGamesRepository: ReversiGamesRepository,
 
-		private cacheService: CacheService,
 		private userEntityService: UserEntityService,
 		private globalEventService: GlobalEventService,
 		private reversiGameEntityService: ReversiGameEntityService,
@@ -50,7 +48,7 @@ export class ReversiService implements OnApplicationShutdown, OnModuleInit {
 
 	@bindThis
 	async onModuleInit() {
-		this.notificationService = this.moduleRef.get(NotificationService.name);
+		this.notificationService = this.moduleRef.get('NotificationService');
 	}
 
 	@bindThis

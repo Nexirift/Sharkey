@@ -22,7 +22,7 @@ import type { FollowingsRepository, FollowRequestsRepository, InstancesRepositor
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { bindThis } from '@/decorators.js';
-import { UserBlockingService } from '@/core/UserBlockingService.js';
+import type { UserBlockingService } from '@/core/UserBlockingService.js';
 import { CacheService } from '@/core/CacheService.js';
 import type { Config } from '@/config.js';
 import { AccountMoveService } from '@/core/AccountMoveService.js';

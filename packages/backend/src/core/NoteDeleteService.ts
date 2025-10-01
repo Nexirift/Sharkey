@@ -6,6 +6,7 @@
 import { Brackets, In, IsNull, Not } from 'typeorm';
 import { Injectable, Inject } from '@nestjs/common';
 import type { MiUser, MiLocalUser, MiRemoteUser } from '@/models/User.js';
+import { isLocalUser, isRemoteUser } from '@/models/User.js';
 import { MiNote, IMentionedRemoteUsers } from '@/models/Note.js';
 import type { InstancesRepository, MiMeta, NotesRepository, UsersRepository } from '@/models/_.js';
 import { RelayService } from '@/core/RelayService.js';
@@ -18,14 +19,13 @@ import InstanceChart from '@/core/chart/charts/instance.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { SearchService } from '@/core/SearchService.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { isQuote, isRenote } from '@/misc/is-renote.js';
 import { LatestNoteService } from '@/core/LatestNoteService.js';
 import { ApLogService } from '@/core/ApLogService.js';
-import Logger from '@/logger.js';
+import type Logger from '@/logger.js';
 import { LoggerService } from './LoggerService.js';
 
 @Injectable()
@@ -48,7 +48,6 @@ export class NoteDeleteService {
 		@Inject(DI.instancesRepository)
 		private instancesRepository: InstancesRepository,
 
-		private userEntityService: UserEntityService,
 		private globalEventService: GlobalEventService,
 		private relayService: RelayService,
 		private federatedInstanceService: FederatedInstanceService,
@@ -92,7 +91,7 @@ export class NoteDeleteService {
 			});
 
 			//#region ローカルの投稿なら削除アクティビティを配送
-			if (this.userEntityService.isLocalUser(user) && !note.localOnly) {
+			if (isLocalUser(user) && !note.localOnly) {
 				let renote: MiNote | null = null;
 
 				// if deleted note is renote
@@ -113,7 +112,7 @@ export class NoteDeleteService {
 			const federatedLocalCascadingNotes = (cascadingNotes).filter(note => !note.localOnly && note.userHost == null); // filter out local-only notes
 			for (const cascadingNote of federatedLocalCascadingNotes) {
 				if (!cascadingNote.user) continue;
-				if (!this.userEntityService.isLocalUser(cascadingNote.user)) continue;
+				if (!isLocalUser(cascadingNote.user)) continue;
 				const content = this.apRendererService.addContext(this.apRendererService.renderDelete(this.apRendererService.renderTombstone(`${this.config.url}/notes/${cascadingNote.id}`), cascadingNote.user));
 				this.deliverToConcerned(cascadingNote.user, cascadingNote, content);
 			}
@@ -132,7 +131,7 @@ export class NoteDeleteService {
 			}
 
 			if (this.meta.enableStatsForFederatedInstances) {
-				if (this.userEntityService.isRemoteUser(user)) {
+				if (isRemoteUser(user)) {
 					this.federatedInstanceService.fetchOrRegister(user.host).then(async i => {
 						if (note.renoteId && note.text || !note.renoteId) {
 							this.instancesRepository.decrement({ id: i.id }, 'notesCount', 1);

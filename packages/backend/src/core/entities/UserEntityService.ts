@@ -44,16 +44,16 @@ import type {
 	UsersRepository,
 } from '@/models/_.js';
 import { bindThis } from '@/decorators.js';
-import { RolePolicies, RoleService } from '@/core/RoleService.js';
-import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
-import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
-import { IdService } from '@/core/IdService.js';
+import { isSystemAccount } from '@/misc/is-system-account.js';
+import type { RolePolicies, RoleService } from '@/core/RoleService.js';
+import type { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
+import type { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
+import type { IdService } from '@/core/IdService.js';
 import type { AnnouncementService } from '@/core/AnnouncementService.js';
 import type { CustomEmojiService } from '@/core/CustomEmojiService.js';
-import { AvatarDecorationService } from '@/core/AvatarDecorationService.js';
-import { ChatService } from '@/core/ChatService.js';
-import { isSystemAccount } from '@/misc/is-system-account.js';
-import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
+import type { AvatarDecorationService } from '@/core/AvatarDecorationService.js';
+import type { ChatService } from '@/core/ChatService.js';
+import type { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import type { CacheService } from '@/core/CacheService.js';
 import { getCallerId } from '@/misc/attach-caller-id.js';
 import type { OnModuleInit } from '@nestjs/common';
@@ -182,7 +182,9 @@ export class UserEntityService implements OnModuleInit {
 	public validateListenBrainz = ajv.compile(listenbrainzSchema);
 	//#endregion
 
+	/** @deprecated use export from MiUser */
 	public isLocalUser = isLocalUser;
+	/** @deprecated use export from MiUser */
 	public isRemoteUser = isRemoteUser;
 
 	@bindThis

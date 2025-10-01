@@ -21,6 +21,7 @@ import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { ApDbResolverService } from '@/core/activitypub/ApDbResolverService.js';
 import { QueueService } from '@/core/QueueService.js';
 import type { MiLocalUser, MiRemoteUser, MiUser } from '@/models/User.js';
+import { isLocalUser } from '@/models/User.js';
 import { UserKeypairService } from '@/core/UserKeypairService.js';
 import type { MiUserPublickey } from '@/models/UserPublickey.js';
 import type { MiFollowing } from '@/models/Following.js';
@@ -28,7 +29,6 @@ import { countIf } from '@/misc/prelude/array.js';
 import type { MiNote } from '@/models/Note.js';
 import { QueryService } from '@/core/QueryService.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import type Logger from '@/logger.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { bindThis } from '@/decorators.js';
@@ -81,7 +81,6 @@ export class ActivityPubServerService {
 		private followRequestsRepository: FollowRequestsRepository,
 
 		private utilityService: UtilityService,
-		private userEntityService: UserEntityService,
 		private apRendererService: ApRendererService,
 		private apDbResolverService: ApDbResolverService,
 		private queueService: QueueService,
@@ -976,7 +975,7 @@ export class ActivityPubServerService {
 
 			const keypair = await this.userKeypairService.getUserKeypair(user.id);
 
-			if (this.userEntityService.isLocalUser(user)) {
+			if (isLocalUser(user)) {
 				this.setResponseType(request, reply);
 				return (this.apRendererService.addContext(this.apRendererService.renderKey(user, keypair)));
 			} else {

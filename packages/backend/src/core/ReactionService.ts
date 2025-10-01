@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { DI } from '@/di-symbols.js';
-import type { EmojisRepository, NoteReactionsRepository, UsersRepository, NotesRepository, NoteThreadMutingsRepository, MiMeta } from '@/models/_.js';
+import type { EmojisRepository, NoteReactionsRepository, UsersRepository, NotesRepository, MiMeta } from '@/models/_.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import type { MiRemoteUser, MiUser } from '@/models/User.js';
+import { isLocalUser, isRemoteUser } from '@/models/User.js';
 import type { MiNote } from '@/models/Note.js';
 import { IdService } from '@/core/IdService.js';
 import { MiNoteReaction } from '@/models/NoteReaction.js';
@@ -17,8 +19,6 @@ import { NotificationService } from '@/core/NotificationService.js';
 import PerUserReactionsChart from '@/core/chart/charts/per-user-reactions.js';
 import { emojiRegex } from '@/misc/emoji-regex.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
-import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { bindThis } from '@/decorators.js';
 import { UtilityService } from '@/core/UtilityService.js';
@@ -71,8 +71,12 @@ const isCustomEmojiRegexp = /^:([\p{Letter}\p{Number}\p{Mark}_+-]+)(?:@\.)?:$/u;
 const decodeCustomEmojiRegexp = /^:([\p{Letter}\p{Number}\p{Mark}_+-]+)(?:@([\w.-]+))?:$/u;
 
 @Injectable()
-export class ReactionService {
+export class ReactionService implements OnModuleInit {
+	private roleService: RoleService;
+
 	constructor(
+		private readonly moduleRef: ModuleRef,
+
 		@Inject(DI.meta)
 		private meta: MiMeta,
 
@@ -85,9 +89,6 @@ export class ReactionService {
 		@Inject(DI.noteReactionsRepository)
 		private noteReactionsRepository: NoteReactionsRepository,
 
-		@Inject(DI.noteThreadMutingsRepository)
-		private noteThreadMutingsRepository: NoteThreadMutingsRepository,
-
 		@Inject(DI.emojisRepository)
 		private emojisRepository: EmojisRepository,
 
@@ -96,9 +97,6 @@ export class ReactionService {
 
 		private utilityService: UtilityService,
 		private customEmojiService: CustomEmojiService,
-		private roleService: RoleService,
-		private userEntityService: UserEntityService,
-		private noteEntityService: NoteEntityService,
 		private userBlockingService: UserBlockingService,
 		private reactionsBufferingService: ReactionsBufferingService,
 		private idService: IdService,
@@ -111,6 +109,11 @@ export class ReactionService {
 		private readonly cacheService: CacheService,
 		private readonly noteVisibilityService: NoteVisibilityService,
 	) {
+	}
+
+	@bindThis
+	onModuleInit() {
+		this.roleService = this.moduleRef.get('RoleService');
 	}
 
 	@bindThis
@@ -280,7 +283,7 @@ export class ReactionService {
 		}
 
 		//#region 配信
-		if (this.userEntityService.isLocalUser(user) && !note.localOnly) {
+		if (isLocalUser(user) && !note.localOnly) {
 			const content = this.apRendererService.addContext(await this.apRendererService.renderLike(record, note));
 			const dm = this.apDeliverManagerService.createDeliverManager(user, content);
 			if (note.userHost !== null) {
@@ -292,7 +295,7 @@ export class ReactionService {
 				dm.addFollowersRecipe();
 			} else if (note.visibility === 'specified') {
 				const visibleUsers = await Promise.all(note.visibleUserIds.map(id => this.usersRepository.findOneBy({ id })));
-				for (const u of visibleUsers.filter(u => u && this.userEntityService.isRemoteUser(u))) {
+				for (const u of visibleUsers.filter(u => u && isRemoteUser(u))) {
 					dm.addDirectRecipe(u as MiRemoteUser);
 				}
 			}
@@ -343,7 +346,7 @@ export class ReactionService {
 		});
 
 		//#region 配信
-		if (this.userEntityService.isLocalUser(user) && !note.localOnly) {
+		if (isLocalUser(user) && !note.localOnly) {
 			const content = this.apRendererService.addContext(this.apRendererService.renderUndo(await this.apRendererService.renderLike(exist, note), user));
 			const dm = this.apDeliverManagerService.createDeliverManager(user, content);
 			if (note.userHost !== null) {
@@ -357,86 +360,102 @@ export class ReactionService {
 	}
 
 	/**
-	 * - 文字列タイプのレガシーな形式のリアクションを現在の形式に変換する
-	 * - ローカルのリアクションのホストを `@.` にする（`decodeReaction()`の効果）
+	 * @deprecated Use the exported function instead
 	 */
-	@bindThis
-	public convertLegacyReaction(reaction: string): string {
-		reaction = this.decodeReaction(reaction).reaction;
-		if (Object.keys(legacies).includes(reaction)) return legacies[reaction];
-		return reaction;
-	}
+	readonly convertLegacyReaction = convertLegacyReaction;
 
-	// TODO: 廃止
 	/**
-	 * - 文字列タイプのレガシーな形式のリアクションを現在の形式に変換する
-	 * - ローカルのリアクションのホストを `@.` にする（`decodeReaction()`の効果）
-	 * - データベース上には存在する「0個のリアクションがついている」という情報を削除する
+	 * @deprecated Use the exported function instead
 	 */
-	@bindThis
-	public convertLegacyReactions(reactions: MiNote['reactions']): MiNote['reactions'] {
-		return Object.entries(reactions)
-			.filter(([, count]) => {
-				// `ReactionService.prototype.delete`ではリアクション削除時に、
-				// `MiNote['reactions']`のエントリの値をデクリメントしているが、
-				// デクリメントしているだけなのでエントリ自体は0を値として持つ形で残り続ける。
-				// そのため、この処理がなければ、「0個のリアクションがついている」ということになってしまう。
-				return count > 0;
-			})
-			.map(([reaction, count]) => {
-				const key = this.convertLegacyReaction(reaction);
+	readonly convertLegacyReactions = convertLegacyReactions;
 
-				return [key, count] as const;
-			})
-			.reduce<MiNote['reactions']>((acc, [key, count]) => {
-				// unchecked indexed access
-				const prevCount = acc[key] as number | undefined;
+	/**
+	 * @deprecated Use the exported function instead
+	 */
+	readonly normalize = normalize;
 
-				acc[key] = (prevCount ?? 0) + count;
+	/**
+	 * @deprecated Use the exported function instead
+	 */
+	readonly decodeReaction = decodeReaction;
+}
 
-				return acc;
-			}, {});
+/**
+ * - 文字列タイプのレガシーな形式のリアクションを現在の形式に変換する
+ * - ローカルのリアクションのホストを `@.` にする（`decodeReaction()`の効果）
+ */
+export function convertLegacyReaction(reaction: string): string {
+	reaction = decodeReaction(reaction).reaction;
+	if (Object.keys(legacies).includes(reaction)) return legacies[reaction];
+	return reaction;
+}
+
+// TODO: 廃止
+/**
+ * - 文字列タイプのレガシーな形式のリアクションを現在の形式に変換する
+ * - ローカルのリアクションのホストを `@.` にする（`decodeReaction()`の効果）
+ * - データベース上には存在する「0個のリアクションがついている」という情報を削除する
+ */
+export function convertLegacyReactions(reactions: MiNote['reactions']): MiNote['reactions'] {
+	return Object.entries(reactions)
+		.filter(([, count]) => {
+			// `ReactionService.prototype.delete`ではリアクション削除時に、
+			// `MiNote['reactions']`のエントリの値をデクリメントしているが、
+			// デクリメントしているだけなのでエントリ自体は0を値として持つ形で残り続ける。
+			// そのため、この処理がなければ、「0個のリアクションがついている」ということになってしまう。
+			return count > 0;
+		})
+		.map(([reaction, count]) => {
+			const key = convertLegacyReaction(reaction);
+
+			return [key, count] as const;
+		})
+		.reduce<MiNote['reactions']>((acc, [key, count]) => {
+			// unchecked indexed access
+			const prevCount = acc[key] as number | undefined;
+
+			acc[key] = (prevCount ?? 0) + count;
+
+			return acc;
+		}, {});
+}
+
+export function normalize(reaction: string | null): string {
+	if (reaction == null) return FALLBACK;
+
+	// 文字列タイプのリアクションを絵文字に変換
+	if (Object.keys(legacies).includes(reaction)) return legacies[reaction];
+
+	// Unicode絵文字
+	const match = emojiRegex.exec(reaction);
+	if (match) {
+		// 合字を含む1つの絵文字
+		const unicode = match[0];
+
+		// 異体字セレクタ除去
+		return unicode.match('\u200d') ? unicode : unicode.replace(/\ufe0f/g, '');
 	}
 
-	@bindThis
-	public normalize(reaction: string | null): string {
-		if (reaction == null) return FALLBACK;
+	return FALLBACK;
+}
 
-		// 文字列タイプのリアクションを絵文字に変換
-		if (Object.keys(legacies).includes(reaction)) return legacies[reaction];
+export function decodeReaction(str: string): DecodedReaction {
+	const custom = str.match(decodeCustomEmojiRegexp);
 
-		// Unicode絵文字
-		const match = emojiRegex.exec(reaction);
-		if (match) {
-			// 合字を含む1つの絵文字
-			const unicode = match[0];
-
-			// 異体字セレクタ除去
-			return unicode.match('\u200d') ? unicode : unicode.replace(/\ufe0f/g, '');
-		}
-
-		return FALLBACK;
-	}
-
-	@bindThis
-	public decodeReaction(str: string): DecodedReaction {
-		const custom = str.match(decodeCustomEmojiRegexp);
-
-		if (custom) {
-			const name = custom[1];
-			const host = custom[2] ?? null;
-
-			return {
-				reaction: `:${name}@${host ?? '.'}:`,	// ローカル分は@以降を省略するのではなく.にする
-				name,
-				host,
-			};
-		}
+	if (custom) {
+		const name = custom[1];
+		const host = custom[2] ?? null;
 
 		return {
-			reaction: str,
-			name: undefined,
-			host: undefined,
+			reaction: `:${name}@${host ?? '.'}:`,	// ローカル分は@以降を省略するのではなく.にする
+			name,
+			host,
 		};
 	}
+
+	return {
+		reaction: str,
+		name: undefined,
+		host: undefined,
+	};
 }

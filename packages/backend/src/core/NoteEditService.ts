@@ -20,6 +20,7 @@ import type { MiApp } from '@/models/App.js';
 import { concat } from '@/misc/prelude/array.js';
 import { IdService } from '@/core/IdService.js';
 import type { MiUser, MiLocalUser, MiRemoteUser } from '@/models/User.js';
+import { isRemoteUser, isLocalUser } from '@/models/User.js';
 import { MiPoll, type IPoll } from '@/models/Poll.js';
 import type { MiChannel } from '@/models/Channel.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
@@ -34,7 +35,6 @@ import { NotificationService } from '@/core/NotificationService.js';
 import { UserWebhookService } from '@/core/UserWebhookService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
@@ -200,7 +200,6 @@ export class NoteEditService implements OnApplicationShutdown {
 		@Inject(DI.pollsRepository)
 		private pollsRepository: PollsRepository,
 
-		private userEntityService: UserEntityService,
 		private noteEntityService: NoteEntityService,
 		private idService: IdService,
 		private globalEventService: GlobalEventService,
@@ -545,7 +544,7 @@ export class NoteEditService implements OnApplicationShutdown {
 			if (mentionedUsers.length > 0) {
 				note.mentions = mentionedUsers.map(u => u.id);
 				const profiles = await this.userProfilesRepository.findBy({ userId: In(note.mentions) });
-				note.mentionedRemoteUsers = JSON.stringify(mentionedUsers.filter(u => this.userEntityService.isRemoteUser(u)).map(u => {
+				note.mentionedRemoteUsers = JSON.stringify(mentionedUsers.filter(u => isRemoteUser(u)).map(u => {
 					const profile = profiles.find(p => p.userId === u.id);
 					const url = profile != null ? profile.url : null;
 					return {
@@ -608,7 +607,7 @@ export class NoteEditService implements OnApplicationShutdown {
 	}, data: Option, silent: boolean, tags: string[], mentionedUsers: MinimumUser[]) {
 		// Register host
 		if (this.meta.enableStatsForFederatedInstances) {
-			if (this.userEntityService.isRemoteUser(user)) {
+			if (isRemoteUser(user)) {
 				this.federatedInstanceService.fetchOrRegister(user.host).then(async i => {
 					if (note.renote && note.text || !note.renote) {
 						this.updateNotesCountQueue.enqueue(i.id, 1);
@@ -638,7 +637,7 @@ export class NoteEditService implements OnApplicationShutdown {
 		}
 
 		if (!silent) {
-			if (this.userEntityService.isLocalUser(user)) this.activeUsersChart.write(user);
+			if (isLocalUser(user)) this.activeUsersChart.write(user);
 
 			// Pack the note
 			const noteObj = await this.noteEntityService.pack(note, null, { skipHide: true, withReactionAndUserPairCache: true });
@@ -680,26 +679,26 @@ export class NoteEditService implements OnApplicationShutdown {
 			nm.notify();
 
 			//#region AP deliver
-			if (!data.localOnly && this.userEntityService.isLocalUser(user)) {
+			if (!data.localOnly && isLocalUser(user)) {
 				trackTask(async () => {
 					const noteActivity = await this.apRendererService.renderNoteOrRenoteActivity(note, user, { renote: data.renote });
 					const dm = this.apDeliverManagerService.createDeliverManager(user, noteActivity);
 
 					// メンションされたリモートユーザーに配送
-					for (const u of mentionedUsers.filter(u => this.userEntityService.isRemoteUser(u))) {
+					for (const u of mentionedUsers.filter(u => isRemoteUser(u))) {
 						dm.addDirectRecipe(u as MiRemoteUser);
 					}
 
 					// 投稿がリプライかつ投稿者がローカルユーザーかつリプライ先の投稿の投稿者がリモートユーザーなら配送
 					if (data.reply && data.reply.userHost !== null) {
 						const u = await this.usersRepository.findOneBy({ id: data.reply.userId });
-						if (u && this.userEntityService.isRemoteUser(u)) dm.addDirectRecipe(u);
+						if (u && isRemoteUser(u)) dm.addDirectRecipe(u);
 					}
 
 					// 投稿がRenoteかつ投稿者がローカルユーザーかつRenote元の投稿の投稿者がリモートユーザーなら配送
 					if (this.isRenote(data) && data.renote.userHost !== null) {
 						const u = await this.usersRepository.findOneBy({ id: data.renote.userId });
-						if (u && this.userEntityService.isRemoteUser(u)) dm.addDirectRecipe(u);
+						if (u && isRemoteUser(u)) dm.addDirectRecipe(u);
 					}
 
 					// フォロワーに配送
