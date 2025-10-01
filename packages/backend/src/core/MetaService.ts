@@ -16,7 +16,6 @@ import { TimeService, type TimerHandle } from '@/global/TimeService.js';
 import { MiInstance } from '@/models/Instance.js';
 import { diffArrays } from '@/misc/diff-arrays.js';
 import type { MetasRepository } from '@/models/_.js';
-import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 
 @Injectable()
@@ -37,7 +36,6 @@ export class MetaService implements OnApplicationShutdown {
 		private featuredService: FeaturedService,
 		private globalEventService: GlobalEventService,
 		private readonly timeService: TimeService,
-		private readonly federatedInstanceService: FederatedInstanceService,
 	) {
 		//this.onMessage = this.onMessage.bind(this);
 
@@ -158,7 +156,6 @@ export class MetaService implements OnApplicationShutdown {
 			});
 		}
 
-		await this.federatedInstanceService.syncCache(before, updated);
 		this.globalEventService.publishInternalEvent('metaUpdated', { before, after: updated });
 
 		return updated;
