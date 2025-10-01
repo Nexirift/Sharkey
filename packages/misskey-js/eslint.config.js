@@ -19,10 +19,11 @@ export default [
 			'**/coverage/',
 			'**/node_modules/',
 			'scripts',
+			'*.*',
 		],
 	},
 	{
-		files: ['src/**/*.ts', 'src/**/*.tsx'],
+		files: ['src/**/*.ts', 'test/**/*.ts'],
 		languageOptions: {
 			parserOptions: {
 				parser: tsParser,
@@ -31,6 +32,9 @@ export default [
 				tsconfigRootDir: import.meta.dirname,
 			},
 		},
+	},
+	{
+		files: ['scripts/**/*.mjs'],
 	},
 	{
 		files: ['src/autogen/**/*.ts', 'src/autogen/**/*.tsx'],

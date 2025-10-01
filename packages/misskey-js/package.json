@@ -4,13 +4,13 @@
 	"version": "2025.5.2-dev",
 	"description": "Misskey SDK for JavaScript",
 	"license": "MIT",
-	"main": "./built/src/index.js",
-	"types": "./built/src/index.d.ts",
+	"main": "./built/index.js",
+	"types": "./built/index.d.ts",
 	"scripts": {
 		"clean": "node scripts/clean.mjs",
-		"build": "tsc -b && ncp test-d ./built/test-d",
+		"build": "tsc -b && node scripts/post-build.mjs",
 		"rebuild": "pnpm clean && pnpm build",
-		"tsd": "tsd --files \"./built/test-d/**/*.ts\"",
+		"tsd": "tsd --types \"./temp/built/src/index.d.ts\" --files \"./temp/built/test-d/**/*.ts\"",
 		"api": "pnpm api-extractor run --local --verbose",
 		"api-prod": "pnpm api-extractor run --verbose",
 		"eslint": "eslint --quiet \"{src,test,test-d,scripts}/**/*.{js,jsx,ts,tsx,vue}\" --cache",
@@ -41,7 +41,7 @@
 		"typescript": "5.8.3"
 	},
 	"files": [
-		"built/src"
+		"built"
 	],
 	"dependencies": {
 		"eventemitter3": "5.0.1",
