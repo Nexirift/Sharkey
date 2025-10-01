@@ -36,7 +36,7 @@ describe('Chart', () => {
 	let clock: lolex.InstalledClock;
 
 	beforeEach(async () => {
-		if (db) db.destroy();
+		if (db) await db.destroy();
 
 		db = new DataSource({
 			type: 'postgres',
