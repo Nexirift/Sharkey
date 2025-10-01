@@ -4,7 +4,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { MetricsTime, type JobType } from 'bullmq';
 import { parse as parseRedisInfo } from 'redis-info';
 import type { IActivity } from '@/core/activitypub/type.js';
@@ -56,7 +56,7 @@ export const QUEUE_TYPES = [
 ] as const;
 
 @Injectable()
-export class QueueService {
+export class QueueService implements OnModuleInit {
 	constructor(
 		@Inject(DI.config)
 		private config: Config,
@@ -71,57 +71,60 @@ export class QueueService {
 		@Inject('queue:userWebhookDeliver') public userWebhookDeliverQueue: UserWebhookDeliverQueue,
 		@Inject('queue:systemWebhookDeliver') public systemWebhookDeliverQueue: SystemWebhookDeliverQueue,
 		@Inject('queue:scheduleNotePost') public ScheduleNotePostQueue: ScheduleNotePostQueue,
-	) {
-		this.systemQueue.add('tickCharts', {
+	) {}
+
+	@bindThis
+	public async onModuleInit() {
+		await this.systemQueue.add('tickCharts', {
 		}, {
 			repeat: { pattern: '55 * * * *' },
 			removeOnComplete: 10,
 			removeOnFail: 30,
 		});
 
-		this.systemQueue.add('resyncCharts', {
+		await this.systemQueue.add('resyncCharts', {
 		}, {
 			repeat: { pattern: '0 0 * * *' },
 			removeOnComplete: 10,
 			removeOnFail: 30,
 		});
 
-		this.systemQueue.add('cleanCharts', {
+		await this.systemQueue.add('cleanCharts', {
 		}, {
 			repeat: { pattern: '0 0 * * *' },
 			removeOnComplete: 10,
 			removeOnFail: 30,
 		});
 
-		this.systemQueue.add('aggregateRetention', {
+		await this.systemQueue.add('aggregateRetention', {
 		}, {
 			repeat: { pattern: '0 0 * * *' },
 			removeOnComplete: 10,
 			removeOnFail: 30,
 		});
 
-		this.systemQueue.add('clean', {
+		await this.systemQueue.add('clean', {
 		}, {
 			repeat: { pattern: '0 0 * * *' },
 			removeOnComplete: 10,
 			removeOnFail: 30,
 		});
 
-		this.systemQueue.add('checkExpiredMutings', {
+		await this.systemQueue.add('checkExpiredMutings', {
 		}, {
 			repeat: { pattern: '*/5 * * * *' },
 			removeOnComplete: 10,
 			removeOnFail: 30,
 		});
 
-		this.systemQueue.add('bakeBufferedReactions', {
+		await this.systemQueue.add('bakeBufferedReactions', {
 		}, {
 			repeat: { pattern: '0 0 * * *' },
 			removeOnComplete: 10,
 			removeOnFail: 30,
 		});
 
-		this.systemQueue.add('checkModeratorsActivity', {
+		await this.systemQueue.add('checkModeratorsActivity', {
 		}, {
 			// 毎時30分に起動
 			repeat: { pattern: '30 * * * *' },
