@@ -10,6 +10,10 @@ import { MeiliSearch } from 'meilisearch';
 import { MiMeta } from '@/models/Meta.js';
 import { bindThis } from '@/decorators.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
+import { TimeService, NativeTimeService } from '@/core/TimeService.js';
+import { EnvService } from '@/core/EnvService.js';
+import { CacheManagementService } from '@/core/CacheManagementService.js';
+import { InternalEventService } from '@/core/InternalEventService.js';
 import { DI } from './di-symbols.js';
 import { Config, loadConfig } from './config.js';
 import { createPostgresDataSource } from './postgres.js';
@@ -165,11 +169,19 @@ const $meta: Provider = {
 	inject: [DI.db, DI.redisForSub],
 };
 
+const $CacheManagementService: Provider[] = [CacheManagementService, { provide: 'CacheManagementService', useExisting: CacheManagementService }];
+const $InternalEventService: Provider[] = [InternalEventService, { provide: 'InternalEventService', useExisting: InternalEventService }];
+const $TimeService: Provider[] = [
+	{ provide: TimeService, useClass: NativeTimeService },
+	{ provide: 'TimeService', useExisting: TimeService },
+];
+const $EnvService: Provider[] = [EnvService, { provide: 'EnvService', useExisting: EnvService }];
+
 @Global()
 @Module({
 	imports: [RepositoryModule],
-	providers: [$config, $db, $meta, $meilisearch, $redis, $redisForPub, $redisForSub, $redisForTimelines, $redisForReactions, $redisForRateLimit],
-	exports: [$config, $db, $meta, $meilisearch, $redis, $redisForPub, $redisForSub, $redisForTimelines, $redisForReactions, $redisForRateLimit, RepositoryModule],
+	providers: [$config, $db, $meta, $meilisearch, $redis, $redisForPub, $redisForSub, $redisForTimelines, $redisForReactions, $redisForRateLimit, $CacheManagementService, $InternalEventService, $TimeService, $EnvService].flat(),
+	exports: [$config, $db, $meta, $meilisearch, $redis, $redisForPub, $redisForSub, $redisForTimelines, $redisForReactions, $redisForRateLimit, $CacheManagementService, $InternalEventService, $TimeService, $EnvService, RepositoryModule].flat(),
 })
 export class GlobalModule implements OnApplicationShutdown {
 	private readonly logger = new Logger('global');

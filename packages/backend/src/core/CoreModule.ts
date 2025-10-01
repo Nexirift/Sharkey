@@ -15,8 +15,6 @@ import { SystemWebhookService } from '@/core/SystemWebhookService.js';
 import { UserSearchService } from '@/core/UserSearchService.js';
 import { WebhookTestService } from '@/core/WebhookTestService.js';
 import { FlashService } from '@/core/FlashService.js';
-import { TimeService } from '@/core/TimeService.js';
-import { EnvService } from '@/core/EnvService.js';
 import { ApUtilityService } from '@/core/activitypub/ApUtilityService.js';
 import { ApLogService } from '@/core/ApLogService.js';
 import { UpdateInstanceQueue } from '@/core/UpdateInstanceQueue.js';
@@ -188,7 +186,6 @@ const $HashtagService: Provider = { provide: 'HashtagService', useExisting: Hash
 const $HttpRequestService: Provider = { provide: 'HttpRequestService', useExisting: HttpRequestService };
 const $IdService: Provider = { provide: 'IdService', useExisting: IdService };
 const $ImageProcessingService: Provider = { provide: 'ImageProcessingService', useExisting: ImageProcessingService };
-const $InternalEventService: Provider = { provide: 'InternalEventService', useExisting: InternalEventService };
 const $InternalStorageService: Provider = { provide: 'InternalStorageService', useExisting: InternalStorageService };
 const $MetaService: Provider = { provide: 'MetaService', useExisting: MetaService };
 const $MfmService: Provider = { provide: 'MfmService', useExisting: MfmService };
@@ -239,8 +236,7 @@ const $ChannelFollowingService: Provider = { provide: 'ChannelFollowingService',
 const $ChatService: Provider = { provide: 'ChatService', useExisting: ChatService };
 const $RegistryApiService: Provider = { provide: 'RegistryApiService', useExisting: RegistryApiService };
 const $ReversiService: Provider = { provide: 'ReversiService', useExisting: ReversiService };
-const $TimeService: Provider = { provide: 'TimeService', useExisting: TimeService };
-const $EnvService: Provider = { provide: 'EnvService', useExisting: EnvService };
+const $InstanceStatsService = { provide: 'InstanceStatsService', useExisting: InstanceStatsService };
 const $NoteVisibilityService: Provider = { provide: 'NoteVisibilityService', useExisting: NoteVisibilityService };
 
 const $ChartLoggerService: Provider = { provide: 'ChartLoggerService', useExisting: ChartLoggerService };
@@ -400,8 +396,6 @@ const $SponsorsService: Provider = { provide: 'SponsorsService', useExisting: Sp
 		ChatService,
 		RegistryApiService,
 		ReversiService,
-		TimeService,
-		EnvService,
 		NoteVisibilityService,
 
 		ChartLoggerService,
@@ -506,7 +500,6 @@ const $SponsorsService: Provider = { provide: 'SponsorsService', useExisting: Sp
 		$HttpRequestService,
 		$IdService,
 		$ImageProcessingService,
-		$InternalEventService,
 		$InternalStorageService,
 		$MetaService,
 		$MfmService,
@@ -557,8 +550,6 @@ const $SponsorsService: Provider = { provide: 'SponsorsService', useExisting: Sp
 		$ChatService,
 		$RegistryApiService,
 		$ReversiService,
-		$TimeService,
-		$EnvService,
 		$NoteVisibilityService,
 
 		$ChartLoggerService,
@@ -715,8 +706,6 @@ const $SponsorsService: Provider = { provide: 'SponsorsService', useExisting: Sp
 		ChatService,
 		RegistryApiService,
 		ReversiService,
-		TimeService,
-		EnvService,
 		NoteVisibilityService,
 
 		FederationChart,
@@ -820,7 +809,6 @@ const $SponsorsService: Provider = { provide: 'SponsorsService', useExisting: Sp
 		$HttpRequestService,
 		$IdService,
 		$ImageProcessingService,
-		$InternalEventService,
 		$InternalStorageService,
 		$MetaService,
 		$MfmService,
@@ -870,8 +858,6 @@ const $SponsorsService: Provider = { provide: 'SponsorsService', useExisting: Sp
 		$ChatService,
 		$RegistryApiService,
 		$ReversiService,
-		$TimeService,
-		$EnvService,
 		$NoteVisibilityService,
 
 		$FederationChart,
