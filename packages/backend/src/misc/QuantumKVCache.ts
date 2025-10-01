@@ -16,12 +16,14 @@ export interface QuantumKVOpts<T> {
 
 	/**
 	 * Callback to fetch the value for a key that wasn't found in the cache.
+	 * Return null/undefined or throw an error if no value exists for the given key.
 	 * May be synchronous or async.
 	 */
-	fetcher: (key: string, cache: QuantumKVCache<T>) => T | Promise<T>;
+	fetcher: (key: string, cache: QuantumKVCache<T>) => T | null | undefined | Promise<T | null | undefined>;
 
 	/**
 	 * Optional callback to fetch the value for multiple keys that weren't found in the cache.
+	 * Don't throw or return null if a key has no value; just omit it from the response.
 	 * May be synchronous or async.
 	 * If not provided, then the implementation will fall back on repeated calls to fetcher().
 	 */
@@ -135,7 +137,7 @@ export class QuantumKVCache<T> implements Iterable<[key: string, value: T]> {
 	 * Skips if all values are unchanged.
 	 */
 	@bindThis
-	public async setMany(items: Iterable<[key: string, value: T]>): Promise<void> {
+	public async setMany(items: Iterable<readonly [key: string, value: T]>): Promise<void> {
 		const changedKeys: string[] = [];
 
 		for (const item of items) {
@@ -170,7 +172,7 @@ export class QuantumKVCache<T> implements Iterable<[key: string, value: T]> {
 	 * This should only be used when the value is known to be current, like after fetching from the database.
 	 */
 	@bindThis
-	public addMany(items: Iterable<[key: string, value: T]>): void {
+	public addMany(items: Iterable<readonly [key: string, value: T]>): void {
 		for (const [key, value] of items) {
 			this.memoryCache.set(key, value);
 		}
@@ -179,6 +181,7 @@ export class QuantumKVCache<T> implements Iterable<[key: string, value: T]> {
 	/**
 	 * Gets a value from the local memory cache, or returns undefined if not found.
 	 * Returns cached data only - does not make any fetches.
+	 * TODO separate get/getMaybe
 	 */
 	@bindThis
 	public get(key: string): T | undefined {
@@ -188,6 +191,7 @@ export class QuantumKVCache<T> implements Iterable<[key: string, value: T]> {
 	/**
 	 * Gets multiple values from the local memory cache; returning undefined for any missing keys.
 	 * Returns cached data only - does not make any fetches.
+	 * TODO don't return undefined, matching fetch
 	 */
 	@bindThis
 	public getMany(keys: Iterable<string>): [key: string, value: T | undefined][] {
@@ -205,8 +209,9 @@ export class QuantumKVCache<T> implements Iterable<[key: string, value: T]> {
 	@bindThis
 	public async fetch(key: string): Promise<T> {
 		let value = this.memoryCache.get(key);
-		if (value === undefined) {
-			value = await this.fetcher(key, this);
+		if (value == null) {
+			value = await this.callFetch(key);
+
 			this.memoryCache.set(key, value);
 
 			if (this.onChanged) {
@@ -217,12 +222,37 @@ export class QuantumKVCache<T> implements Iterable<[key: string, value: T]> {
 	}
 
 	/**
+	 * Gets or fetches a value from the cache, returning undefined if not found.
+	 * Fires an onChanged event on success, but does not emit an update event to other processes.
+	 */
+	@bindThis
+	public async fetchMaybe(key: string): Promise<T | undefined> {
+		let value = this.memoryCache.get(key);
+		if (value != null) {
+			return value;
+		}
+
+		value = await this.callFetchMaybe(key);
+		if (value == null) {
+			return undefined;
+		}
+
+		this.memoryCache.set(key, value);
+
+		if (this.onChanged) {
+			await this.onChanged([key], this);
+		}
+
+		return value;
+	}
+
+	/**
 	 * Gets or fetches multiple values from the cache.
 	 * Missing / unmapped values are excluded from the response.
 	 * Fires onChanged event, but does not emit any update events to other processes.
 	 */
 	@bindThis
-	public async fetchMany(keys: Iterable<string>): Promise<[key: string, value: T][]> {
+	public async fetchMany(keys: Iterable<string>): Promise<KVPArray<T>> {
 		const results: [key: string, value: T][] = [];
 		const toFetch: string[] = [];
 
@@ -250,7 +280,7 @@ export class QuantumKVCache<T> implements Iterable<[key: string, value: T]> {
 			}
 		}
 
-		return results;
+		return makeKVPArray(results);
 	}
 
 	/**
@@ -259,7 +289,7 @@ export class QuantumKVCache<T> implements Iterable<[key: string, value: T]> {
 	 */
 	@bindThis
 	public has(key: string): boolean {
-		return this.memoryCache.get(key) !== undefined;
+		return this.memoryCache.has(key);
 	}
 
 	/**
@@ -307,16 +337,17 @@ export class QuantumKVCache<T> implements Iterable<[key: string, value: T]> {
 	 */
 	@bindThis
 	public async refresh(key: string): Promise<T> {
-		const value = await this.fetcher(key, this);
+		const value = await this.callFetch(key);
 		await this.set(key, value);
 		return value;
 	}
 
 	@bindThis
-	public async refreshMany(keys: Iterable<string>): Promise<[key: string, value: T][]> {
-		const values = await this.bulkFetch(keys);
-		await this.setMany(values);
-		return values;
+	public async refreshMany(keys: Iterable<string>): Promise<KVPArray<T>> {
+		const toFetch = Array.from(keys);
+		const fetched = await this.bulkFetch(toFetch);
+		await this.setMany(fetched);
+		return makeKVPArray(fetched);
 	}
 
 	/**
@@ -349,16 +380,24 @@ export class QuantumKVCache<T> implements Iterable<[key: string, value: T]> {
 	}
 
 	@bindThis
-	private async bulkFetch(keys: Iterable<string>): Promise<[key: string, value: T][]> {
+	private async bulkFetch(keys: string[]): Promise<[key: string, value: T][]> {
+		// Use the bulk fetcher if available.
 		if (this.bulkFetcher) {
-			const results = await this.bulkFetcher(Array.from(keys), this);
-			return Array.from(results);
+			try {
+				const results = await this.bulkFetcher(keys, this);
+				return Array.from(results);
+			} catch (err) {
+				throw new FetchFailedError(this.name, keys, renderInlineError(err), { cause: err });
+			}
 		}
 
+		// Otherwise fall back to regular fetch.
 		const results: [key: string, value: T][] = [];
 		for (const key of keys) {
-			const value = await this.fetcher(key, this);
-			results.push([key, value]);
+			const value = await this.callFetchMaybe(key);
+			if (value != null) {
+				results.push([key, value]);
+			}
 		}
 		return results;
 	}
@@ -376,11 +415,106 @@ export class QuantumKVCache<T> implements Iterable<[key: string, value: T]> {
 		}
 	}
 
+	@bindThis
+	private async callFetch(key: string): Promise<T> {
+		const value = await this.callFetchMaybe(key);
+
+		if (value == null) {
+			throw new KeyNotFoundError(this.name, key);
+		}
+
+		return value;
+	}
+
+	@bindThis
+	private async callFetchMaybe(key: string): Promise<T | undefined> {
+		try {
+			const value = await this.fetcher(key, this);
+			return value ?? undefined;
+		} catch (err) {
+			throw new FetchFailedError(this.name, key, renderInlineError(err), { cause: err });
+		}
+	}
+
 	/**
 	 * Iterates all [key, value] pairs in memory.
 	 * This applies to the local subset view, not the cross-cluster cache state.
 	 */
 	[Symbol.iterator](): Iterator<[key: string, value: T]> {
 		return this.entries();
+	}
+}
+
+/**
+ * Base class for all Quantum Cache errors.
+ */
+export class QuantumCacheError extends Error {
+	/**
+	 * Name of the cache that produced this error.
+	 */
+	public readonly cacheName: string;
+
+	constructor(
+		cacheName: string,
+		message?: string,
+		options?: ErrorOptions,
+	) {
+		const actualMessage = message
+			? `Error in cache ${cacheName}: ${message}`
+			: `Error in cache ${cacheName}.`;
+		super(actualMessage, options);
+
+		this.cacheName = cacheName;
+	}
+}
+
+/**
+ * Thrown when a fetch failed for any reason.
+ */
+export class FetchFailedError extends QuantumCacheError {
+	/**
+	 * Name of the key(s) that could not be fetched.
+	 * Will be an array if bulkFetcher() failed, and a string if regular fetch() failed.
+	 */
+	public readonly keyNames: string | readonly string[];
+
+	constructor(
+		cacheName: string,
+		keyNames: string | readonly string[],
+		message?: string,
+		options?: ErrorOptions,
+	) {
+		const actualMessage = typeof(keyNames) === 'string'
+			? message
+				? `Fetch failed for key "${keyNames}": ${message}`
+				: `Fetch failed for key "${keyNames}".`
+			: message
+				? `Fetch failed for ${keyNames.length} keys: ${message}`
+				: `Fetch failed for ${keyNames.length} keys.`;
+		super(cacheName, actualMessage, options);
+
+		this.keyNames = keyNames;
+	}
+}
+
+/**
+ * Thrown when a fetch failed because no value was found for the requested key(s).
+ */
+export class KeyNotFoundError extends FetchFailedError {
+	/**
+	 * Missing keys are considered non-retryable, as they won't suddenly appear unless something external creates them.
+	 */
+	readonly [isRetryableSymbol] = false;
+
+	constructor(
+		cacheName: string,
+		keyNames: string | readonly string[],
+		message?: string,
+		options?: ErrorOptions,
+	) {
+		const actualMessage = message
+			? `Fetcher did not return a value: ${message}`
+			: 'Fetcher did not return a value.';
+		super(cacheName, keyNames, actualMessage, options);
 	}
 }
