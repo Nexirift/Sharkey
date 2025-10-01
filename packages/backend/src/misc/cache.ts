@@ -39,7 +39,7 @@ export class RedisKVCache<T> {
 				`kvcache:${this.name}:${key}`,
 				this.toRedisConverter(value),
 			);
-		} else {
+		} else if (this.lifetime > 0) {
 			await this.redisClient.set(
 				`kvcache:${this.name}:${key}`,
 				this.toRedisConverter(value),
@@ -149,7 +149,7 @@ export class RedisSingleCache<T> {
 				`singlecache:${this.name}`,
 				this.toRedisConverter(value),
 			);
-		} else {
+		} else if (this.lifetime > 0) {
 			await this.redisClient.set(
 				`singlecache:${this.name}`,
 				this.toRedisConverter(value),
