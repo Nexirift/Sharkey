@@ -14,6 +14,7 @@ import { ConflictError } from '@/misc/errors/ConflictError.js';
 /**
  * Returns false if the provided value represents a "permanent" error that cannot be retried.
  * Returns true if the error is retryable, unknown (as all errors are retryable by default), or not an error object.
+ * If the error cannot be readily identified as retryable, then recurses to the inner exception ("cause" property).
  */
 export function isRetryableError(e: unknown): boolean {
 	if (e instanceof AggregateError) return e.errors.every(inner => isRetryableError(inner));
@@ -29,8 +30,15 @@ export function isRetryableError(e: unknown): boolean {
 	if (e instanceof ConflictError) return true;
 	if (e instanceof UnrecoverableError) return false;
 	if (e instanceof AbortError) return true;
-	if (e instanceof FetchError) return true;
+	if (e instanceof FetchError) return true; // TODO check status code?
 	if (e instanceof SyntaxError) return false;
-	if (e instanceof Error) return e.name === 'AbortError';
+	if (e instanceof Error) {
+		if (e.name === 'AbortError') return true;
+		if (e.cause != null) return isRetryableError(e.cause);
+	}
+
+	// TODO aggregate errors (any permanent makes the whole thing permanent)
+	// TODO "got" errors
+
 	return true;
 }
