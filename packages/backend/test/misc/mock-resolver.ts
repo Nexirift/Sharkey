@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { Inject } from '@nestjs/common';
+import { MockLoggerService } from './MockLoggerService.js';
 import type { Config } from '@/config.js';
 import type { ApDbResolverService } from '@/core/activitypub/ApDbResolverService.js';
 import type { ApRendererService } from '@/core/activitypub/ApRendererService.js';
@@ -38,25 +40,59 @@ export class MockResolver extends Resolver {
 	#responseMap = new Map<string, MockResponse>();
 	#remoteGetTrials: string[] = [];
 
-	constructor(loggerService: LoggerService) {
+	constructor(
+		@Inject(DI.config)
+		config?: Config,
+
+		@Inject(DI.meta)
+		meta?: MiMeta,
+
+		@Inject(DI.usersRepository)
+		usersRepository?: UsersRepository,
+
+		@Inject(DI.notesRepository)
+		notesRepository?: NotesRepository,
+
+		@Inject(DI.pollsRepository)
+		pollsRepository?: PollsRepository,
+
+		@Inject(DI.noteReactionsRepository)
+		noteReactionsRepository?: NoteReactionsRepository,
+
+		@Inject(DI.followRequestsRepository)
+		followRequestsRepository?: FollowRequestsRepository,
+
+		utilityService?: UtilityService,
+		systemAccountService?: SystemAccountService,
+		apRequestService?: ApRequestService,
+		httpRequestService?: HttpRequestService,
+		apRendererService?: ApRendererService,
+		apDbResolverService?: ApDbResolverService,
+		loggerService?: LoggerService,
+		apLogService?: ApLogService,
+		apUtilityService?: ApUtilityService,
+		cacheService?: CacheService,
+		recursionLimit?: number,
+	) {
 		super(
-			{} as Config,
-			{} as MiMeta,
-			{} as UsersRepository,
-			{} as NotesRepository,
-			{} as PollsRepository,
-			{} as NoteReactionsRepository,
-			{} as FollowRequestsRepository,
-			{} as UtilityService,
-			{} as SystemAccountService,
-			{} as ApRequestService,
-			{} as HttpRequestService,
-			{} as ApRendererService,
-			{} as ApDbResolverService,
-			loggerService,
-			{} as ApLogService,
-			{} as ApUtilityService,
-			{} as CacheService,
+			config ?? {} as Config,
+			meta ?? {} as MiMeta,
+			usersRepository ?? {} as UsersRepository,
+			notesRepository ?? {} as NotesRepository,
+			pollsRepository ?? {} as PollsRepository,
+			noteReactionsRepository ?? {} as NoteReactionsRepository,
+			followRequestsRepository ?? {} as FollowRequestsRepository,
+			utilityService ?? {} as UtilityService,
+			systemAccountService ?? {} as SystemAccountService,
+			apRequestService ?? {} as ApRequestService,
+			httpRequestService ?? {} as HttpRequestService,
+			apRendererService ?? {} as ApRendererService,
+			apDbResolverService ?? {} as ApDbResolverService,
+			loggerService ?? new MockLoggerService(),
+			apLogService ?? {} as ApLogService,
+			apUtilityService ?? {} as ApUtilityService,
+			cacheService ?? {} as CacheService,
+			recursionLimit,
 		);
 	}
 

@@ -410,36 +410,36 @@ export class Resolver {
 export class ApResolverService {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		protected readonly config: Config,
 
 		@Inject(DI.meta)
-		private meta: MiMeta,
+		protected readonly meta: MiMeta,
 
 		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
+		protected readonly usersRepository: UsersRepository,
 
 		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
+		protected readonly notesRepository: NotesRepository,
 
 		@Inject(DI.pollsRepository)
-		private pollsRepository: PollsRepository,
+		protected readonly pollsRepository: PollsRepository,
 
 		@Inject(DI.noteReactionsRepository)
-		private noteReactionsRepository: NoteReactionsRepository,
+		protected readonly noteReactionsRepository: NoteReactionsRepository,
 
 		@Inject(DI.followRequestsRepository)
-		private followRequestsRepository: FollowRequestsRepository,
+		protected readonly followRequestsRepository: FollowRequestsRepository,
 
-		private utilityService: UtilityService,
-		private systemAccountService: SystemAccountService,
-		private apRequestService: ApRequestService,
-		private httpRequestService: HttpRequestService,
-		private apRendererService: ApRendererService,
-		private apDbResolverService: ApDbResolverService,
-		private loggerService: LoggerService,
-		private readonly apLogService: ApLogService,
-		private readonly apUtilityService: ApUtilityService,
-		private readonly cacheService: CacheService,
+		protected readonly utilityService: UtilityService,
+		protected readonly systemAccountService: SystemAccountService,
+		protected readonly apRequestService: ApRequestService,
+		protected readonly httpRequestService: HttpRequestService,
+		protected readonly apRendererService: ApRendererService,
+		protected readonly apDbResolverService: ApDbResolverService,
+		protected readonly loggerService: LoggerService,
+		protected readonly apLogService: ApLogService,
+		protected readonly apUtilityService: ApUtilityService,
+		protected readonly cacheService: CacheService,
 	) {
 	}
 
