@@ -1,12 +1,13 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"compilerOptions": {
-		"target": "ESNext",
+		"target": "ES2022",
 		"module": "ESNext",
-		"moduleResolution": "node16",
+		"moduleResolution": "nodenext",
 		"strict": true,
 		"strictFunctionTypes": true,
 		"strictNullChecks": true,
+		"skipLibCheck": true,
 		"esModuleInterop": true,
 		"incremental": true,
 		"lib": [

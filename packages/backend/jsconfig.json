@@ -1,8 +1,12 @@
 {
 	"compilerOptions": {
-		"target": "es6",
-		"module": "commonjs",
-		"allowSyntheticDefaultImports": true
+		"target": "ES2022",
+		"module": "NodeNext",
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"skipLibCheck": true,
+		"allowJs": true,
+		"checkJs": true
 	},
 	"exclude": [
 		"node_modules",

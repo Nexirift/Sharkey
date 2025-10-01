@@ -22,6 +22,7 @@
 		"emitDecoratorMetadata": true,
 		"resolveJsonModule": true,
 		"isolatedModules": true,
+		"skipLibCheck": true,
 		"incremental": true,
 		"baseUrl": "./",
 		"paths": {
