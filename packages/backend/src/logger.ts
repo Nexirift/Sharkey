@@ -23,13 +23,16 @@ export type DataElement = DataObject | Error | string | null;
 // https://stackoverflow.com/questions/61148466/typescript-type-that-matches-any-object-but-not-arrays
 export type DataObject = Record<string, unknown> | (object & { length?: never; });
 
+export type Console = Pick<typeof global.console, 'error' | 'warn' | 'info' | 'log' | 'debug'>;
+export const nativeConsole: Console = global.console;
+
 const levelFuncs = {
 	error: 'error',
 	warning: 'warn',
 	success: 'info',
 	info: 'log',
 	debug: 'debug',
-} as const satisfies Record<Level, keyof typeof console>;
+} as const satisfies Record<Level, keyof Console>;
 
 // eslint-disable-next-line import/no-default-export
 export default class Logger {
@@ -37,12 +40,19 @@ export default class Logger {
 	private parentLogger: Logger | null = null;
 	public readonly verbose: boolean;
 
-	constructor(context: string, color?: KEYWORD, verbose?: boolean) {
+	/**
+	 * Where to send the actual log strings.
+	 * Defaults to the native global.console instance.
+	 */
+	private readonly console: Console;
+
+	constructor(context: string, color?: KEYWORD, verbose?: boolean, console?: Console) {
 		this.context = {
 			name: context,
 			color: color,
 		};
 		this.verbose = verbose ?? envOption.verbose;
+		this.console = console ?? nativeConsole;
 	}
 
 	@bindThis
@@ -94,7 +104,7 @@ export default class Logger {
 		} else if (data != null) {
 			args.push(data);
 		}
-		console[levelFuncs[level]](...args);
+		this.console[levelFuncs[level]](...args);
 	}
 
 	@bindThis
