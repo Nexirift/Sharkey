@@ -16,6 +16,7 @@ import { FileInfo, FileInfoService } from '@/core/FileInfoService.js';
 //import { DI } from '@/di-symbols.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import type { TestingModule } from '@nestjs/testing';
+import { CoreModule } from '@/core/CoreModule.js';
 import type { MockFunctionMetadata } from 'jest-mock';
 
 const _filename = fileURLToPath(import.meta.url);
@@ -41,10 +42,7 @@ describe('FileInfoService', () => {
 		app = await Test.createTestingModule({
 			imports: [
 				GlobalModule,
-			],
-			providers: [
-				LoggerService,
-				FileInfoService,
+				CoreModule,
 			],
 		})
 			.useMocker((token) => {

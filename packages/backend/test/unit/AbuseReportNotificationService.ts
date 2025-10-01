@@ -29,6 +29,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { RecipientMethod } from '@/models/AbuseReportNotificationRecipient.js';
 import { SystemWebhookService } from '@/core/SystemWebhookService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
+import { CoreModule } from '@/core/CoreModule.js';
 
 process.env.NODE_ENV = 'test';
 
@@ -114,39 +115,20 @@ describe('AbuseReportNotificationService', () => {
 			.createTestingModule({
 				imports: [
 					GlobalModule,
-				],
-				providers: [
-					AbuseReportNotificationService,
-					IdService,
-					{
-						provide: RoleService, useFactory: () => ({ getModeratorIds: jest.fn() }),
-					},
-					{
-						provide: SystemWebhookService, useFactory: () => ({ enqueueSystemWebhook: jest.fn() }),
-					},
-					{
-						provide: UserEntityService, useFactory: () => ({
-							pack: (v: any) => Promise.resolve(v),
-							packMany: (v: any) => Promise.resolve(v),
-						}),
-					},
-					{
-						provide: EmailService, useFactory: () => ({ sendEmail: jest.fn() }),
-					},
-					{
-						provide: MetaService, useFactory: () => ({ fetch: jest.fn() }),
-					},
-					{
-						provide: ModerationLogService, useFactory: () => ({ log: () => Promise.resolve() }),
-					},
-					{
-						provide: GlobalEventService, useFactory: () => ({ publishAdminStream: jest.fn() }),
-					},
-					{
-						provide: DI.meta, useFactory: () => meta,
-					},
+					CoreModule,
 				],
 			})
+			.overrideProvider(RoleService).useValue({ getModeratorIds: jest.fn() })
+			.overrideProvider(SystemWebhookService).useValue({ enqueueSystemWebhook: jest.fn() })
+			.overrideProvider(UserEntityService).useValue({
+				pack: (v: any) => Promise.resolve(v),
+				packMany: (v: any) => Promise.resolve(v),
+			})
+			.overrideProvider(EmailService).useValue({ sendEmail: jest.fn() })
+			.overrideProvider(MetaService).useValue({ fetch: jest.fn() })
+			.overrideProvider(ModerationLogService).useValue({ log: () => Promise.resolve() })
+			.overrideProvider(GlobalEventService).useValue({ publishAdminStream: jest.fn() })
+			.overrideProvider(DI.meta).useValue(meta)
 			.compile();
 
 		await app.init();

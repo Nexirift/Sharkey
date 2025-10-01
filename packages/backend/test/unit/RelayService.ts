@@ -18,6 +18,7 @@ import { RelayService } from '@/core/RelayService.js';
 import { SystemAccountService } from '@/core/SystemAccountService.js';
 import { GlobalModule } from '@/GlobalModule.js';
 import { UtilityService } from '@/core/UtilityService.js';
+import { CoreModule } from '@/core/CoreModule.js';
 
 const moduleMocker = new ModuleMocker(global);
 
@@ -30,26 +31,17 @@ describe('RelayService', () => {
 		app = await Test.createTestingModule({
 			imports: [
 				GlobalModule,
-			],
-			providers: [
-				IdService,
-				ApRendererService,
-				RelayService,
-				UserEntityService,
-				SystemAccountService,
-				UtilityService,
+				CoreModule,
 			],
 		})
 			.useMocker((token) => {
-				if (token === QueueService) {
-					return { deliver: jest.fn() };
-				}
 				if (typeof token === 'function') {
 					const mockMetadata = moduleMocker.getMetadata(token) as MockFunctionMetadata<any, any>;
 					const Mock = moduleMocker.generateFromMetadata(mockMetadata);
 					return new Mock();
 				}
 			})
+			.overrideProvider(QueueService).useValue({ deliver: jest.fn() })
 			.compile();
 
 		await app.init();
@@ -61,6 +53,10 @@ describe('RelayService', () => {
 
 	afterAll(async () => {
 		await app.close();
+	});
+
+	afterEach(() => {
+		queueService.deliver.mockReset();
 	});
 
 	test('addRelay', async () => {

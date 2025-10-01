@@ -8,8 +8,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Response } from 'node-fetch';
 import {
 	CaptchaError,
-	CaptchaErrorCode,
-	captchaErrorCodes,
 	CaptchaSaveResult,
 	CaptchaService,
 } from '@/core/CaptchaService.js';
@@ -18,6 +16,8 @@ import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { MiMeta } from '@/models/Meta.js';
 import { LoggerService } from '@/core/LoggerService.js';
+import { CoreModule } from '@/core/CoreModule.js';
+import { captchaErrorCodes, type CaptchaErrorCode } from '@/misc/captcha-error.js';
 
 describe('CaptchaService', () => {
 	let app: TestingModule;
@@ -29,21 +29,12 @@ describe('CaptchaService', () => {
 		app = await Test.createTestingModule({
 			imports: [
 				GlobalModule,
+				CoreModule,
 			],
-			providers: [
-				CaptchaService,
-				LoggerService,
-				{
-					provide: HttpRequestService, useFactory: () => ({ send: jest.fn() }),
-				},
-				{
-					provide: MetaService, useFactory: () => ({
-						fetch: jest.fn(),
-						update: jest.fn(),
-					}),
-				},
-			],
-		}).compile();
+		})
+			.overrideProvider(HttpRequestService).useValue({ send: jest.fn() })
+			.overrideProvider(MetaService).useValue({ fetch: jest.fn(), update: jest.fn() })
+			.compile();
 
 		await app.init();
 		app.enableShutdownHooks();

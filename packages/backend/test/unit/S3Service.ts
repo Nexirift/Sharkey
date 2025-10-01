@@ -14,7 +14,7 @@ import {
 	UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import { mockClient } from 'aws-sdk-client-mock';
-import { FakeInternalEventService } from '../misc/FakeInternalEventService.js';
+import { MockInternalEventService } from '../misc/MockInternalEventService.js';
 import type { TestingModule } from '@nestjs/testing';
 import { GlobalModule } from '@/GlobalModule.js';
 import { CoreModule } from '@/core/CoreModule.js';
@@ -33,9 +33,8 @@ describe('S3Service', () => {
 	beforeAll(async () => {
 		app = await Test.createTestingModule({
 			imports: [GlobalModule, CoreModule],
-			providers: [S3Service],
 		})
-			.overrideProvider(InternalEventService).useClass(FakeInternalEventService)
+			.overrideProvider(InternalEventService).useClass(MockInternalEventService)
 			.compile();
 
 		await app.init();
