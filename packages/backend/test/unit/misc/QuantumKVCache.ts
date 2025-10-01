@@ -4,11 +4,13 @@
  */
 
 import { jest } from '@jest/globals';
-import { FakeInternalEventService } from '../../misc/FakeInternalEventService.js';
-import { QuantumKVCache, QuantumKVOpts } from '@/misc/QuantumKVCache.js';
+import { GodOfTimeService } from '../../misc/GodOfTimeService.js';
+import { MockInternalEventService } from '../../misc/MockInternalEventService.js';
+import { QuantumKVCache, QuantumKVOpts, FetchFailedError, KeyNotFoundError } from '@/misc/QuantumKVCache.js';
 
 describe(QuantumKVCache, () => {
-	let fakeInternalEventService: FakeInternalEventService;
+	let fakeTimeService: GodOfTimeService;
+	let fakeInternalEventService: MockInternalEventService;
 	let madeCaches: { dispose: () => void }[];
 
 	function makeCache<T>(opts?: Partial<QuantumKVOpts<T>> & { name?: string }): QuantumKVCache<T> {
@@ -22,14 +24,20 @@ describe(QuantumKVCache, () => {
 			Object.assign(_opts, opts);
 		}
 
-		const cache = new QuantumKVCache<T>(fakeInternalEventService, _opts.name, _opts);
+		const services = {
+			internalEventService: fakeInternalEventService,
+			timeService: fakeTimeService,
+		};
+
+		const cache = new QuantumKVCache<T>(_opts.name, services, _opts);
 		madeCaches.push(cache);
 		return cache;
 	}
 
 	beforeEach(() => {
 		madeCaches = [];
-		fakeInternalEventService = new FakeInternalEventService();
+		fakeTimeService = new GodOfTimeService();
+		fakeInternalEventService = new MockInternalEventService();
 	});
 
 	afterEach(() => {
@@ -333,6 +341,108 @@ describe(QuantumKVCache, () => {
 		});
 	});
 
+	describe('fetch', () => {
+		it('should throw FetchFailedError when fetcher throws error', async () => {
+			const cache = makeCache<string>({
+				fetcher: () => { throw new Error('test error'); },
+			});
+
+			await expect(cache.fetch('foo')).rejects.toThrow(FetchFailedError);
+		});
+
+		it('should throw KeyNotFoundError when fetcher returns null', async () => {
+			const cache = makeCache<string>({
+				fetcher: () => null,
+			});
+
+			await expect(cache.fetch('foo')).rejects.toThrow(KeyNotFoundError);
+		});
+
+		it('should throw KeyNotFoundError when fetcher undefined', async () => {
+			const cache = makeCache<string>({
+				fetcher: () => undefined,
+			});
+
+			await expect(cache.fetch('foo')).rejects.toThrow(KeyNotFoundError);
+		});
+	});
+
+	describe('fetchMaybe', () => {
+		it('should return value when found by fetcher', async () => {
+			const cache = makeCache<string>({
+				fetcher: () => 'bar',
+			});
+
+			const result = await cache.fetchMaybe('foo');
+
+			expect(result).toBe('bar');
+		});
+
+		it('should call onChanged when found by fetcher', async () => {
+			const fakeOnChanged = jest.fn(() => Promise.resolve());
+			const cache = makeCache<string>({
+				fetcher: () => 'bar',
+				onChanged: fakeOnChanged,
+			});
+
+			await cache.fetchMaybe('foo');
+
+			expect(fakeOnChanged).toHaveBeenCalled();
+		});
+
+		it('should return undefined when fetcher returns undefined', async () => {
+			const cache = makeCache<string>({
+				fetcher: () => undefined,
+			});
+
+			const result = await cache.fetchMaybe('foo');
+
+			expect(result).toBe(undefined);
+		});
+
+		it('should not call onChanged when fetcher returns undefined', async () => {
+			const fakeOnChanged = jest.fn(() => Promise.resolve());
+			const cache = makeCache<string>({
+				fetcher: () => undefined,
+				onChanged: fakeOnChanged,
+			});
+
+			await cache.fetchMaybe('foo');
+
+			expect(fakeOnChanged).not.toHaveBeenCalled();
+		});
+
+		it('should return undefined when fetcher returns null', async () => {
+			const cache = makeCache<string>({
+				fetcher: () => null,
+			});
+
+			const result = await cache.fetchMaybe('foo');
+
+			expect(result).toBe(undefined);
+		});
+
+		it('should not call onChanged when fetcher returns null', async () => {
+			const fakeOnChanged = jest.fn(() => Promise.resolve());
+			const cache = makeCache<string>({
+				fetcher: () => null,
+				onChanged: fakeOnChanged,
+			});
+
+			await cache.fetchMaybe('foo');
+
+			expect(fakeOnChanged).not.toHaveBeenCalled();
+		});
+
+		it('should throw FetchFailedError when fetcher throws error', async () => {
+			const cache = makeCache<string>({
+				fetcher: () => { throw new Error('test error'); },
+			});
+
+			await expect(cache.fetchMaybe('foo')).rejects.toThrow(FetchFailedError);
+		});
+	});
+
 	describe('fetchMany', () => {
 		it('should do nothing for empty input', async () => {
 			const fakeOnChanged = jest.fn(() => Promise.resolve());
@@ -506,6 +616,52 @@ describe(QuantumKVCache, () => {
 
 			expect(fakeInternalEventService._calls).toContainEqual(['emit', ['quantumCacheUpdated', { name: 'fake', keys: ['foo', 'alpha'] }]]);
 			expect(fakeInternalEventService._calls.filter(c => c[0] === 'emit')).toHaveLength(1);
+		});
+
+		it('should throw FetchFailedError when bulk fetcher throws error', async () => {
+			const cache = makeCache<string>({
+				bulkFetcher: () => { throw new Error('test error'); },
+			});
+
+			await expect(cache.refreshMany(['foo'])).rejects.toThrow(FetchFailedError);
+		});
+
+		it('should throw FetchFailedError when fallback fetcher throws error', async () => {
+			const cache = makeCache<string>({
+				fetcher: () => { throw new Error('test error'); },
+			});
+
+			await expect(cache.refreshMany(['foo'])).rejects.toThrow(FetchFailedError);
+		});
+
+		it('should not throw when fallback fetcher returns null', async () => {
+			const cache = makeCache<string>({
+				fetcher: () => null,
+			});
+
+			const result = await cache.refreshMany(['foo']);
+
+			expect(result).toHaveLength(0);
+		});
+
+		it('should not throw when fallback fetcher returns undefined', async () => {
+			const cache = makeCache<string>({
+				fetcher: () => undefined,
+			});
+
+			const result = await cache.refreshMany(['foo']);
+
+			expect(result).toHaveLength(0);
+		});
+
+		it('should not throw when bulk fetcher returns empty', async () => {
+			const cache = makeCache<string>({
+				bulkFetcher: () => [],
+			});
+
+			const result = await cache.refreshMany(['foo']);
+
+			expect(result).toHaveLength(0);
 		});
 	});
 
