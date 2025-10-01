@@ -15,10 +15,11 @@ import { DI } from '@/di-symbols.js';
 import { deepClone } from '@/misc/clone.js';
 import { bindThis } from '@/decorators.js';
 import { SystemAccountService } from '@/core/SystemAccountService.js';
+import { CacheManagementService, ManagedMemorySingleCache } from '@/core/CacheManagementService.js';
 
 @Injectable()
 export class RelayService {
-	private relaysCache: MemorySingleCache<MiRelay[]>;
+	private readonly relaysCache: ManagedMemorySingleCache<MiRelay[]>;
 
 	constructor(
 		@Inject(DI.relaysRepository)
@@ -28,8 +29,10 @@ export class RelayService {
 		private queueService: QueueService,
 		private systemAccountService: SystemAccountService,
 		private apRendererService: ApRendererService,
+
+		cacheManagementService: CacheManagementService,
 	) {
-		this.relaysCache = new MemorySingleCache<MiRelay[]>(1000 * 60 * 10); // 10m
+		this.relaysCache = cacheManagementService.createMemorySingleCache<MiRelay[]>(1000 * 60 * 10); // 10m
 	}
 
 	@bindThis
