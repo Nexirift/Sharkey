@@ -18,10 +18,11 @@ export default [
 			'**/built/',
 			'**/coverage/',
 			'**/node_modules/',
+			'scripts',
 		],
 	},
 	{
-		files: ['**/*.ts', '**/*.tsx'],
+		files: ['src/**/*.ts', 'src/**/*.tsx'],
 		languageOptions: {
 			parserOptions: {
 				parser: tsParser,

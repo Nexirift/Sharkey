@@ -5,7 +5,7 @@
 
 import { nyaize } from '../src/nyaize.js';
 
-function runTests(cases) {
+function runTests(cases: [string, string][]) {
 	for (const c of cases) {
 		const [input,expected] = c;
 		const got = nyaize(input);

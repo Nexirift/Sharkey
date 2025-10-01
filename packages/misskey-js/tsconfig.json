@@ -6,9 +6,11 @@
 		"moduleResolution": "nodenext",
 		"declaration": true,
 		"declarationMap": true,
-		"sourceMap": false,
+		"sourceMap": true,
+		"inlineSources": true,
+		"allowJs": true,
+		"checkJs": true,
 		"outDir": "./built/",
-		"removeComments": true,
 		"strict": true,
 		"strictFunctionTypes": true,
 		"strictNullChecks": true,
@@ -16,21 +18,26 @@
 		"noImplicitReturns": true,
 		"esModuleInterop": true,
 		"exactOptionalPropertyTypes": true,
-		"skipLibCheck": true,
+		"rootDir": ".",
 		"incremental": true,
+		"composite": true,
 		"typeRoots": [
 			"./node_modules/@types"
 		],
 		"lib": [
 			"esnext",
-			"dom"
+			"dom",
+			"dom.iterable" // https://dev.to/deciduously/formdata-in-typescript-24cl
 		]
 	},
+	"compileOnSave": false,
 	"include": [
-		"src/**/*"
+		"src/**/*",
+		"test/**/*",
+		"test-d/**/*",
+		"scripts/**/*",
 	],
 	"exclude": [
-		"node_modules",
-		"test/**/*"
+		"node_modules"
 	]
 }

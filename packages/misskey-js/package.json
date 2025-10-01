@@ -4,26 +4,17 @@
 	"version": "2025.5.2-dev",
 	"description": "Misskey SDK for JavaScript",
 	"license": "MIT",
-	"main": "./built/index.js",
-	"types": "./built/index.d.ts",
-	"exports": {
-		".": {
-			"import": "./built/index.js",
-			"types": "./built/index.d.ts"
-		},
-		"./*": {
-			"import": "./built/*",
-			"types": "./built/*"
-		}
-	},
+	"main": "./built/src/index.js",
+	"types": "./built/src/index.d.ts",
 	"scripts": {
-		"build": "node ./build.js",
-		"watch": "nodemon -w package.json -e json --exec \"node ./build.js --watch\"",
-		"tsd": "tsd",
+		"clean": "node scripts/clean.mjs",
+		"build": "tsc -b && ncp test-d ./built/test-d",
+		"rebuild": "pnpm clean && pnpm build",
+		"tsd": "tsd --files \"./built/test-d/**/*.ts\"",
 		"api": "pnpm api-extractor run --local --verbose",
 		"api-prod": "pnpm api-extractor run --verbose",
-		"eslint": "eslint --quiet \"{src,test,js,@types}/**/*.{js,jsx,ts,tsx,vue}\" --cache",
-		"typecheck": "tsc --noEmit",
+		"eslint": "eslint --quiet \"{src,test,test-d,scripts}/**/*.{js,jsx,ts,tsx,vue}\" --cache",
+		"typecheck": "tsc -b --noEmit",
 		"lint": "pnpm typecheck && pnpm eslint",
 		"jest": "jest --coverage --detectOpenHandles",
 		"test": "pnpm jest && pnpm tsd",
@@ -31,13 +22,12 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/misskey-dev/misskey.git",
+		"url": "https://activitypub.software/TransFem-org/Sharkey.git",
 		"directory": "packages/misskey-js"
 	},
 	"devDependencies": {
 		"@microsoft/api-extractor": "7.52.5",
 		"@simplewebauthn/types": "12.0.0",
-		"@swc/jest": "0.2.38",
 		"@types/jest": "29.5.14",
 		"@types/node": "22.15.2",
 		"@typescript-eslint/eslint-plugin": "8.31.0",
@@ -47,15 +37,11 @@
 		"jest-websocket-mock": "2.5.0",
 		"mock-socket": "9.3.1",
 		"ncp": "2.0.0",
-		"nodemon": "3.1.10",
-		"execa": "9.5.2",
 		"tsd": "0.32.0",
-		"typescript": "5.8.3",
-		"esbuild": "0.25.3",
-		"glob": "11.0.2"
+		"typescript": "5.8.3"
 	},
 	"files": [
-		"built"
+		"built/src"
 	],
 	"dependencies": {
 		"eventemitter3": "5.0.1",

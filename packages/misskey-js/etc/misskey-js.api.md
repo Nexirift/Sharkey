@@ -2775,7 +2775,7 @@ type IResponse = operations['i']['responses']['200']['content']['application/jso
 type IRevokeTokenRequest = operations['i___revoke-token']['requestBody']['content']['application/json'];
 
 // @public (undocumented)
-function isAPIError(reason: Record<PropertyKey, unknown>): reason is APIError;
+function isAPIError(reason: unknown): reason is APIError;
 
 // @public (undocumented)
 type ISharedAccessListRequest = operations['i___shared-access___list']['requestBody']['content']['application/json'];
@@ -3725,7 +3725,7 @@ type SponsorsResponse = operations['sponsors']['responses']['200']['content']['a
 // @public (undocumented)
 type StatsResponse = operations['stats']['responses']['200']['content']['application/json'];
 
-// @public (undocumented)
+// @public
 export class Stream extends EventEmitter<StreamEvents> implements IStream {
     constructor(origin: string, user: {
         token: string;
@@ -3733,7 +3733,6 @@ export class Stream extends EventEmitter<StreamEvents> implements IStream {
         WebSocket?: Options['WebSocket'];
         binaryType?: ReconnectingWebSocket['binaryType'];
     });
-    // (undocumented)
     close(): void;
     // (undocumented)
     disconnectToChannel(connection: NonSharedConnection): void;
@@ -3745,7 +3744,6 @@ export class Stream extends EventEmitter<StreamEvents> implements IStream {
     removeSharedConnection(connection: SharedConnection): void;
     // (undocumented)
     removeSharedConnectionPool(pool: Pool): void;
-    // (undocumented)
     send(typeOrPayload: string): void;
     // (undocumented)
     send(typeOrPayload: string, payload: unknown): void;
