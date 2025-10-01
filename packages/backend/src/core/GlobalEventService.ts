@@ -247,12 +247,12 @@ export interface InternalEventTypes {
 	roleUpdated: MiRole;
 	userRoleAssigned: MiRoleAssignment;
 	userRoleUnassigned: MiRoleAssignment;
-	webhookCreated: MiWebhook;
-	webhookDeleted: MiWebhook;
-	webhookUpdated: MiWebhook;
-	systemWebhookCreated: MiSystemWebhook;
-	systemWebhookDeleted: MiSystemWebhook;
-	systemWebhookUpdated: MiSystemWebhook;
+	webhookCreated: { id: MiWebhook['id'] };
+	webhookDeleted: { id: MiWebhook['id'] };
+	webhookUpdated: { id: MiWebhook['id'] };
+	systemWebhookCreated: { id: MiSystemWebhook['id'] };
+	systemWebhookDeleted: { id: MiSystemWebhook['id'] };
+	systemWebhookUpdated: { id: MiSystemWebhook['id'] };
 	antennaCreated: MiAntenna;
 	antennaDeleted: MiAntenna;
 	antennaUpdated: MiAntenna;
@@ -386,8 +386,8 @@ export class GlobalEventService {
 	}
 
 	@bindThis
-	public publishBroadcastStream<K extends keyof BroadcastTypes>(type: K, value?: BroadcastTypes[K]): void {
-		this.publish('broadcast', type, typeof value === 'undefined' ? null : value);
+	public async publishBroadcastStream<K extends keyof BroadcastTypes>(type: K, value?: BroadcastTypes[K]): Promise<void> {
+		await this.publish('broadcast', type, typeof value === 'undefined' ? null : value);
 	}
 
 	@bindThis
