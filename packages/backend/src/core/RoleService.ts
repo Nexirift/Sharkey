@@ -17,19 +17,24 @@ import type {
 } from '@/models/_.js';
 import { MemoryKVCache, MemorySingleCache } from '@/misc/cache.js';
 import type { MiUser } from '@/models/User.js';
+import { isLocalUser, isRemoteUser } from '@/models/User.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
-import { CacheService } from '@/core/CacheService.js';
-import type { FollowStats } from '@/core/CacheService.js';
+import type { CacheService, FollowStats } from '@/core/CacheService.js';
 import type { RoleCondFormulaValue } from '@/models/Role.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import type { GlobalEvents } from '@/core/GlobalEventService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { IdService } from '@/core/IdService.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import type { Packed } from '@/misc/json-schema.js';
 import { FanoutTimelineService } from '@/core/FanoutTimelineService.js';
-import { NotificationService } from '@/core/NotificationService.js';
+import type { NotificationService } from '@/core/NotificationService.js';
+import { TimeService } from '@/core/TimeService.js';
+import {
+	CacheManagementService,
+	type ManagedMemorySingleCache,
+	type ManagedMemoryKVCache,
+} from '@/core/CacheManagementService.js';
 import type { OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
 import { getCallerId } from '@/misc/attach-caller-id.js';
 
@@ -115,10 +120,14 @@ export const DEFAULT_POLICIES: RolePolicies = {
 	canViewFederation: true,
 };
 
+// TODO cache sync fixes (and maybe events too?)
+
 @Injectable()
 export class RoleService implements OnApplicationShutdown, OnModuleInit {
-	private rolesCache: MemorySingleCache<MiRole[]>;
-	private roleAssignmentByUserIdCache: MemoryKVCache<MiRoleAssignment[]>;
+	private readonly rolesCache: ManagedMemorySingleCache<MiRole[]>;
+	private readonly roleAssignmentByUserIdCache: ManagedMemoryKVCache<MiRoleAssignment[]>;
+
+	private cacheService: CacheService;
 	private notificationService: NotificationService;
 
 	public static AlreadyAssignedError = class extends Error {};
@@ -145,15 +154,16 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 		@Inject(DI.roleAssignmentsRepository)
 		private roleAssignmentsRepository: RoleAssignmentsRepository,
 
-		private cacheService: CacheService,
-		private userEntityService: UserEntityService,
 		private globalEventService: GlobalEventService,
 		private idService: IdService,
 		private moderationLogService: ModerationLogService,
 		private fanoutTimelineService: FanoutTimelineService,
+		private readonly timeService: TimeService,
+
+		cacheManagementService: CacheManagementService,
 	) {
-		this.rolesCache = new MemorySingleCache<MiRole[]>(1000 * 60 * 60); // 1h
-		this.roleAssignmentByUserIdCache = new MemoryKVCache<MiRoleAssignment[]>(1000 * 60 * 5); // 5m
+		this.rolesCache = cacheManagementService.createMemorySingleCache<MiRole[]>(1000 * 60 * 60); // 1h
+		this.roleAssignmentByUserIdCache = cacheManagementService.createMemoryKVCache<MiRoleAssignment[]>(1000 * 60 * 5); // 5m
 		// TODO additional cache for final calculation?
 
 		this.redisForSub.on('message', this.onMessage);
@@ -161,7 +171,8 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 
 	@bindThis
 	async onModuleInit() {
-		this.notificationService = this.moduleRef.get(NotificationService.name);
+		this.notificationService = this.moduleRef.get('NotificationService');
+		this.cacheService = this.moduleRef.get('CacheService');
 	}
 
 	@bindThis
@@ -250,11 +261,11 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 				}
 				// ローカルユーザのみ
 				case 'isLocal': {
-					return this.userEntityService.isLocalUser(user);
+					return isLocalUser(user);
 				}
 				// リモートユーザのみ
 				case 'isRemote': {
-					return this.userEntityService.isRemoteUser(user);
+					return isRemoteUser(user);
 				}
 				// User is from a specific instance
 				case 'isFromInstance': {
@@ -295,11 +306,11 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 				}
 				// ユーザが作成されてから指定期間経過した
 				case 'createdLessThan': {
-					return this.idService.parse(user.id).date.getTime() > (Date.now() - (value.sec * 1000));
+					return this.idService.parse(user.id).date.getTime() > (this.timeService.now - (value.sec * 1000));
 				}
 				// ユーザが作成されてから指定期間経っていない
 				case 'createdMoreThan': {
-					return this.idService.parse(user.id).date.getTime() < (Date.now() - (value.sec * 1000));
+					return this.idService.parse(user.id).date.getTime() < (this.timeService.now - (value.sec * 1000));
 				}
 				// フォロワー数が指定値以下
 				case 'followersLessThanOrEq': {
@@ -399,7 +410,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 
 	@bindThis
 	public async getUserAssigns(userOrId: MiUser | MiUser['id']) {
-		const now = Date.now();
+		const now = this.timeService.now;
 		const userId = typeof(userOrId) === 'object' ? userOrId.id : userOrId;
 		let assigns = await this.roleAssignmentByUserIdCache.fetch(userId, () => this.roleAssignmentsRepository.findBy({ userId }));
 		// 期限切れのロールを除外
@@ -438,7 +449,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 	 */
 	@bindThis
 	public async getUserBadgeRoles(userOrId: MiUser | MiUser['id']) {
-		const now = Date.now();
+		const now = this.timeService.now;
 		const userId = typeof(userOrId) === 'object' ? userOrId.id : userOrId;
 		let assigns = await this.roleAssignmentByUserIdCache.fetch(userId, () => this.roleAssignmentsRepository.findBy({ userId }));
 		// 期限切れのロールを除外
@@ -584,7 +595,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 			: [];
 
 		// Setを経由して重複を除去（ユーザIDは重複する可能性があるので）
-		const now = Date.now();
+		const now = this.timeService.now;
 		const resultSet = new Set(
 			assigns
 				.filter(it =>
@@ -638,7 +649,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 
 	@bindThis
 	public async assign(userId: MiUser['id'], roleId: MiRole['id'], expiresAt: Date | null = null, moderator?: MiUser): Promise<void> {
-		const now = Date.now();
+		const now = this.timeService.now;
 
 		const role = await this.rolesRepository.findOneByOrFail({ id: roleId });
 
@@ -666,7 +677,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 		});
 
 		this.rolesRepository.update(roleId, {
-			lastUsedAt: new Date(),
+			lastUsedAt: this.timeService.date,
 		});
 
 		this.globalEventService.publishInternalEvent('userRoleAssigned', created);
@@ -693,7 +704,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 
 	@bindThis
 	public async unassign(userId: MiUser['id'], roleId: MiRole['id'], moderator?: MiUser): Promise<void> {
-		const now = new Date();
+		const now = this.timeService.date;
 
 		const existing = await this.roleAssignmentsRepository.findOneBy({ roleId, userId });
 		if (existing == null) {
@@ -745,7 +756,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 
 	@bindThis
 	public async create(values: Partial<MiRole>, moderator?: MiUser): Promise<MiRole> {
-		const date = new Date();
+		const date = this.timeService.date;
 		const created = await this.rolesRepository.insertOne({
 			id: this.idService.gen(date.getTime()),
 			updatedAt: date,
@@ -781,7 +792,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 
 	@bindThis
 	public async update(role: MiRole, params: Partial<MiRole>, moderator?: MiUser): Promise<void> {
-		const date = new Date();
+		const date = this.timeService.date;
 		await this.rolesRepository.update(role.id, {
 			updatedAt: date,
 			...params,
@@ -826,7 +837,6 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 	@bindThis
 	public dispose(): void {
 		this.redisForSub.off('message', this.onMessage);
-		this.roleAssignmentByUserIdCache.dispose();
 	}
 
 	@bindThis
