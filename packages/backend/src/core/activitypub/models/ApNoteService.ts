@@ -3,12 +3,13 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { In } from 'typeorm';
 import { UnrecoverableError } from 'bullmq';
 import promiseLimit from 'promise-limit';
+import { ModuleRef } from '@nestjs/core';
 import { DI } from '@/di-symbols.js';
-import type { UsersRepository, PollsRepository, EmojisRepository, NotesRepository, MiMeta } from '@/models/_.js';
+import type { PollsRepository, EmojisRepository, NotesRepository, MiMeta } from '@/models/_.js';
 import type { Config } from '@/config.js';
 import type { MiRemoteUser } from '@/models/User.js';
 import type { MiNote } from '@/models/Note.js';
@@ -40,27 +41,27 @@ import { ApDbResolverService } from '../ApDbResolverService.js';
 import { ApResolverService } from '../ApResolverService.js';
 import { ApAudienceService } from '../ApAudienceService.js';
 import { ApUtilityService } from '../ApUtilityService.js';
-import { ApPersonService } from './ApPersonService.js';
 import { extractApHashtags } from './tag.js';
 import { ApMentionService } from './ApMentionService.js';
 import { ApQuestionService } from './ApQuestionService.js';
 import { ApImageService } from './ApImageService.js';
+import type { ApPersonService } from './ApPersonService.js';
 import type { Resolver } from '../ApResolverService.js';
 import type { IObject, IPost, IApEmoji } from '../type.js';
 
 @Injectable()
-export class ApNoteService {
+export class ApNoteService implements OnModuleInit {
+	private apPersonService: ApPersonService;
 	private logger: Logger;
 
 	constructor(
+		private readonly moduleRef: ModuleRef,
+
 		@Inject(DI.config)
 		private config: Config,
 
 		@Inject(DI.meta)
 		private meta: MiMeta,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
 
 		@Inject(DI.pollsRepository)
 		private pollsRepository: PollsRepository,
@@ -74,10 +75,6 @@ export class ApNoteService {
 		private idService: IdService,
 		private apMfmService: ApMfmService,
 		private apResolverService: ApResolverService,
-
-		// 循環参照のため / for circular dependency
-		@Inject(forwardRef(() => ApPersonService))
-		private apPersonService: ApPersonService,
 
 		private utilityService: UtilityService,
 		private apAudienceService: ApAudienceService,
@@ -94,6 +91,11 @@ export class ApNoteService {
 		private readonly customEmojiService: CustomEmojiService,
 	) {
 		this.logger = this.apLoggerService.logger;
+	}
+
+	@bindThis
+	public onModuleInit() {
+		this.apPersonService = this.moduleRef.get('ApPersonService');
 	}
 
 	@bindThis

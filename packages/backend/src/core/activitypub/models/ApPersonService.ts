@@ -3,23 +3,25 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import promiseLimit from 'promise-limit';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { ModuleRef } from '@nestjs/core';
 import { UnrecoverableError } from 'bullmq';
 import { DI } from '@/di-symbols.js';
 import type { FollowingsRepository, InstancesRepository, MiMeta, UserProfilesRepository, UserPublickeysRepository, UsersRepository } from '@/models/_.js';
 import type { Config } from '@/config.js';
 import type { MiLocalUser, MiRemoteUser } from '@/models/User.js';
+import { isRemoteUser, isLocalUser } from '@/models/User.js';
 import { MiUser } from '@/models/User.js';
 import { truncate } from '@/misc/truncate.js';
 import type { CacheService } from '@/core/CacheService.js';
+import { CacheManagementService, type ManagedQuantumKVCache } from '@/core/CacheManagementService.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
 import type Logger from '@/logger.js';
 import type { MiNote } from '@/models/Note.js';
-import type { IdService } from '@/core/IdService.js';
+import { IdService } from '@/core/IdService.js';
 import type { MfmService } from '@/core/MfmService.js';
 import { toArray } from '@/misc/prelude/array.js';
 import type { GlobalEventService } from '@/core/GlobalEventService.js';
@@ -31,27 +33,25 @@ import type UsersChart from '@/core/chart/charts/users.js';
 import type InstanceChart from '@/core/chart/charts/instance.js';
 import type { HashtagService } from '@/core/HashtagService.js';
 import { MiUserNotePining } from '@/models/UserNotePining.js';
-import type { UtilityService } from '@/core/UtilityService.js';
-import type { UserEntityService } from '@/core/entities/UserEntityService.js';
+import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
-import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
+import type { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import type { AccountMoveService } from '@/core/AccountMoveService.js';
 import { ApUtilityService } from '@/core/activitypub/ApUtilityService.js';
 import { AppLockService } from '@/core/AppLockService.js';
-import { MemoryKVCache } from '@/misc/cache.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { verifyFieldLinks } from '@/misc/verify-field-link.js';
 import { isRetryableError } from '@/misc/is-retryable-error.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { getApId, getApType, isActor, isCollection, isCollectionOrOrderedCollection, isPropertyValue } from '../type.js';
+import { ApLoggerService } from '../ApLoggerService.js';
 import { extractApHashtags } from './tag.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { ApNoteService } from './ApNoteService.js';
 import type { ApMfmService } from '../ApMfmService.js';
 import type { ApResolverService, Resolver } from '../ApResolverService.js';
-import type { ApLoggerService } from '../ApLoggerService.js';
 
 import type { ApImageService } from './ApImageService.js';
 import type { IActor, ICollection, IObject, IOrderedCollection } from '../type.js';
@@ -61,15 +61,12 @@ const nameLength = 128;
 type Field = Record<'name' | 'value', string>;
 
 @Injectable()
-export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
+export class ApPersonService implements OnModuleInit {
 	// Moved from ApDbResolverService
-	private readonly publicKeyByKeyIdCache = new MemoryKVCache<MiUserPublickey | null>(1000 * 60 * 60 * 12); // 12h
-	private readonly publicKeyByUserIdCache = new MemoryKVCache<MiUserPublickey | null>(1000 * 60 * 60 * 12); // 12h
+	private publicKeyByKeyIdCache: ManagedQuantumKVCache<MiUserPublickey>;
+	private publicKeyByUserIdCache: ManagedQuantumKVCache<MiUserPublickey>;
 
-	private utilityService: UtilityService;
-	private userEntityService: UserEntityService;
 	private driveFileEntityService: DriveFileEntityService;
-	private idService: IdService;
 	private globalEventService: GlobalEventService;
 	private federatedInstanceService: FederatedInstanceService;
 	private fetchInstanceMetadataService: FetchInstanceMetadataService;
@@ -82,7 +79,6 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 	private hashtagService: HashtagService;
 	private usersChart: UsersChart;
 	private instanceChart: InstanceChart;
-	private apLoggerService: ApLoggerService;
 	private accountMoveService: AccountMoveService;
 	private logger: Logger;
 
@@ -114,18 +110,31 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 		private followingsRepository: FollowingsRepository,
 
 		private roleService: RoleService,
-		private readonly apUtilityService: ApUtilityService,
 		private readonly httpRequestService: HttpRequestService,
 		private readonly appLockService: AppLockService,
+		private readonly cacheManagementService: CacheManagementService,
+		private readonly utilityService: UtilityService,
+		private readonly apUtilityService: ApUtilityService,
+		private readonly idService: IdService,
+
+		apLoggerService: ApLoggerService,
 	) {
+		this.logger = apLoggerService.logger;
+		this.publicKeyByKeyIdCache = this.cacheManagementService.createQuantumKVCache<MiUserPublickey>('publicKeyByKeyId', {
+			lifetime: 1000 * 60 * 60 * 12, // 12h
+			fetcher: async (keyId) => await this.userPublickeysRepository.findOneBy({ keyId }),
+			bulkFetcher: async (keyIds) => await this.userPublickeysRepository.findBy({ keyId: In(keyIds) }).then(ks => ks.map(k => [k.keyId, k])),
+		});
+		this.publicKeyByUserIdCache = this.cacheManagementService.createQuantumKVCache<MiUserPublickey>('publicKeyByUserId', {
+			lifetime: 1000 * 60 * 60 * 12, // 12h
+			fetcher: async (userId) => await this.userPublickeysRepository.findOneBy({ userId }),
+			bulkFetcher: async (userIds) => await this.userPublickeysRepository.findBy({ userId: In(userIds) }).then(ks => ks.map(k => [k.userId, k])),
+		});
 	}
 
 	@bindThis
 	onModuleInit(): void {
-		this.utilityService = this.moduleRef.get('UtilityService');
-		this.userEntityService = this.moduleRef.get('UserEntityService');
 		this.driveFileEntityService = this.moduleRef.get('DriveFileEntityService');
-		this.idService = this.moduleRef.get('IdService');
 		this.globalEventService = this.moduleRef.get('GlobalEventService');
 		this.federatedInstanceService = this.moduleRef.get('FederatedInstanceService');
 		this.fetchInstanceMetadataService = this.moduleRef.get('FetchInstanceMetadataService');
@@ -138,14 +147,7 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 		this.hashtagService = this.moduleRef.get('HashtagService');
 		this.usersChart = this.moduleRef.get('UsersChart');
 		this.instanceChart = this.moduleRef.get('InstanceChart');
-		this.apLoggerService = this.moduleRef.get('ApLoggerService');
 		this.accountMoveService = this.moduleRef.get('AccountMoveService');
-		this.logger = this.apLoggerService.logger;
-	}
-
-	@bindThis
-	onApplicationShutdown(): void {
-		this.dispose();
 	}
 
 	/**
@@ -507,9 +509,12 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 		this.cacheService.uriPersonCache.set(user.uri, user);
 
 		// Register public key to the cache.
-		// Value may be null, which indicates that the user has no defined key. (optimization)
-		this.publicKeyByUserIdCache.set(user.id, publicKey);
-		if (publicKey) this.publicKeyByKeyIdCache.set(publicKey.keyId, publicKey);
+		if (publicKey) {
+			await Promise.all([
+				this.publicKeyByKeyIdCache.set(publicKey.keyId, publicKey),
+				this.publicKeyByUserIdCache.set(publicKey.userId, publicKey),
+			]);
+		}
 
 		// Register host
 		if (this.meta.enableStatsForFederatedInstances) {
@@ -700,18 +705,21 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 			// Create or update key
 			await this.userPublickeysRepository.save(publicKey);
 
-			this.publicKeyByKeyIdCache.set(person.publicKey.id, publicKey);
-			this.publicKeyByUserIdCache.set(exist.id, publicKey);
+			// Save it to the cache
+			await Promise.all([
+				this.publicKeyByKeyIdCache.set(publicKey.keyId, publicKey),
+				this.publicKeyByUserIdCache.set(publicKey.userId, publicKey),
+			]);
 		} else {
 			const existingPublicKey = await this.userPublickeysRepository.findOneBy({ userId: exist.id });
 			if (existingPublicKey) {
 				// Delete key
-				await this.userPublickeysRepository.delete({ userId: exist.id });
-				this.publicKeyByKeyIdCache.delete(existingPublicKey.keyId);
+				await Promise.all([
+					this.userPublickeysRepository.delete({ userId: existingPublicKey.userId }),
+					this.publicKeyByUserIdCache.delete(existingPublicKey.userId),
+					this.publicKeyByKeyIdCache.delete(existingPublicKey.keyId),
+				]);
 			}
-
-			// Null indicates that the user has no key. (optimization)
-			this.publicKeyByUserIdCache.set(exist.id, null);
 		}
 
 		let _description: string | null = null;
@@ -843,7 +851,7 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 	@bindThis
 	public async updateFeatured(userId: MiUser['id'], resolver?: Resolver): Promise<void> {
 		const user = await this.usersRepository.findOneByOrFail({ id: userId, isDeleted: false });
-		if (!this.userEntityService.isRemoteUser(user)) return;
+		if (!isRemoteUser(user)) return;
 		if (!user.featured) return;
 
 		this.logger.info(`Updating the featured: ${user.uri}`);
@@ -908,7 +916,7 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 		// まずサーバー内で検索して様子見
 		let dst = await this.fetchPerson(src.movedToUri);
 
-		if (dst && this.userEntityService.isLocalUser(dst)) {
+		if (dst && isLocalUser(dst)) {
 			// targetがローカルユーザーだった場合データベースから引っ張ってくる
 			dst = await this.usersRepository.findOneByOrFail({ uri: src.movedToUri }) as MiLocalUser;
 		} else if (dst) {
@@ -944,10 +952,10 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async isPublicCollection(collection: string | ICollection | IOrderedCollection | undefined, resolver: Resolver, sentFrom: string): Promise<boolean> {
+	private async isPublicCollection(collection: string | IObject | undefined, resolver: Resolver, sentFrom: string): Promise<boolean> {
 		if (collection) {
-			const resolved = await resolver.resolveCollection(collection, true, sentFrom).catch(() => null);
-			if (resolved) {
+			const resolved = await resolver.resolveCollection(collection, true, sentFrom);
+			{
 				if (resolved.first || (resolved as ICollection).items || (resolved as IOrderedCollection).orderedItems) {
 					return true;
 				}
@@ -959,35 +967,11 @@ export class ApPersonService implements OnModuleInit, OnApplicationShutdown {
 
 	@bindThis
 	public async findPublicKeyByUserId(userId: string): Promise<MiUserPublickey | null> {
-		const publicKey = this.publicKeyByUserIdCache.get(userId) ?? await this.userPublickeysRepository.findOneBy({ userId });
-
-		// This can technically keep a key cached "forever" if it's used enough, but that's ok.
-		// We can never have stale data because the publicKey caches are coherent. (cache updates whenever data changes)
-		if (publicKey) {
-			this.publicKeyByUserIdCache.set(publicKey.userId, publicKey);
-			this.publicKeyByKeyIdCache.set(publicKey.keyId, publicKey);
-		}
-
-		return publicKey;
+		return await this.publicKeyByUserIdCache.fetchMaybe(userId) ?? null;
 	}
 
 	@bindThis
 	public async findPublicKeyByKeyId(keyId: string): Promise<MiUserPublickey | null> {
-		const publicKey = this.publicKeyByKeyIdCache.get(keyId) ?? await this.userPublickeysRepository.findOneBy({ keyId });
-
-		// This can technically keep a key cached "forever" if it's used enough, but that's ok.
-		// We can never have stale data because the publicKey caches are coherent. (cache updates whenever data changes)
-		if (publicKey) {
-			this.publicKeyByUserIdCache.set(publicKey.userId, publicKey);
-			this.publicKeyByKeyIdCache.set(publicKey.keyId, publicKey);
-		}
-
-		return publicKey;
-	}
-
-	@bindThis
-	public dispose(): void {
-		this.publicKeyByUserIdCache.dispose();
-		this.publicKeyByKeyIdCache.dispose();
+		return await this.publicKeyByKeyIdCache.fetchMaybe(keyId) ?? null;
 	}
 }
