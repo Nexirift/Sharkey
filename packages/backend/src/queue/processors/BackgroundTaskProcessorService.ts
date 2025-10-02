@@ -30,6 +30,7 @@ import { ApLogService } from '@/core/ApLogService.js';
 import { CollapsedQueueService } from '@/core/CollapsedQueueService.js';
 import { isRemoteUser } from '@/models/User.js';
 import { errorCodes, IdentifiableError } from '@/misc/identifiable-error.js';
+import { TimeService } from '@/core/TimeService.js';
 
 @Injectable()
 export class BackgroundTaskProcessorService {
@@ -66,6 +67,7 @@ export class BackgroundTaskProcessorService {
 		private readonly latestNoteService: LatestNoteService,
 		private readonly userSuspendService: UserSuspendService,
 		private readonly apLogService: ApLogService,
+		private readonly timeService: TimeService,
 
 		queueLoggerService: QueueLoggerService,
 	) {
@@ -114,7 +116,7 @@ export class BackgroundTaskProcessorService {
 		if (user.isSuspended) return `Skipping update-user task: user ${task.userId} is suspended`;
 		if (!isRemoteUser(user)) return `Skipping update-user task: user ${task.userId} is local`;
 
-		if (user.lastFetchedAt && Date.now() - user.lastFetchedAt.getTime() < 1000 * 60 * 60 * 24) {
+		if (user.lastFetchedAt && this.timeService.now - user.lastFetchedAt.getTime() < 1000 * 60 * 60 * 24) {
 			return `Skipping update-user task: user ${task.userId} was recently updated`;
 		}
 
@@ -129,7 +131,7 @@ export class BackgroundTaskProcessorService {
 		if (!isRemoteUser(user)) return `Skipping update-featured task: user ${task.userId} is local`;
 		if (!user.featured) return `Skipping update-featured task: user ${task.userId} has no featured collection`;
 
-		if (user.lastFetchedFeaturedAt && Date.now() - user.lastFetchedFeaturedAt.getTime() < 1000 * 60 * 60 * 24) {
+		if (user.lastFetchedFeaturedAt && this.timeService.now - user.lastFetchedFeaturedAt.getTime() < 1000 * 60 * 60 * 24) {
 			return `Skipping update-featured task: user ${task.userId} was recently updated`;
 		}
 
@@ -171,7 +173,7 @@ export class BackgroundTaskProcessorService {
 		if (instance.isBlocked) return `Skipping update-instance task: instance ${task.host} is blocked`;
 		if (instance.suspensionState === 'goneSuspended') return `Skipping update-instance task: instance ${task.host} is gone`;
 
-		if (instance.infoUpdatedAt && Date.now() - instance.infoUpdatedAt.getTime() < 1000 * 60 * 60 * 24) {
+		if (instance.infoUpdatedAt && this.timeService.now - instance.infoUpdatedAt.getTime() < 1000 * 60 * 60 * 24) {
 			return `Skipping update-instance task: instance ${task.host} was recently updated`;
 		}
 
@@ -195,12 +197,12 @@ export class BackgroundTaskProcessorService {
 		const updateGoneSuspended = task.result === 'perm-fail' && instance.suspensionState !== 'goneSuspended';
 
 		// Check if we need to auto-suspend the instance
-		const updateAutoSuspended = instance.isNotResponding && instance.notRespondingSince && instance.suspensionState === 'none' && instance.notRespondingSince.getTime() <= Date.now() - 1000 * 60 * 60 * 24 * 7;
+		const updateAutoSuspended = instance.isNotResponding && instance.notRespondingSince && instance.suspensionState === 'none' && instance.notRespondingSince.getTime() <= this.timeService.now - 1000 * 60 * 60 * 24 * 7;
 
 		// This is messy, but we need to minimize updates to space in Postgres blocks.
 		if (updateNotResponding || updateGoneSuspended || updateAutoSuspended) {
 			await this.collapsedQueueService.updateInstanceQueue.enqueue(instance.id, {
-				notRespondingSince: updateNotResponding ? (success ? null : new Date()) : undefined,
+				notRespondingSince: updateNotResponding ? (success ? null : this.timeService.date) : undefined,
 				shouldSuspendGone: updateGoneSuspended || undefined,
 				shouldSuspendNotResponding: updateAutoSuspended || undefined,
 			});
@@ -241,7 +243,7 @@ export class BackgroundTaskProcessorService {
 
 		// Unsuspend instance (deferred)
 		await this.collapsedQueueService.updateInstanceQueue.enqueue(instance.id, {
-			latestRequestReceivedAt: new Date(),
+			latestRequestReceivedAt: this.timeService.date,
 			shouldUnsuspend: instance.suspensionState === 'autoSuspendedForNotResponding',
 		});
 

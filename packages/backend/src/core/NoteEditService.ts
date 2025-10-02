@@ -623,7 +623,7 @@ export class NoteEditService implements OnApplicationShutdown {
 			}
 		}
 
-		await this.collapsedQueueService.updateUserQueue.enqueue(user.id, { updatedAt: new Date() });
+		await this.collapsedQueueService.updateUserQueue.enqueue(user.id, { updatedAt: this.timeService.date });
 
 		// ハッシュタグ更新
 		await this.pushToTl(note, user);

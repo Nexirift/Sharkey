@@ -139,7 +139,7 @@ export class NoteDeleteService {
 				await this.collapsedQueueService.updateUserQueue.enqueue(user.id, { notesCountDelta: -1 });
 			}
 
-			await this.collapsedQueueService.updateUserQueue.enqueue(user.id, { updatedAt: new Date() });
+			await this.collapsedQueueService.updateUserQueue.enqueue(user.id, { updatedAt: this.timeService.date });
 
 			for (const cascade of cascadingNotes) {
 				if (!isPureRenote(cascade)) {
