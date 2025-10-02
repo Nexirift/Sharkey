@@ -20,4 +20,10 @@ export default [
 			'@stylistic/indent': 'off',
 		},
 	},
+	{
+		ignores: [
+			'built/**/*',
+			'*.*',
+		],
+	},
 ];

@@ -178,7 +178,8 @@ export default [
 			"**/coverage/",
 			"**/node_modules/",
 			"**/libopenmpt/",
-			"**/storybook-static/"
+			"**/storybook-static/",
+			"*.*",
 		]
 	},
 ];

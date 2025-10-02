@@ -40,4 +40,10 @@ export default [
 			}],
 		},
 	},
+	{
+		ignores: [
+			'built/**/*',
+			'*.*',
+		],
+	},
 ];

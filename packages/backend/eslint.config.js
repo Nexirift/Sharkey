@@ -70,6 +70,7 @@ export default [
 			"**/coverage/",
 			"**/node_modules/",
 			"**/migration/",
+			"*.*",
 		]
 	},
 ];

@@ -109,6 +109,7 @@ export default [
 			"**/built/",
 			"**/coverage/",
 			"**/node_modules/",
+			"*.*",
 		]
 	},
 ];
