@@ -42,13 +42,6 @@ export default [
 					position: 'after',
 				}],
 			}],
-			'no-restricted-globals': ['error', {
-				name: '__dirname',
-				message: 'Not in ESModule. Use `import.meta.url` instead.',
-			}, {
-				name: '__filename',
-				message: 'Not in ESModule. Use `import.meta.url` instead.',
-			}],
 		},
 	},
 	{
@@ -57,18 +50,30 @@ export default [
 			'no-restricted-globals': [
 				'error',
 				{
-					name: 'setTimeout',
-					message: 'Use TimeService.startTimer instead.',
+					globals: [
+						{
+							name: '__dirname',
+							message: 'Not in ESModule. Use `import.meta.url` instead.',
+						},
+						{
+							name: '__filename',
+							message: 'Not in ESModule. Use `import.meta.url` instead.',
+						},
+						{
+							name: 'setTimeout',
+							message: 'Use TimeService.startTimer instead.',
+						},
+						{
+							name: 'setInterval',
+							message: 'Use TimeService.startTimer instead.',
+						},
+						{
+							name: 'console',
+							message: 'Use a Logger instance instead.',
+						},
+					],
 					checkGlobalObject: true,
-				}, {
-					name: 'setInterval',
-					message: 'Use TimeService.startTimer instead.',
-					checkGlobalObject: true,
-				}, {
-					name: 'console',
-					message: 'Use a Logger instance instead.',
-					checkGlobalObject: true,
-				}
+				},
 			],
 			'no-restricted-properties': [
 				'error',
