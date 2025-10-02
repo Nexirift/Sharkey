@@ -19,6 +19,9 @@ import { DI } from '@/di-symbols.js';
 import { TimeService } from '@/core/TimeService.js';
 import { InternalEventService } from '@/core/InternalEventService.js';
 
+// This is the one place that's *supposed* to new() up caches.
+/* eslint-disable no-restricted-syntax */
+
 export type ManagedMemoryKVCache<T> = Managed<MemoryKVCache<T>>;
 export type ManagedMemorySingleCache<T> = Managed<MemorySingleCache<T>>;
 export type ManagedRedisKVCache<T> = Managed<RedisKVCache<T>>;

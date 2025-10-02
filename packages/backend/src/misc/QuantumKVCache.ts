@@ -75,6 +75,8 @@ export class QuantumKVCache<T> implements Iterable<readonly [key: string, value:
 		services: QuantumCacheServices,
 		opts: QuantumKVOpts<T>,
 	) {
+		// OK: we forward all management calls to the inner cache.
+		// eslint-disable-next-line no-restricted-syntax
 		this.memoryCache = new MemoryKVCache(opts.lifetime, services);
 		this.fetcher = opts.fetcher;
 		this.bulkFetcher = opts.bulkFetcher;

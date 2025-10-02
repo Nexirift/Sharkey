@@ -37,6 +37,8 @@ export class RedisKVCache<T> {
 	) {
 		this.redisClient = services.redisClient;
 		this.lifetime = opts.lifetime;
+		// OK: we forward all management calls to the inner cache.
+		// eslint-disable-next-line no-restricted-syntax
 		this.memoryCache = new MemoryKVCache(opts.memoryCacheLifetime, services);
 		this.fetcher = opts.fetcher ?? (() => { throw new Error('fetch not supported - use get/set directly'); });
 		this.toRedisConverter = opts.toRedisConverter ?? ((value) => JSON.stringify(value));
@@ -150,6 +152,8 @@ export class RedisSingleCache<T> {
 	) {
 		this.redisClient = services.redisClient;
 		this.lifetime = opts.lifetime;
+		// OK: we forward all management calls to the inner cache.
+		// eslint-disable-next-line no-restricted-syntax
 		this.memoryCache = new MemorySingleCache(opts.memoryCacheLifetime, services);
 
 		this.fetcher = opts.fetcher ?? (() => { throw new Error('fetch not supported - use get/set directly'); });
@@ -198,7 +202,7 @@ export class RedisSingleCache<T> {
 
 	@bindThis
 	public clear(): void {
-		this.memoryCache.delete();
+		this.memoryCache.clear();
 	}
 
 	/**
@@ -233,6 +237,7 @@ export class RedisSingleCache<T> {
 	@bindThis
 	public dispose(): void {
 		this.clear();
+		this.memoryCache.dispose();
 	}
 }
 
