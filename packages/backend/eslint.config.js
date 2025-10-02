@@ -83,9 +83,9 @@ export default [
 				{
 					"selector": "NewExpression[callee.name='Date'][arguments.length=0]",
 					"message": "new Date() is restricted. Use TimeService.date instead."
-				}
+				},
 			],
-		}
+		},
 	},
 	{
 		files: ['src/server/web/**/*.js', 'src/server/web/**/*.ts'],
