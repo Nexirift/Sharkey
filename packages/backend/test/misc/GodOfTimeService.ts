@@ -31,26 +31,46 @@ export class GodOfTimeService extends TimeService<GodsOwnTimer> {
 	public set now(value: number) {
 		// Moving backwards is allowed, for now.
 		if (value > this._now) {
-			// Fire all expiring timers in chronological order.
-			const expiringTimers = this.timers
-				.values()
-				.filter(t => t.expiresAt >= value)
-				.toArray()
-				.sort((a, b) => a.expiresAt - b.expiresAt);
+			// Since timers may repeat, we need to loop this.
+			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+			while (true) {
+				// Fire all expiring timers in chronological order.
+				const expiringTimers = this.timers
+					.values()
+					.filter(t => t.expiresAt <= value)
+					.toArray()
+					.sort((a, b) => a.expiresAt - b.expiresAt);
 
-			// Since we sorted the list, this will progressively increase "now" as we handle later and later events.
-			for (const timer of expiringTimers) {
-				// When the timer fires, "now" should equal the time that was originally waited for.
-				this._now = timer.expiresAt;
+				// Stop when everything is caught up
+				if (expiringTimers.length === 0) {
+					break;
+				}
 
-				// Cleanup first in case timer throws an exception.
-				this.timers.delete(timer.timerId);
-				timer.callback();
+				// Since we sorted the list, this will progressively increase "now" as we handle later and later events.
+				for (const timer of expiringTimers) {
+					// When the timer fires, "now" should equal the time that was originally waited for.
+					this._now = timer.expiresAt;
+					this.runTimer(timer);
+				}
 			}
 		}
 
 		// Bump up to the final target value
 		this._now = value;
+	}
+
+	private runTimer(timer: GodsOwnTimer): void {
+		// Cleanup first in case timer throws an exception.
+		if (timer.repeating) {
+			timer.expiresAt = this._now + timer.delay;
+		} else {
+			this.timers.delete(timer.timerId);
+		}
+
+		// Fire the actual callback.
+		// If it throws an error, then processing will stop halfway.
+		// This is good, since it means the adjustment can be retried safely.
+		timer.callback();
 	}
 
 	/**
