@@ -16,7 +16,7 @@ import type { UsersRepository, NotesRepository, AccessTokensRepository, MiAntenn
 import { DI } from '@/di-symbols.js';
 import { AntennaService } from '@/core/AntennaService.js';
 import { CacheService } from '@/core/CacheService.js';
-import type { TimeService } from '@/core/TimeService.js';
+import { TimeService } from '@/core/TimeService.js';
 
 export type UpdateInstanceJob = {
 	latestRequestReceivedAt?: Date,
