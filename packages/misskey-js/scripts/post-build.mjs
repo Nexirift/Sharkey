@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: hazelnoot and other Sharkey contributors
+ * SPDX-License-Identifier: AGPL-3.0-only
+ */
+
 import {libBuild, outDir, testDBuild, testDSource} from './_common.mjs';
 import {rm, cp} from 'fs/promises';
 

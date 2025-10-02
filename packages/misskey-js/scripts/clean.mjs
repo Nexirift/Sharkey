@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: hazelnoot and other Sharkey contributors
+ * SPDX-License-Identifier: AGPL-3.0-only
+ */
+
 import { rm } from 'fs/promises';
 import {buildDir, outDir} from './_common.mjs';
 
