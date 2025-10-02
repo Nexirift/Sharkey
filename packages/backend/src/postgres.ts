@@ -130,8 +130,8 @@ class TypeORMLogger implements Logger {
 		dbLogger: MisskeyLogger,
 	) {
 		this.sqlLogger = dbLogger.createSubLogger('sql', 'gray');
-		this.sqlLogger.createSubLogger('migrate');
-		this.sqlLogger.createSubLogger('schema');
+		this.sqlMigrateLogger = this.sqlLogger.createSubLogger('migrate');
+		this.sqlSchemaLogger = this.sqlLogger.createSubLogger('schema');
 	}
 
 	@bindThis
