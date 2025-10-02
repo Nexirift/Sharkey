@@ -6,10 +6,12 @@
 process.env.NODE_ENV = 'test';
 
 import * as assert from 'assert';
-import { jest } from '@jest/globals';
 import { DataSource } from 'typeorm';
+import { Test, TestingModule } from '@nestjs/testing';
 import { GodOfTimeService } from '../misc/GodOfTimeService.js';
 import { MockLoggerService } from '../misc/MockLoggerService.js';
+import { MockRedis } from '../misc/MockRedis.js';
+import { GlobalModule } from '@/GlobalModule.js';
 import TestChart from '@/core/chart/charts/test.js';
 import TestGroupedChart from '@/core/chart/charts/test-grouped.js';
 import TestUniqueChart from '@/core/chart/charts/test-unique.js';
@@ -18,17 +20,19 @@ import { entity as TestChartEntity } from '@/core/chart/charts/entities/test.js'
 import { entity as TestGroupedChartEntity } from '@/core/chart/charts/entities/test-grouped.js';
 import { entity as TestUniqueChartEntity } from '@/core/chart/charts/entities/test-unique.js';
 import { entity as TestIntersectionChartEntity } from '@/core/chart/charts/entities/test-intersection.js';
-import { loadConfig } from '@/config.js';
-import type { AppLockService } from '@/core/AppLockService.js';
+import { AppLockService } from '@/core/AppLockService.js';
 import Logger from '@/logger.js';
+import { CoreModule } from '@/core/CoreModule.js';
+import { DI } from '@/di-symbols.js';
+import { TimeService } from '@/core/TimeService.js';
+import { LoggerService } from '@/core/LoggerService.js';
 
 describe('Chart', () => {
-	const config = loadConfig();
-	const appLockService = {
-		getChartInsertLock: () => () => Promise.resolve(() => {}),
-	} as unknown as jest.Mocked<AppLockService>;
-
-	let db: DataSource | undefined;
+	let app: TestingModule;
+	let db: DataSource;
+	let appLockService: AppLockService;
+	let logger: Logger;
+	let redis: MockRedis;
 
 	let testChart: TestChart;
 	let testGroupedChart: TestGroupedChart;
@@ -36,46 +40,52 @@ describe('Chart', () => {
 	let testIntersectionChart: TestIntersectionChart;
 	let clock: GodOfTimeService;
 
-	beforeEach(async () => {
-		if (db) await db.destroy();
+	beforeAll(async () => {
+		app = await Test.createTestingModule({
+			imports: [GlobalModule, CoreModule],
+		})
+			.overrideProvider(DI.redis).useClass(MockRedis)
+			.overrideProvider(TimeService).useClass(GodOfTimeService)
+			.overrideProvider(LoggerService).useClass(MockLoggerService)
+			.compile();
 
-		db = new DataSource({
-			type: 'postgres',
-			host: config.db.host,
-			port: config.db.port,
-			username: config.db.user,
-			password: config.db.pass,
-			database: config.db.db,
-			extra: {
-				statement_timeout: 1000 * 10,
-				...config.db.extra,
-			},
-			synchronize: true,
-			dropSchema: true,
-			maxQueryExecutionTime: 300,
-			entities: [
-				TestChartEntity.hour, TestChartEntity.day,
-				TestGroupedChartEntity.hour, TestGroupedChartEntity.day,
-				TestUniqueChartEntity.hour, TestUniqueChartEntity.day,
-				TestIntersectionChartEntity.hour, TestIntersectionChartEntity.day,
-			],
-			migrations: ['../../migration/*.js'],
-		});
+		logger = app.get(LoggerService).getLogger('chart');
+		appLockService = app.get(AppLockService);
+		redis = app.get(DI.redis);
+		db = app.get(DI.db);
 
-		await db.initialize();
-
-		clock = new GodOfTimeService();
+		clock = app.get(TimeService);
 		clock.resetTo(Date.UTC(2000, 0, 1, 0, 0, 0));
 
-		const logger = new MockLoggerService(config).getLogger('chart');
+		await app.init();
+		app.enableShutdownHooks();
+	});
+
+	afterAll(async () => {
+		await app.close();
+	});
+
+	beforeEach(async () => {
+		clock.resetTo(Date.UTC(2000, 0, 1, 0, 0, 0));
+		redis.mockReset();
+
 		testChart = new TestChart(db, appLockService, clock, logger);
 		testGroupedChart = new TestGroupedChart(db, appLockService, clock, logger);
 		testUniqueChart = new TestUniqueChart(db, appLockService, clock, logger);
 		testIntersectionChart = new TestIntersectionChart(db, appLockService, clock, logger);
 	});
 
-	afterAll(async () => {
-		if (db) await db.destroy();
+	afterEach(async () => {
+		const entities = [
+			TestChartEntity.hour, TestChartEntity.day,
+			TestGroupedChartEntity.hour, TestGroupedChartEntity.day,
+			TestUniqueChartEntity.hour, TestUniqueChartEntity.day,
+			TestIntersectionChartEntity.hour, TestIntersectionChartEntity.day,
+		];
+
+		for (const entity of entities) {
+			await db.getRepository(entity).delete({});
+		}
 	});
 
 	test('Can updates', async () => {
