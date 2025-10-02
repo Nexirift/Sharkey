@@ -22,7 +22,7 @@ export default [
 	},
 	{
 		ignores: [
-			'built/**/*',
+			'**/node_modules',
 			'*.*',
 		],
 	},
