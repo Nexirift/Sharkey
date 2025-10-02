@@ -31,16 +31,17 @@ const $config: Provider = {
 
 const $db: Provider = {
 	provide: DI.db,
-	useFactory: async (config) => {
+	useFactory: async (config: Config, loggerService: LoggerService) => {
+		const dbLogger = loggerService.getLogger('db');
 		try {
-			const db = createPostgresDataSource(config);
+			const db = createPostgresDataSource(config, dbLogger);
 			return await db.initialize();
 		} catch (e) {
-			console.error('failed to initialize database connection', e);
+			dbLogger.error('failed to initialize database connection', { e });
 			throw e;
 		}
 	},
-	inject: [DI.config],
+	inject: [DI.config, LoggerService],
 };
 
 const $meilisearch: Provider = {
