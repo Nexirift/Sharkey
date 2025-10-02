@@ -52,6 +52,36 @@ export default [
 		},
 	},
 	{
+		files: ['src/**/*.ts'],
+		rules: {
+			'no-restricted-globals': [
+				'error',
+				{
+					name: 'setTimeout',
+					message: 'Use TimeService.startTimer instead.',
+				}, {
+					name: 'setInterval',
+					message: 'Use TimeService.startTimer instead.',
+				}
+			],
+			'no-restricted-properties': [
+				'error',
+				{
+					object: 'Date',
+					property: 'now',
+					message: 'Use TimeService.now instead.',
+				},
+			],
+			'no-restricted-syntax': [
+				'error',
+				{
+					"selector": "NewExpression[callee.name='Date'][arguments.length=0]",
+					"message": "new Date() is restricted. Use TimeService.date instead."
+				}
+			],
+		}
+	},
+	{
 		files: ['src/server/web/**/*.js', 'src/server/web/**/*.ts'],
 		languageOptions: {
 			globals: {
