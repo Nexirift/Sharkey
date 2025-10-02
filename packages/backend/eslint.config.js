@@ -59,9 +59,11 @@ export default [
 				{
 					name: 'setTimeout',
 					message: 'Use TimeService.startTimer instead.',
+					checkGlobalObject: true,
 				}, {
 					name: 'setInterval',
 					message: 'Use TimeService.startTimer instead.',
+					checkGlobalObject: true,
 				}
 			],
 			'no-restricted-properties': [
