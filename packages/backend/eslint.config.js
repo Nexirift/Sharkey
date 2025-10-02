@@ -122,6 +122,11 @@ export default [
 				LANGS_VERSION: true,
 			},
 		},
+		rules: {
+			'no-restricted-globals': 'off',
+			'no-restricted-properties': 'off',
+			'no-restricted-syntax': 'off',
+		},
 	},
 	{
 		ignores: [
