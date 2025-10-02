@@ -122,7 +122,6 @@ export class ApPersonService implements OnModuleInit {
 		private readonly cacheManagementService: CacheManagementService,
 		private readonly utilityService: UtilityService,
 		private readonly apUtilityService: ApUtilityService,
-		private readonly idService: IdService,
 		private readonly timeService: TimeService,
 		private readonly queueService: QueueService,
 		private readonly collapsedQueueService: CollapsedQueueService,
@@ -952,7 +951,7 @@ export class ApPersonService implements OnModuleInit {
 		resolver ??= this.apResolverService.createResolver();
 
 		// Mark as updated
-		await this.usersRepository.update({ id: userId }, { lastFetchedFeaturedAt: new Date() });
+		await this.usersRepository.update({ id: userId }, { lastFetchedFeaturedAt: this.timeService.date });
 		await this.internalEventService.emit('remoteUserUpdated', { id: userId });
 
 		// Resolve and regist Notes

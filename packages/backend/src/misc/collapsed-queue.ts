@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { TimeService, type TimerHandle } from '@/global/TimeService.js';
 import promiseLimit from 'promise-limit';
+import type { TimeService, TimerHandle } from '@/global/TimeService.js';
 import { InternalEventService } from '@/core/InternalEventService.js';
 import { bindThis } from '@/decorators.js';
 import { Serialized } from '@/types.js';
@@ -31,7 +31,7 @@ export class CollapsedQueue<V> {
 	private readonly deferredKeys = new Set<string>();
 
 	constructor(
-		private readonly internalEventService: InternalEventervice,
+		private readonly internalEventService: InternalEventService,
 		private readonly timeService: TimeService,
 		public readonly name: string,
 		private readonly timeout: number,
@@ -85,7 +85,7 @@ export class CollapsedQueue<V> {
 		const job = this.jobs.get(key);
 		if (!job) return;
 
-		clearTimeout(job.timer);
+		this.timeService.stopTimer(job.timer);
 		this.jobs.delete(key);
 		await this.internalEventService.emit('collapsedQueueDefer', { name: this.name, key, deferred: false });
 	}
@@ -93,7 +93,7 @@ export class CollapsedQueue<V> {
 	@bindThis
 	async performAllNow() {
 		for (const job of this.jobs.values()) {
-			clearTimeout(job.timer);
+			this.timeService.stopTimer(job.timer);
 		}
 
 		const entries = Array.from(this.jobs.entries());

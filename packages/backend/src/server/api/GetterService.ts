@@ -12,7 +12,6 @@ import { isRemoteUser, isLocalUser } from '@/models/User.js';
 import type { MiNote } from '@/models/Note.js';
 import { CacheService } from '@/core/CacheService.js';
 import { bindThis } from '@/decorators.js';
-import { CacheService } from '@/core/CacheService.js';
 
 @Injectable()
 export class GetterService {

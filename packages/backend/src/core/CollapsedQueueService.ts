@@ -16,6 +16,7 @@ import type { UsersRepository, NotesRepository, AccessTokensRepository, MiAntenn
 import { DI } from '@/di-symbols.js';
 import { AntennaService } from '@/core/AntennaService.js';
 import { CacheService } from '@/core/CacheService.js';
+import type { TimeService } from '@/core/TimeService.js';
 
 export type UpdateInstanceJob = {
 	latestRequestReceivedAt?: Date,
@@ -84,6 +85,7 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 		private readonly internalEventService: InternalEventService,
 		private readonly antennaService: AntennaService,
 		private readonly cacheService: CacheService,
+		private readonly timeService: TimeService,
 
 		loggerService: LoggerService,
 	) {
@@ -94,6 +96,7 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 
 		this.updateInstanceQueue = new CollapsedQueue(
 			this.internalEventService,
+			this.timeService,
 			'updateInstance',
 			fiveMinuteInterval,
 			(oldJob, newJob) => ({
@@ -170,6 +173,7 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 
 		this.updateUserQueue = new CollapsedQueue(
 			this.internalEventService,
+			this.timeService,
 			'updateUser',
 			oneMinuteInterval,
 			(oldJob, newJob) => ({
@@ -221,6 +225,7 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 
 		this.updateNoteQueue = new CollapsedQueue(
 			this.internalEventService,
+			this.timeService,
 			'updateNote',
 			oneMinuteInterval,
 			(oldJob, newJob) => ({
@@ -246,6 +251,7 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 
 		this.updateAccessTokenQueue = new CollapsedQueue(
 			this.internalEventService,
+			this.timeService,
 			'updateAccessToken',
 			fiveMinuteInterval,
 			(oldJob, newJob) => ({
@@ -266,6 +272,7 @@ export class CollapsedQueueService implements OnApplicationShutdown {
 
 		this.updateAntennaQueue = new CollapsedQueue(
 			this.internalEventService,
+			this.timeService,
 			'updateAntenna',
 			fiveMinuteInterval,
 			(oldJob, newJob) => ({

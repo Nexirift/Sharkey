@@ -10,7 +10,6 @@ import type { EmojisRepository, NoteReactionsRepository, UsersRepository, NotesR
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { isLocalUser, isRemoteUser } from '@/models/User.js';
 import type { MiRemoteUser, MiUser } from '@/models/User.js';
-import { isLocalUser, isRemoteUser } from '@/models/User.js';
 import type { MiNote } from '@/models/Note.js';
 import { IdService } from '@/core/IdService.js';
 import { MiNoteReaction } from '@/models/NoteReaction.js';
@@ -228,7 +227,7 @@ export class ReactionService implements OnModuleInit {
 				.execute();
 		}
 
-		await this.collapsedQueueService.updateUserQueue.enqueue(user.id, { updatedAt: new Date() });
+		await this.collapsedQueueService.updateUserQueue.enqueue(user.id, { updatedAt: this.timeService.date });
 
 		// 30%の確率、セルフではない、3日以内に投稿されたノートの場合ハイライト用ランキング更新
 		if (
@@ -346,7 +345,7 @@ export class ReactionService implements OnModuleInit {
 				.execute();
 		}
 
-		await this.collapsedQueueService.updateUserQueue.enqueue(user.id, { updatedAt: new Date() });
+		await this.collapsedQueueService.updateUserQueue.enqueue(user.id, { updatedAt: this.timeService.date });
 
 		this.globalEventService.publishNoteStream(note.id, 'unreacted', {
 			reaction: this.decodeReaction(exist.reaction).reaction,

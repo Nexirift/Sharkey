@@ -30,7 +30,6 @@ import { MiMeta, MiNote, MiUser, MiUserKeypair, UserNotePiningsRepository, UserP
 import { DI } from '@/di-symbols.js';
 import { secureRndstr } from '@/misc/secure-rndstr.js';
 import { DownloadService } from '@/core/DownloadService.js';
-import { ApUtilityService } from '@/core/activitypub/ApUtilityService.js';
 import { genAidx } from '@/misc/id/aidx.js';
 import { IdService } from '@/core/IdService.js';
 import { MockResolver } from '../misc/mock-resolver.js';
@@ -186,8 +185,8 @@ describe('ActivityPub', () => {
 		cacheManagementService = app.get(CacheManagementService);
 		mockConsole = app.get<MockConsole>(DI.console);
 		notesRepository = app.get<NotesRepository>(DI.notesRepository);
-	});
 		userNotePiningsRepository = app.get<UserNotePiningsRepository>(DI.userNotePiningsRepository);
+	});
 
 	afterAll(async () => {
 		await app.close();

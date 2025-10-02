@@ -739,7 +739,7 @@ export class DriveService {
 	}
 
 	@bindThis
-	public async deleteFile(file: MiDriveFile, isExpired = false, deleter?: MiUser) {
+	public async deleteFile(file: MiDriveFile, isExpired = false, deleter?: { id: string }) {
 		await this.queueService.createDeleteFileJob(file.id, isExpired, deleter?.id);
 	}
 

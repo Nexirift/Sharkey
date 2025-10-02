@@ -160,7 +160,7 @@ export class NoteDeleteService {
 				}
 
 				for (const cascade of cascadingNotes) {
-					if (this.userEntityService.isRemoteUser(cascade.user)) {
+					if (isRemoteUser(cascade.user)) {
 						if (!isPureRenote(cascade)) {
 							const i = await this.federatedInstanceService.fetchOrRegister(cascade.user.host);
 							await this.collapsedQueueService.updateInstanceQueue.enqueue(i.id, { notesCountDelta: -1 });
