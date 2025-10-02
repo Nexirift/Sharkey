@@ -145,6 +145,8 @@ export interface PromiseTimerHandle<T = void> extends PromiseLike<T> {
 @Injectable()
 export class NativeTimeService extends TimeService<NativeTimer> implements OnApplicationShutdown {
 	public get now(): number {
+		// This is the one place that actually *should* have it
+		// eslint-disable-next-line no-restricted-properties
 		return Date.now();
 	}
 

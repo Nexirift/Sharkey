@@ -11,6 +11,7 @@ import { DI } from '@/di-symbols.js';
 import type Logger from '@/logger.js';
 import { bindThis } from '@/decorators.js';
 import { CheckModeratorsActivityProcessorService } from '@/queue/processors/CheckModeratorsActivityProcessorService.js';
+import { TimeService } from '@/core/TimeService.js';
 import { renderFullError } from '@/misc/render-full-error.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
 import { UserWebhookDeliverProcessorService } from './processors/UserWebhookDeliverProcessorService.js';
@@ -61,10 +62,10 @@ function httpRelatedBackoff(attemptsMade: number) {
 	return backoff;
 }
 
-function getJobInfo(job: Bull.Job | undefined, increment = false): string {
+function _getJobInfo(now: number, job: Bull.Job | undefined, increment = false): string {
 	if (job == null) return '-';
 
-	const age = Date.now() - job.timestamp;
+	const age = now - job.timestamp;
 
 	const formated = age > 60000 ? `${Math.floor(age / 1000 / 60)}m`
 		: age > 10000 ? `${Math.floor(age / 1000)}s`
@@ -134,8 +135,14 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		private checkModeratorsActivityProcessorService: CheckModeratorsActivityProcessorService,
 		private cleanProcessorService: CleanProcessorService,
 		private scheduleNotePostProcessorService: ScheduleNotePostProcessorService,
+		private readonly timeService: TimeService,
 	) {
 		this.logger = this.queueLoggerService.logger;
+
+		// This is just to avoid modifying all the existing code.
+		const getJobInfo = (job: Bull.Job | undefined, increment = false) => {
+			return _getJobInfo(this.timeService.now, job, increment);
+		};
 
 		//#region system
 		{
@@ -559,7 +566,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		// Render job
 		if (job) {
 			parts.push('job [');
-			parts.push(getJobInfo(job));
+			parts.push(_getJobInfo(this.timeService.now, job));
 			parts.push('] failed: ');
 		} else {
 			parts.push('job failed: ');

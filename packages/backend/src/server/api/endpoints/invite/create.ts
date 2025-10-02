@@ -79,7 +79,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				createdBy: me,
 				createdById: me.id,
 				expiresAt: policies.inviteExpirationTime ? new Date(this.timeService.now + (policies.inviteExpirationTime * 1000 * 60)) : null,
-				code: generateInviteCode(),
+				code: generateInviteCode(this.timeService.now),
 			});
 
 			return await this.inviteCodeEntityService.pack(ticket, me);

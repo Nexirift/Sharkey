@@ -11,6 +11,7 @@ import { IdService } from '@/core/IdService.js';
 import { DI } from '@/di-symbols.js';
 import { generateInviteCode } from '@/misc/generate-invite-code.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
+import type { TimeService } from '@/core/TimeService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -57,6 +58,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private inviteCodeEntityService: InviteCodeEntityService,
 		private idService: IdService,
 		private moderationLogService: ModerationLogService,
+		private readonly timeService: TimeService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			if (ps.expiresAt && isNaN(Date.parse(ps.expiresAt))) {
@@ -71,7 +73,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					createdBy: me,
 					createdById: me.id,
 					expiresAt: ps.expiresAt ? new Date(ps.expiresAt) : null,
-					code: generateInviteCode(),
+					code: generateInviteCode(this.timeService.now),
 				}));
 			}
 

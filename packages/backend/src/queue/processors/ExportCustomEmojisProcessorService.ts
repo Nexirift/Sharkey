@@ -78,7 +78,7 @@ export class ExportCustomEmojisProcessorService {
 			});
 		};
 
-		await writeMeta(`{"metaVersion":2,"host":"${this.config.host}","exportedAt":"${new Date().toString()}","emojis":[`);
+		await writeMeta(`{"metaVersion":2,"host":"${this.config.host}","exportedAt":"${this.timeService.date.toString()}","emojis":[`);
 
 		const customEmojis = await this.emojisRepository.find({
 			where: {
