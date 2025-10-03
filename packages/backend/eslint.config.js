@@ -5,7 +5,20 @@ import sharedConfig from '../shared/eslint.config.js';
 export default [
 	...sharedConfig,
 	{
-		ignores: ['**/node_modules', 'built', '@types/**/*', 'migration'],
+		ignores: [
+			"assets/",
+			"**/built/",
+			"migration/",
+			"**/node_modules/",
+			"test/",
+			"test-federation/",
+			"test-server/",
+			"**/temp/",
+			"**/@types/",
+			"**/coverage/",
+			"*.*",
+			"**/*.test.ts",
+		],
 	},
 	{
 		languageOptions: {
@@ -15,11 +28,11 @@ export default [
 		},
 	},
 	{
-		files: ['**/*.ts', '**/*.tsx'],
+		files: ['src/**/*.ts', 'src/**/*.tsx'],
 		languageOptions: {
 			parserOptions: {
 				parser: tsParser,
-				project: ['./tsconfig.json', './test/tsconfig.json', './test-federation/tsconfig.json'],
+				project: ['./tsconfig.json'],
 				sourceType: 'module',
 				tsconfigRootDir: import.meta.dirname,
 			},
@@ -42,11 +55,6 @@ export default [
 					position: 'after',
 				}],
 			}],
-		},
-	},
-	{
-		files: ['src/**/*.ts'],
-		rules: {
 			'no-restricted-globals': [
 				'error',
 				{
@@ -127,16 +135,5 @@ export default [
 			'no-restricted-properties': 'off',
 			'no-restricted-syntax': 'off',
 		},
-	},
-	{
-		ignores: [
-			"**/lib/",
-			"**/temp/",
-			"**/built/",
-			"**/coverage/",
-			"**/node_modules/",
-			"**/migration/",
-			"*.*",
-		]
 	},
 ];

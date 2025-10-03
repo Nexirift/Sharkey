@@ -21,7 +21,7 @@ export default [
 	},
 	{
 		ignores: [
-			'built/**/*',
+			"**/built/",
 			'*.*',
 		],
 	},
