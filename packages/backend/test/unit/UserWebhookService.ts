@@ -93,8 +93,8 @@ describe('UserWebhookService', () => {
 	});
 
 	afterEach(async () => {
-		await usersRepository.delete({});
-		await userWebhooksRepository.delete({});
+		await usersRepository.deleteAll({});
+		await userWebhooksRepository.deleteAll({});
 		queueService.userWebhookDeliver.mockReset();
 		cacheManagementService.clear();
 	});

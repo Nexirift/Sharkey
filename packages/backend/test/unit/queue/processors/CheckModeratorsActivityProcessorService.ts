@@ -146,8 +146,8 @@ describe('CheckModeratorsActivityProcessorService', () => {
 	});
 
 	afterEach(async () => {
-		await userProfilesRepository.delete({});
-		await usersRepository.delete({});
+		await usersRepository.deleteAll();
+		await userProfilesRepository.deleteAll();
 		roleService.getModerators.mockReset();
 		announcementService.create.mockReset();
 		emailService.sendEmail.mockReset();

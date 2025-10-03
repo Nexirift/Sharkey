@@ -171,10 +171,10 @@ describe('RoleService', () => {
 
 	afterEach(async () => {
 		await Promise.all([
-			metasRepository.delete({}),
-			usersRepository.delete({}),
-			rolesRepository.delete({}),
-			roleAssignmentsRepository.delete({}),
+			metasRepository.deleteAll(),
+			usersRepository.deleteAll(),
+			rolesRepository.deleteAll(),
+			roleAssignmentsRepository.deleteAll(),
 		]);
 
 		cacheManagementService.clear();

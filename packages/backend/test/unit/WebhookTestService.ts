@@ -110,8 +110,8 @@ describe('WebhookTestService', () => {
 		userWebhookService.fetchWebhooks.mockClear();
 		systemWebhookService.fetchSystemWebhooks.mockClear();
 
-		await userProfilesRepository.delete({});
-		await usersRepository.delete({});
+		await userProfilesRepository.deleteAll();
+		await usersRepository.deleteAll();
 		cacheManagementService.clear();
 	});
 

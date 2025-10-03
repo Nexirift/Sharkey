@@ -97,8 +97,8 @@ describe('SystemWebhookService', () => {
 	});
 
 	afterEach(async () => {
-		await usersRepository.delete({});
-		await systemWebhooksRepository.delete({});
+		await usersRepository.deleteAll();
+		await systemWebhooksRepository.deleteAll();
 		queueService.systemWebhookDeliver.mockReset();
 		cacheManagementService.clear();
 	});
