@@ -84,7 +84,7 @@ describe('Chart', () => {
 		];
 
 		for (const entity of entities) {
-			await db.getRepository(entity).delete({});
+			await db.getRepository(entity).deleteAll();
 		}
 	});
 

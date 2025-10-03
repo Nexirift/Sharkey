@@ -75,7 +75,7 @@ describe('FetchInstanceMetadataService', () => {
 	});
 
 	afterEach(async () => {
-		await instancesRepository.delete({});
+		await instancesRepository.deleteAll();
 		cacheManagementService.clear();
 	});
 

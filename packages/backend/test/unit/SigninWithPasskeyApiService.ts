@@ -128,8 +128,8 @@ describe('SigninWithPasskeyApiService', () => {
 	});
 
 	afterEach(async () => {
-		await userProfilesRepository.delete({});
-		await usersRepository.delete({});
+		await userProfilesRepository.deleteAll();
+		await usersRepository.deleteAll();
 		cacheManagementService.clear();
 	});
 

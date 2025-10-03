@@ -11,13 +11,13 @@ import { dirname } from 'node:path';
 import { ModuleMocker } from 'jest-mock';
 import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, test } from '@jest/globals';
+import type { MockMetadata } from 'jest-mock';
 import { GlobalModule } from '@/GlobalModule.js';
 import { FileInfo, FileInfoService } from '@/core/FileInfoService.js';
 //import { DI } from '@/di-symbols.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import type { TestingModule } from '@nestjs/testing';
 import { CoreModule } from '@/core/CoreModule.js';
-import type { MockMetadata } from 'jest-mock';
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);

@@ -142,14 +142,14 @@ describe('UserEntityService', () => {
 		});
 
 		afterEach(async () => {
-			await userProfileRepository.delete({});
-			await userMemosRepository.delete({});
-			await followingRepository.delete({});
-			await followingRequestRepository.delete({});
-			await blockingRepository.delete({});
-			await mutingRepository.delete({});
-			await renoteMutingsRepository.delete({});
-			await usersRepository.delete({});
+			await userProfileRepository.deleteAll();
+			await userMemosRepository.deleteAll();
+			await followingRepository.deleteAll();
+			await followingRequestRepository.deleteAll();
+			await blockingRepository.deleteAll();
+			await mutingRepository.deleteAll();
+			await renoteMutingsRepository.deleteAll();
+			await usersRepository.deleteAll();
 			cacheManagementService.clear();
 		});
 
