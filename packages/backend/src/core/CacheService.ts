@@ -584,9 +584,25 @@ export class CacheService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async findUserByAcct(acct: string): Promise<MiUser> {
+	public async findOptionalUserById(userId: MiUser['id']): Promise<MiUser | undefined> {
+		return await this.userByIdCache.fetchMaybe(userId);
+	}
+
+	@bindThis
+	public async findUserByAcct(acct: string | Acct.Acct): Promise<MiUser> {
+		acct = typeof(acct) === 'string' ? acct : Acct.toString(acct);
 		const id = await this.userByAcctCache.fetch(acct);
 		return await this.findUserById(id);
+	}
+
+	@bindThis
+	public async findOptionalUserByAcct(acct: string | Acct.Acct): Promise<MiUser | undefined> {
+		acct = typeof(acct) === 'string' ? acct : Acct.toString(acct);
+
+		const id = await this.userByAcctCache.fetchMaybe(acct);
+		if (id == null) return undefined;
+
+		return await this.findOptionalUserById(id);
 	}
 
 	@bindThis
@@ -594,6 +610,17 @@ export class CacheService implements OnApplicationShutdown {
 		const user = await this.findUserById(userId);
 
 		if (!isLocalUser(user)) {
+			throw new IdentifiableError('aeac1339-2550-4521-a8e3-781f06d98656', 'User is not local');
+		}
+
+		return user;
+	}
+
+	@bindThis
+	public async findOptionalLocalUserById(userId: MiUser['id']): Promise<MiLocalUser | undefined> {
+		const user = await this.findOptionalUserById(userId);
+
+		if (user && !isLocalUser(user)) {
 			throw new IdentifiableError('aeac1339-2550-4521-a8e3-781f06d98656', 'User is not local');
 		}
 
@@ -612,8 +639,14 @@ export class CacheService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public findOptionalUserById(userId: MiUser['id']) {
-		return this.userByIdCache.fetchMaybe(userId);
+	public async findOptionalRemoteUserById(userId: MiUser['id']): Promise<MiRemoteUser | undefined> {
+		const user = await this.findOptionalUserById(userId);
+
+		if (user && !isRemoteUser(user)) {
+			throw new IdentifiableError('aeac1339-2550-4521-a8e3-781f06d98656', 'User is not remote');
+		}
+
+		return user;
 	}
 
 	@bindThis
