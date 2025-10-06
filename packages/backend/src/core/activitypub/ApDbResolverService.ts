@@ -10,6 +10,7 @@ import type { Config } from '@/config.js';
 import { MemoryKVCache } from '@/misc/cache.js';
 import type { MiUserPublickey } from '@/models/UserPublickey.js';
 import { CacheService } from '@/core/CacheService.js';
+import { TimeService } from '@/core/TimeService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import type { MiNote } from '@/models/Note.js';
 import { bindThis } from '@/decorators.js';
@@ -42,6 +43,7 @@ export class ApDbResolverService implements OnApplicationShutdown {
 		private apLoggerService: ApLoggerService,
 		private utilityService: UtilityService,
 		private readonly idService: IdService,
+		private readonly timeService: TimeService,
 	) {
 		// Caches moved to ApPersonService to avoid circular dependency
 	}
@@ -128,7 +130,7 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	@bindThis
 	public async refetchPublicKeyForApId(user: MiRemoteUser): Promise<MiUserPublickey | null> {
 		// Don't re-fetch if we've updated the user recently
-		const maxUpdatedTime = Date.now() - 60_000; // 1 minute ago
+		const maxUpdatedTime = this.timeService.now - 60_000; // 1 minute ago
 		if (
 			(user.lastFetchedAt && user.lastFetchedAt.valueOf() > maxUpdatedTime) ||
 			(user.updatedAt && user.updatedAt.valueOf() > maxUpdatedTime) ||
