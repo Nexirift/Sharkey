@@ -196,6 +196,12 @@ misskey-js_tests:
     - pnpm run --filter misskey-js build
     - pnpm run --filter misskey-js test
 
+megalodon_tests:
+  <<: *test_common
+  script:
+    - pnpm run --filter megalodon build
+    - pnpm run --filter megalodon test
+
 get_image_tag:
   <<: *deploy_common
   image:
