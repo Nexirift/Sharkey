@@ -1,25 +1,10 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"compilerOptions": {
-		"target": "ES2022",
-		"module": "ESNext",
-		"moduleResolution": "nodenext",
-		"strict": true,
-		"strictFunctionTypes": true,
-		"strictNullChecks": true,
-		"skipLibCheck": true,
-		"esModuleInterop": true,
-		"incremental": true,
-		"lib": [
-			"esnext",
-		]
-	},
-	"include": [
-		"src/**/*.ts",
-		"built/autogen/**/*.ts"
-	],
-	"exclude": [
-		"node_modules",
-		"./built/**/*.js"
+	"files": [],
+	// WebStorm only reads one tsconfig per directory, so this tricks it into loading both.
+	"references": [
+		{ "path":  "./tsconfig.generator.json" },
+		{ "path":  "./tsconfig.autogen.json" },
+		{ "path":  "./jsconfig.scripts.json" }
 	]
 }

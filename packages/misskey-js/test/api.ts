@@ -1,7 +1,7 @@
-import { enableFetchMocks } from 'jest-fetch-mock';
+import fetchMock from 'jest-fetch-mock';
 import { APIClient, isAPIError } from '../src/api.js';
 
-enableFetchMocks();
+fetchMock.enableMocks();
 
 function getFetchCall(call: any[]) {
 	const { body, method } = call[1];
@@ -26,7 +26,7 @@ describe('API', () => {
 		fetchMock.resetMocks();
 		fetchMock.mockResponse(async (req) => {
 			const body = await req.json();
-			if (req.method == 'POST' && req.url == 'https://misskey.test/api/i') {
+			if (req.method === 'POST' && req.url === 'https://misskey.test/api/i') {
 				if (body.i === 'TOKEN') {
 					return JSON.stringify({ id: 'foo' });
 				} else {
@@ -45,14 +45,14 @@ describe('API', () => {
 		const res = await cli.request('i');
 
 		expect(res).toEqual({
-			id: 'foo'
+			id: 'foo',
 		});
 
 		expect(getFetchCall(fetchMock.mock.calls[0])).toEqual({
 			url: 'https://misskey.test/api/i',
 			method: 'POST',
 			contentType: 'application/json',
-			body: { i: 'TOKEN' }
+			body: { i: 'TOKEN' },
 		});
 	});
 
@@ -60,7 +60,7 @@ describe('API', () => {
 		fetchMock.resetMocks();
 		fetchMock.mockResponse(async (req) => {
 			const body = await req.json();
-			if (req.method == 'POST' && req.url == 'https://misskey.test/api/notes/show') {
+			if (req.method === 'POST' && req.url === 'https://misskey.test/api/notes/show') {
 				if (body.i === 'TOKEN' && body.noteId === 'aaaaa') {
 					return JSON.stringify({ id: 'foo' });
 				} else {
@@ -79,21 +79,21 @@ describe('API', () => {
 		const res = await cli.request('notes/show', { noteId: 'aaaaa' });
 
 		expect(res).toEqual({
-			id: 'foo'
+			id: 'foo',
 		});
 
 		expect(getFetchCall(fetchMock.mock.calls[0])).toEqual({
 			url: 'https://misskey.test/api/notes/show',
 			method: 'POST',
 			contentType: 'application/json',
-			body: { i: 'TOKEN', noteId: 'aaaaa' }
+			body: { i: 'TOKEN', noteId: 'aaaaa' },
 		});
 	});
 
 	test('multipart/form-data', async () => {
 		fetchMock.resetMocks();
 		fetchMock.mockResponse(async (req) => {
-			if (req.method == 'POST' && req.url == 'https://misskey.test/api/drive/files/create') {
+			if (req.method === 'POST' && req.url === 'https://misskey.test/api/drive/files/create') {
 				if (req.headers.get('Content-Type')?.includes('multipart/form-data')) {
 					return JSON.stringify({ id: 'foo' });
 				} else {
@@ -117,7 +117,7 @@ describe('API', () => {
 		});
 
 		expect(res).toEqual({
-			id: 'foo'
+			id: 'foo',
 		});
 
 		expect(getFetchCall(fetchMock.mock.calls[0])).toEqual({
@@ -127,14 +127,14 @@ describe('API', () => {
 			body: {
 				i: 'TOKEN',
 				file: testFile,
-			}
+			},
 		});
 	});
 
 	test('204 No Content で null が返る', async () => {
 		fetchMock.resetMocks();
 		fetchMock.mockResponse(async (req) => {
-			if (req.method == 'POST' && req.url == 'https://misskey.test/api/reset-password') {
+			if (req.method === 'POST' && req.url === 'https://misskey.test/api/reset-password') {
 				return { status: 204 };
 			} else {
 				return { status: 404 };
@@ -154,7 +154,7 @@ describe('API', () => {
 			url: 'https://misskey.test/api/reset-password',
 			method: 'POST',
 			contentType: 'application/json',
-			body: { i: 'TOKEN', token: 'aaa', password: 'aaa' }
+			body: { i: 'TOKEN', token: 'aaa', password: 'aaa' },
 		});
 	});
 
@@ -162,7 +162,7 @@ describe('API', () => {
 		fetchMock.resetMocks();
 		fetchMock.mockResponse(async (req) => {
 			const body = await req.json();
-			if (req.method == 'POST' && req.url == 'https://misskey.test/api/i') {
+			if (req.method === 'POST' && req.url === 'https://misskey.test/api/i') {
 				if (typeof body.i === 'string') {
 					return JSON.stringify({ id: 'foo' });
 				} else {
@@ -173,8 +173,8 @@ describe('API', () => {
 								message: 'Credential required.',
 								code: 'CREDENTIAL_REQUIRED',
 								id: '1384574d-a912-4b81-8601-c7b1c4085df1',
-							}
-						})
+							},
+						}),
 					};
 				}
 			} else {
@@ -206,7 +206,7 @@ describe('API', () => {
 						id: '5d37dbcb-891e-41ca-a3d6-e690c97775ac',
 						kind: 'server',
 					},
-				})
+				}),
 			};
 		});
 
@@ -244,7 +244,7 @@ describe('API', () => {
 		fetchMock.mockResponse(async (req) => {
 			return {
 				status: 500,
-				body: '<html>I AM NOT JSON</html>'
+				body: '<html>I AM NOT JSON</html>',
 			};
 		});
 
@@ -266,7 +266,7 @@ describe('API', () => {
 			return {
 				// 本来返すべき値は`Role`型だが、テストなのでお茶を濁す
 				status: 200,
-				body: '{}'
+				body: '{}',
 			};
 		});
 
@@ -296,5 +296,5 @@ describe('API', () => {
 			},
 			target: 'manual',
 		});
-	})
+	});
 });

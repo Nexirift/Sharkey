@@ -1,11 +1,11 @@
 import assert from 'assert';
 import { mkdir, readFile, writeFile } from 'fs/promises';
-import { OpenAPIV3_1 } from 'openapi-types';
 import { toPascal } from 'ts-case-convert';
 import * as OpenAPIParser from '@readme/openapi-parser';
-import openapiTS, { astToString, OpenAPI3, OperationObject, PathItemObject } from 'openapi-typescript';
+import openapiTS, { astToString, type OpenAPI3, type OperationObject, type PathItemObject } from 'openapi-typescript';
 import ts from 'typescript';
 import { createConfig } from '@redocly/openapi-core';
+import type { OpenAPIV3_1 } from 'openapi-types';
 
 async function generateBaseTypes(
 	openApiDocs: OpenAPIV3_1.Document,
@@ -64,6 +64,7 @@ async function generateBaseTypes(
 			if ('format' in schemaObject && schemaObject.format === 'binary') {
 				return schemaObject.nullable ? ts.factory.createUnionTypeNode([BLOB, NULL]) : BLOB;
 			}
+			return undefined;
 		},
 	});
 
@@ -115,7 +116,7 @@ async function generateSchemaEntities(
 	const schemaNames = Object.keys(schemas);
 	const typeAliasLines: string[] = [];
 
-	typeAliasLines.push(`import { components } from '${toImportPath(typeFileName)}';`);
+	typeAliasLines.push(`import type { components } from '${toImportPath(typeFileName)}';`);
 	typeAliasLines.push(
 		...schemaNames.map(it => `export type ${it} = components['schemas']['${it}'];`),
 	);
@@ -190,7 +191,7 @@ async function generateEndpoints(
 
 	entitiesOutputLine.push('/* eslint @typescript-eslint/naming-convention: 0 */');
 
-	entitiesOutputLine.push(`import { operations } from '${toImportPath(typeFileName)}';`);
+	entitiesOutputLine.push(`import type { operations } from '${toImportPath(typeFileName)}';`);
 	entitiesOutputLine.push('');
 
 	entitiesOutputLine.push(new EmptyTypeAlias(OperationsAliasType.REQUEST).toLine());

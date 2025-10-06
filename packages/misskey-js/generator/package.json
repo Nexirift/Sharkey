@@ -4,7 +4,14 @@
 	"description": "Misskey TypeGenerator",
 	"type": "module",
 	"scripts": {
-		"generate": "tsx src/generator.ts && eslint ./built/**/*.ts --fix --cache"
+		"generate": "tsx src/generator.ts && eslint ./built/**/*.ts --fix --cache",
+		"eslint": "eslint --quiet --cache -c eslint.config.js .",
+		"typecheck-all": "pnpm run --no-bail typecheck:generator && pnpm run --no-bail typecheck:autogen && pnpm run --no-bail typecheck:scripts",
+		"typecheck": "pnpm run typecheck:generator && pnpm run typecheck:autogen && pnpm run typecheck:scripts",
+		"typecheck:generator": "tsc -p tsconfig.generator.json --noEmit",
+		"typecheck:autogen": "tsc -p tsconfig.autogen.json --noEmit",
+		"typecheck:scripts": "tsc -p jsconfig.scripts.json --noEmit",
+		"lint": "pnpm typecheck && pnpm eslint"
 	},
 	"devDependencies": {
 		"@readme/openapi-parser": "5.0.1",

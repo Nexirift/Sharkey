@@ -4,7 +4,7 @@
  */
 
 import { rm } from 'fs/promises';
-import {buildDir, outDir} from './_common.mjs';
+import { buildDir, outDir } from './_common.mjs';
 
 console.log(`Cleaning working directory ${buildDir}...`);
 await rm(buildDir, { recursive: true, force: true });

@@ -1,10 +1,11 @@
 import { EventEmitter } from 'eventemitter3';
-import _ReconnectingWebSocket, { Options } from 'reconnecting-websocket';
+import ReconnectingWebSocket from 'reconnecting-websocket';
+import type { Options } from 'reconnecting-websocket';
 import type { BroadcastEvents, Channels } from './streaming.types.js';
 
-// コンストラクタとクラスそのものの定義が上手く解決出来ないため再定義
-const ReconnectingWebSocketConstructor = _ReconnectingWebSocket as unknown as typeof _ReconnectingWebSocket.default;
-type ReconnectingWebSocket = _ReconnectingWebSocket.default;
+// // コンストラクタとクラスそのものの定義が上手く解決出来ないため再定義
+// const ReconnectingWebSocketConstructor = _ReconnectingWebSocket.default;
+// type ReconnectingWebSocket = _ReconnectingWebSocket.default;
 
 export function urlQuery(obj: Record<string, string | number | boolean | undefined>): string {
 	const params = Object.entries(obj)
@@ -83,7 +84,7 @@ export default class Stream extends EventEmitter<StreamEvents> implements IStrea
 
 		const wsOrigin = origin.replace('http://', 'ws://').replace('https://', 'wss://');
 
-		this.stream = new ReconnectingWebSocketConstructor(`${wsOrigin}/streaming?${query}`, '', {
+		this.stream = new ReconnectingWebSocket(`${wsOrigin}/streaming?${query}`, '', {
 			minReconnectionDelay: 1, // https://github.com/pladaria/reconnecting-websocket/issues/91
 			WebSocket: options.WebSocket,
 		});

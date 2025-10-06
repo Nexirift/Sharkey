@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import {libBuild, outDir, testDBuild, testDSource} from './_common.mjs';
-import {rm, cp} from 'fs/promises';
+import { libBuild, outDir, testDBuild, testDSource } from './_common.mjs';
+import { rm, cp } from 'fs/promises';
 
 // Always clean the output, because artifacts are cached in the build directory instead.
 console.log(`Cleaning output directory ${outDir}...`);
