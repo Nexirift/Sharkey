@@ -287,7 +287,7 @@ export class MastodonConverters {
 			this.getUser(p)
 				.then(u => this.encode(u, mentionedRemoteUsers))
 				.catch(() => null)))
-			.then((p: Entity.Mention[]) => p.filter(m => m));
+			.then((p: (Entity.Mention | null)[]) => p.filter(m => m != null));
 
 		const tags = note.tags.map(tag => {
 			return {
@@ -345,7 +345,7 @@ export class MastodonConverters {
 			sensitive: status.sensitive || !!cw,
 			spoiler_text: cw,
 			visibility: status.visibility,
-			media_attachments: status.media_attachments.map((a: Entity.Account) => convertAttachment(a)),
+			media_attachments: status.media_attachments.map((a: Entity.Attachment) => convertAttachment(a)),
 			mentions: mentions,
 			tags: tags,
 			card: null, //FIXME

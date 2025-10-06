@@ -3,7 +3,13 @@
 * https://jestjs.io/docs/en/configuration.html
 */
 
-module.exports = {
+import base from './jest.config.ts';
+
+export default {
+	...base,
+	globalSetup: "<rootDir>/built-test/entry.js",
+	setupFilesAfterEnv: ["<rootDir>/test/jest.setup.ts"],
+
 	// All imported modules in your tests should be mocked automatically
 	// automock: false,
 
@@ -59,9 +65,9 @@ module.exports = {
 	// A path to a module which exports an async function that is triggered once after all test suites
 	// globalTeardown: undefined,
 
-	// A set of global variables that need to be available in all test environments
-	globals: {
-	},
+	// // A set of global variables that need to be available in all test environments
+	// globals: {
+	// },
 
 	// The maximum amount of workers used to run your tests. Can be specified as % or a number. E.g. maxWorkers: 10% will use 10% of your CPU amount + 1 as the maximum worker number. maxWorkers: 2 will use a maximum of 2 workers.
 	// maxWorkers: "50%",
@@ -80,6 +86,10 @@ module.exports = {
 	//   "tsx",
 	//   "node"
 	// ],
+	moduleFileExtensions: [
+		"ts",
+		"js"
+	],
 
 	// A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
 	moduleNameMapper: {
@@ -129,7 +139,7 @@ module.exports = {
 
 	// A list of paths to directories that Jest should use to search for files in
 	roots: [
-		"<rootDir>"
+		"<rootDir>/test",
 	],
 
 	// Allows you to use a custom runner instead of Jest's default test runner
@@ -158,63 +168,6 @@ module.exports = {
 
 	// The glob patterns Jest uses to detect test files
 	testMatch: [
-		"<rootDir>/test/unit/**/*.ts",
-		"<rootDir>/src/**/*.test.ts",
+		"<rootDir>/test/e2e/**/*.ts",
 	],
-
-	// An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-	// testPathIgnorePatterns: [
-	//   "\\\\node_modules\\\\"
-	// ],
-
-	// The regexp pattern or array of patterns that Jest uses to detect test files
-	// testRegex: [],
-
-	// This option allows the use of a custom results processor
-	// testResultsProcessor: undefined,
-
-	// This option allows use of a custom test runner
-	// testRunner: "jasmine2",
-
-	// This option sets the URL for the jsdom environment. It is reflected in properties such as location.href
-	// testURL: "http://localhost",
-
-	// Setting this value to "fake" allows the use of fake timers for functions such as "setTimeout"
-	// timers: "real",
-
-	// A map from regular expressions to paths to transformers
-	transform: {
-		"^.+\\.(t|j)sx?$": ["@swc/jest"],
-	},
-
-	// An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-	// transformIgnorePatterns: [
-	//   "\\\\node_modules\\\\",
-	//   "\\.pnp\\.[^\\\\]+$"
-	// ],
-
-	// An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
-	// unmockedModulePathPatterns: undefined,
-
-	// Indicates whether each individual test should be reported during the run
-	// verbose: undefined,
-
-	// An array of regexp patterns that are matched against all source file paths before re-running tests in watch mode
-	// watchPathIgnorePatterns: [],
-
-	// Whether to use watchman for file crawling
-	// watchman: true,
-
-	extensionsToTreatAsEsm: ['.ts'],
-
-	testTimeout: 60000,
-
-	// Let Jest kill the test worker whenever it grows too much
-	// (It seems there's a known memory leak issue in Node.js' vm.Script used by Jest)
-	// https://github.com/facebook/jest/issues/11956
-	maxWorkers: 1, // Make it use worker (that can be killed and restarted)
-	logHeapUsage: true, // To debug when out-of-memory happens on CI
-	workerIdleMemoryLimit: '1GiB', // Limit the worker to 1GB (GitHub Workflows dies at 2GB)
-
-	maxConcurrency: 32,
 };

@@ -1,0 +1,24 @@
+{
+	"extends": "../shared/jsconfig.web.json",
+	"include": [
+		"./assets/**/*.js",
+		"./assets/**/*.mjs",
+		"./assets/**/*.cjs",
+		"./assets/**/*.d.ts",
+		"./src/server/web/**/*.js",
+		"./src/server/web/**/*.mjs",
+		"./src/server/web/**/*.cjs",
+		"./src/server/web/**/*.d.ts"
+	],
+	"exclude": [
+		"**/node_modules/**/*",
+		"**/built/**/*",
+		"./jspm_packages",
+		"./tmp",
+		"./temp",
+		"./test",
+		"./test-federation",
+		"./test-server",
+		"**/coverage/**/*"
+	]
+}

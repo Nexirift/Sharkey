@@ -1,0 +1,33 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": "../shared/tsconfig.node.json",
+	"compilerOptions": {
+		"removeComments": false,
+		"verbatimModuleSyntax": false,
+		"rootDir": "./src",
+		"outDir": "./built",
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+		"typeRoots": [
+			"./src/@types",
+			"./node_modules/@types",
+			"./node_modules"
+		],
+	},
+	"include": [
+		"./src/**/*.ts"
+	],
+	"exclude": [
+		"node_modules",
+		"**/built/",
+		"**/*.test.ts",
+		"./src/server/web/**/*.js",
+		"./src/server/web/**/*.mjs",
+		"./src/server/web/**/*.cjs",
+		"./src/server/web/**/*.d.ts",
+		"test/**/*",
+		"test-federation/**/*",
+		"test-server/**/*"
+	]
+}

@@ -3,9 +3,9 @@
 * https://jestjs.io/docs/en/configuration.html
 */
 
-const base = require('./jest.config.cjs')
+import base from './jest.config.ts';
 
-module.exports = {
+export default {
 	...base,
 	testMatch: [
 		"<rootDir>/test/unit/**/*.ts",

@@ -6,18 +6,18 @@ export default [
 	...sharedConfig,
 	{
 		ignores: [
-			"assets/",
-			"**/built/",
-			"migration/",
-			"**/node_modules/",
-			"test/",
-			"test-federation/",
-			"test-server/",
-			"**/temp/",
-			"**/@types/",
-			"**/coverage/",
-			"*.*",
-			"**/*.test.ts",
+			'**/built/',
+			'migration/',
+			'**/node_modules/',
+			'test/',
+			'test-federation/',
+			'test-server/',
+			'**/temp/',
+			'**/@types/',
+			'**/coverage/',
+			'ormconfig.js',
+			'scripts/check_connect.js',
+			'scripts/generate_api_json.js',
 		],
 	},
 	{
@@ -29,10 +29,14 @@ export default [
 	},
 	{
 		files: ['src/**/*.ts', 'src/**/*.tsx'],
+		ignores: [
+			'*.*',
+			'src/server/web/**/*.d.ts',
+		],
 		languageOptions: {
 			parserOptions: {
 				parser: tsParser,
-				project: ['./tsconfig.json'],
+				project: ['./tsconfig.backend.json'],
 				sourceType: 'module',
 				tsconfigRootDir: import.meta.dirname,
 			},
@@ -94,42 +98,50 @@ export default [
 			'no-restricted-syntax': [
 				'error',
 				{
-					"selector": "NewExpression[callee.name='Date'][arguments.length=0]",
-					"message": "new Date() is restricted. Use TimeService.date instead."
+					'selector': 'NewExpression[callee.name=\'Date\'][arguments.length=0]',
+					'message': 'new Date() is restricted. Use TimeService.date instead.',
 				},
 				{
-					"selector": "NewExpression[callee.name='MemoryKVCache']",
-					"message": "Cache constructor will produce an unmanaged instance. Use CacheManagementService.createMemoryKVCache() instead."
+					'selector': 'NewExpression[callee.name=\'MemoryKVCache\']',
+					'message': 'Cache constructor will produce an unmanaged instance. Use CacheManagementService.createMemoryKVCache() instead.',
 				},
 				{
-					"selector": "NewExpression[callee.name='MemorySingleCache']",
-					"message": "Cache constructor will produce an unmanaged instance. Use CacheManagementService.createMemorySingleCache() instead."
+					'selector': 'NewExpression[callee.name=\'MemorySingleCache\']',
+					'message': 'Cache constructor will produce an unmanaged instance. Use CacheManagementService.createMemorySingleCache() instead.',
 				},
 				{
-					"selector": "NewExpression[callee.name='RedisKVCache']",
-					"message": "Cache constructor will produce an unmanaged instance. Use CacheManagementService.createRedisKVCache() instead."
+					'selector': 'NewExpression[callee.name=\'RedisKVCache\']',
+					'message': 'Cache constructor will produce an unmanaged instance. Use CacheManagementService.createRedisKVCache() instead.',
 				},
 				{
-					"selector": "NewExpression[callee.name='RedisSingleCache']",
-					"message": "Cache constructor will produce an unmanaged instance. Use CacheManagementService.createRedisSingleCache() instead."
+					'selector': 'NewExpression[callee.name=\'RedisSingleCache\']',
+					'message': 'Cache constructor will produce an unmanaged instance. Use CacheManagementService.createRedisSingleCache() instead.',
 				},
 				{
-					"selector": "NewExpression[callee.name='QuantumKVCache']",
-					"message": "Cache constructor will produce an unmanaged instance. Use CacheManagementService.createQuantumKVCache() instead."
+					'selector': 'NewExpression[callee.name=\'QuantumKVCache\']',
+					'message': 'Cache constructor will produce an unmanaged instance. Use CacheManagementService.createQuantumKVCache() instead.',
 				},
 				{
-					"selector": "CallExpression[callee.property.name='delete'][arguments.length=1] > ObjectExpression[properties.length=0]",
-					"message": "repository.delete({}) will produce a runtime error. Use repository.deleteAll() instead."
+					'selector': 'CallExpression[callee.property.name=\'delete\'][arguments.length=1] > ObjectExpression[properties.length=0]',
+					'message': 'repository.delete({}) will produce a runtime error. Use repository.deleteAll() instead.',
 				},
 				{
-					"selector": "CallExpression[callee.property.name='update'][arguments.length>=1] > ObjectExpression[properties.length=0]",
-					"message": "repository.update({}, {...}) will produce a runtime error. Use repository.updateAll({...}) instead."
+					'selector': 'CallExpression[callee.property.name=\'update\'][arguments.length>=1] > ObjectExpression[properties.length=0]',
+					'message': 'repository.update({}, {...}) will produce a runtime error. Use repository.updateAll({...}) instead.',
 				},
 			],
 		},
 	},
 	{
-		files: ['src/server/web/**/*.js', 'src/server/web/**/*.ts'],
+		files: [
+			'./assets/**/*.js',
+			'./assets/**/*.mjs',
+			'./assets/**/*.cjs',
+			'./src/server/web/**/*.js',
+			'./src/server/web/**/*.mjs',
+			'./src/server/web/**/*.cjs',
+			'./src/server/web/**/*.d.ts',
+		],
 		languageOptions: {
 			globals: {
 				...globals.browser,
@@ -137,11 +149,38 @@ export default [
 				CLIENT_ENTRY: true,
 				LANGS_VERSION: true,
 			},
+			parserOptions: {
+				parser: tsParser,
+				project: ['./jsconfig.frontend.json'],
+				sourceType: 'module',
+				tsconfigRootDir: import.meta.dirname,
+			},
 		},
 		rules: {
 			'no-restricted-globals': 'off',
 			'no-restricted-properties': 'off',
 			'no-restricted-syntax': 'off',
+		},
+	},
+	{
+		files: [
+			'eslint.*',
+			'jest.*',
+			'scripts/dev.mjs',
+			'scripts/watch.mjs',
+		],
+		ignores: [
+			'ormconfig.js',
+			'scripts/check_connect.js',
+			'scripts/generate_api_json.js',
+		],
+		languageOptions: {
+			parserOptions: {
+				parser: tsParser,
+				project: ['./tsconfig.scripts.json'],
+				sourceType: 'module',
+				tsconfigRootDir: import.meta.dirname,
+			},
 		},
 	},
 ];

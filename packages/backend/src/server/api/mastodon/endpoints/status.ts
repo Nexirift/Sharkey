@@ -10,7 +10,6 @@ import { parseTimelineArgs, TimelineArgs, toBoolean, toInt } from '@/server/api/
 import { MastodonClientService } from '@/server/api/mastodon/MastodonClientService.js';
 import { MastodonDataService } from '@/server/api/mastodon/MastodonDataService.js';
 import { getNoteSummary } from '@/misc/get-note-summary.js';
-import type { Packed } from '@/misc/json-schema.js';
 import { isPureRenote } from '@/misc/is-renote.js';
 import { convertAttachment, convertPoll, MastodonConverters } from '../MastodonConverters.js';
 import type { Entity } from 'megalodon';
@@ -46,7 +45,34 @@ export class ApiStatusMastodon {
 
 			// Fixup - Discord ignores CWs and renders the entire post.
 			if (response.sensitive && _request.headers['user-agent']?.match(/\bDiscordbot\//)) {
-				response.content = getNoteSummary(data.data satisfies Packed<'Note'>);
+				// TODO move this mastoConverters?
+				response.content = getNoteSummary({
+					...data.data,
+					user: {
+						...data.data.account,
+						emojis: {},
+						noindex: data.data.account.noindex ?? false,
+					},
+					visibility: data.data.visibility === 'direct'
+						? 'specified'
+						: data.data.visibility === 'private'
+							? 'followers'
+							: data.data.visibility === 'unlisted'
+								? 'home'
+								: data.data.visibility,
+					mentions: data.data.mentions.map(m => m.id),
+					tags: data.data.tags.map(t => t.name),
+					poll: data.data.poll && {
+						...data.data.poll,
+						choices: data.data.poll.options.map(o => ({
+							...o,
+							text: o.title,
+							votes: o.votes_count ?? 0,
+							isVoted: o.votes_count != null,
+						})),
+					},
+					emojis: {},
+				});
 				response.media_attachments = [];
 				response.in_reply_to_id = null;
 				response.in_reply_to_account_id = null;
@@ -182,7 +208,7 @@ export class ApiStatusMastodon {
 			if (body.in_reply_to_id && removed === '/unreact') {
 				const id = body.in_reply_to_id;
 				const post = await client.getStatus(id);
-				const react = post.data.emoji_reactions.filter((e: Entity.Emoji) => e.me)[0].name;
+				const react = post.data.emoji_reactions.filter((e: Entity.Reaction) => e.me)[0].name;
 				const data = await client.deleteEmojiReaction(id, react);
 				return reply.send(data.data);
 			}
