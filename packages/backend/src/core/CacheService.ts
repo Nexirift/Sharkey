@@ -35,7 +35,6 @@ export interface FollowStats {
 export class CacheService implements OnApplicationShutdown {
 	public readonly userByIdCache: ManagedQuantumKVCache<MiUser>;
 	public readonly nativeTokenCache: ManagedQuantumKVCache<string>; // Token -> UserId
-	public readonly uriPersonCache: ManagedQuantumKVCache<string>; // URI -> UserId
 	public readonly userByAcctCache: ManagedQuantumKVCache<string>; // Acct -> UserId
 	public readonly userProfileCache: ManagedQuantumKVCache<MiUserProfile>;
 	public readonly userMutingsCache: ManagedQuantumKVCache<Set<string>>;
@@ -119,12 +118,12 @@ export class CacheService implements OnApplicationShutdown {
 		this.nativeTokenCache = this.cacheManagementService.createQuantumKVCache('localUserByNativeToken', {
 			lifetime: 1000 * 60 * 5, // 5m
 			fetcher: async (token) => {
-				const user = await this.usersRepository
+				const { id } = await this.usersRepository
 					.createQueryBuilder('user')
 					.select('user.id')
 					.where({ token })
-					.getOne() as { id: string } | null;
-				return user?.id ?? null;
+					.getOneOrFail() as { id: string };
+				return id;
 			},
 			bulkFetcher: async (tokens) => {
 				const users = await this.usersRepository
@@ -133,29 +132,7 @@ export class CacheService implements OnApplicationShutdown {
 					.addSelect('user.token')
 					.where({ token: In(tokens) })
 					.getMany() as { id: string, token: string }[];
-				const userMap = new Map(users.map(u => [u.token, u.id]));
-				return tokens.map(token => [token, userMap.get(token) ?? null]);
-			},
-		});
-
-		this.uriPersonCache = this.cacheManagementService.createQuantumKVCache('uriPerson', {
-			lifetime: 1000 * 60 * 30, // 30m
-			fetcher: async (uri) => {
-				const user = await this.usersRepository
-					.createQueryBuilder('user')
-					.select('user.id')
-					.where({ uri })
-					.getOneOrFail() as { id: string };
-				return user.id;
-			},
-			bulkFetcher: async (uris) => {
-				const users = await this.usersRepository
-					.createQueryBuilder('user')
-					.select('user.id')
-					.addSelect('user.uri')
-					.where({ uri: In(uris) })
-					.getMany() as { id: string, uri: string }[];
-				return users.map(u => [u.uri, u.id]);
+				return users.map(u => [u.token, u.id]);
 			},
 		});
 
@@ -636,7 +613,7 @@ export class CacheService implements OnApplicationShutdown {
 
 	@bindThis
 	public findOptionalUserById(userId: MiUser['id']) {
-		return this.userByIdCache.fetchMaybe(userId, async () => await this.usersRepository.findOneBy({ id: userId }) ?? undefined);
+		return this.userByIdCache.fetchMaybe(userId);
 	}
 
 	@bindThis

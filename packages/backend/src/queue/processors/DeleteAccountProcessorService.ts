@@ -20,6 +20,7 @@ import { ReactionService } from '@/core/ReactionService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { CacheService } from '@/core/CacheService.js';
 import { QueueLoggerService } from '@/queue/QueueLoggerService.js';
+import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import * as Acct from '@/misc/acct.js';
 import type * as Bull from 'bullmq';
 import type { DbUserDeleteJobData } from '../types.js';
@@ -97,6 +98,7 @@ export class DeleteAccountProcessorService {
 		private reactionService: ReactionService,
 		private readonly apLogService: ApLogService,
 		private readonly cacheService: CacheService,
+		private readonly apPersonService: ApPersonService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('delete-account');
 	}
@@ -160,7 +162,7 @@ export class DeleteAccountProcessorService {
 				await this.cacheService.nativeTokenCache.delete(user.token);
 			}
 			if (user.uri) {
-				await this.cacheService.uriPersonCache.delete(user.uri);
+				await this.apPersonService.uriPersonCache.delete(user.uri);
 			}
 
 			await this.followingsRepository.delete({

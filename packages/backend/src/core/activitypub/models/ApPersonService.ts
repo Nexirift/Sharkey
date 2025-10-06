@@ -63,9 +63,12 @@ type Field = Record<'name' | 'value', string>;
 
 @Injectable()
 export class ApPersonService implements OnModuleInit {
+	// Moved from CacheService
+	public readonly uriPersonCache: ManagedQuantumKVCache<string>;
+
 	// Moved from ApDbResolverService
-	private publicKeyByKeyIdCache: ManagedQuantumKVCache<MiUserPublickey>;
-	private publicKeyByUserIdCache: ManagedQuantumKVCache<MiUserPublickey>;
+	private readonly publicKeyByKeyIdCache: ManagedQuantumKVCache<MiUserPublickey>;
+	private readonly publicKeyByUserIdCache: ManagedQuantumKVCache<MiUserPublickey>;
 
 	private driveFileEntityService: DriveFileEntityService;
 	private globalEventService: GlobalEventService;
@@ -122,11 +125,34 @@ export class ApPersonService implements OnModuleInit {
 		apLoggerService: ApLoggerService,
 	) {
 		this.logger = apLoggerService.logger;
+
+		this.uriPersonCache = this.cacheManagementService.createQuantumKVCache('uriPerson', {
+			lifetime: 1000 * 60 * 30, // 30m
+			fetcher: async (uri) => {
+				const { id } = await this.usersRepository
+					.createQueryBuilder('user')
+					.select('user.id')
+					.where({ uri })
+					.getOneOrFail() as { id: string };
+				return id;
+			},
+			bulkFetcher: async (uris) => {
+				const users = await this.usersRepository
+					.createQueryBuilder('user')
+					.select('user.id')
+					.addSelect('user.uri')
+					.where({ uri: In(uris) })
+					.getMany() as { id: string, uri: string }[];
+				return users.map(u => [u.uri, u.id]);
+			},
+		});
+
 		this.publicKeyByKeyIdCache = this.cacheManagementService.createQuantumKVCache<MiUserPublickey>('publicKeyByKeyId', {
 			lifetime: 1000 * 60 * 60 * 12, // 12h
 			fetcher: async (keyId) => await this.userPublickeysRepository.findOneBy({ keyId }),
 			bulkFetcher: async (keyIds) => await this.userPublickeysRepository.findBy({ keyId: In(keyIds) }).then(ks => ks.map(k => [k.keyId, k])),
 		});
+
 		this.publicKeyByUserIdCache = this.cacheManagementService.createQuantumKVCache<MiUserPublickey>('publicKeyByUserId', {
 			lifetime: 1000 * 60 * 60 * 12, // 12h
 			fetcher: async (userId) => await this.userPublickeysRepository.findOneBy({ userId }),
@@ -251,28 +277,38 @@ export class ApPersonService implements OnModuleInit {
 	 * Misskeyに対象のPersonが登録されていればそれを返し、登録がなければnullを返します。
 	 */
 	@bindThis
-	public async fetchPerson(uri: string): Promise<MiLocalUser | MiRemoteUser | null> {
-		const cached = this.cacheService.uriPersonCache.get(uri) as MiLocalUser | MiRemoteUser | null | undefined;
-		if (cached) return cached;
+	public async fetchPerson(uri: string, opts?: { withDeleted?: boolean, withSuspended?: boolean }): Promise<MiLocalUser | MiRemoteUser | null> {
+		const _opts = {
+			withDeleted: opts?.withDeleted ?? false,
+			withSuspended: opts?.withSuspended ?? true,
+		};
 
-		// URIがこのサーバーを指しているならデータベースからフェッチ
-		if (uri.startsWith(`${this.config.url}/`)) {
-			const id = uri.split('/').pop();
-			const u = await this.usersRepository.findOneBy({ id }) as MiLocalUser | null;
-			if (u) this.cacheService.uriPersonCache.set(uri, u);
-			return u;
+		let userId;
+
+		// Resolve URI -> User ID
+		const parsed = this.utilityService.parseUri(uri);
+		if (parsed.local) {
+			userId = parsed.type === 'users' ? parsed.id : null;
+		} else {
+			userId = await this.uriPersonCache.fetch(uri).catch(() => null);
 		}
 
-		//#region このサーバーに既に登録されていたらそれを返す
-		const exist = await this.usersRepository.findOneBy({ uri }) as MiLocalUser | MiRemoteUser | null;
-
-		if (exist) {
-			this.cacheService.uriPersonCache.set(uri, exist);
-			return exist;
+		// No match
+		if (!userId) {
+			return null;
 		}
-		//#endregion
 
-		return null;
+		const user = await this.cacheService.findUserById(userId)
+			.catch(() => null) as MiLocalUser | MiRemoteUser | null;
+
+		if (user?.isDeleted && !_opts.withDeleted) {
+			return null;
+		}
+		if (user?.isSuspended && !_opts.withSuspended) {
+			return null;
+		}
+
+		return user;
 	}
 
 	private async resolveAvatarAndBanner(user: MiRemoteUser, icon: any, image: any, bgimg: any): Promise<Partial<Pick<MiRemoteUser, 'avatarId' | 'bannerId' | 'backgroundId' | 'avatarUrl' | 'bannerUrl' | 'backgroundUrl' | 'avatarBlurhash' | 'bannerBlurhash' | 'backgroundBlurhash'>>> {
@@ -508,7 +544,7 @@ export class ApPersonService implements OnModuleInit {
 		if (user == null) throw new Error(`failed to create user - user is null: ${uri}`);
 
 		// Register to the cache
-		await this.cacheService.uriPersonCache.set(user.uri, user.id);
+		await this.uriPersonCache.set(user.uri, user.id);
 
 		// Register public key to the cache.
 		if (publicKey) {
@@ -541,7 +577,7 @@ export class ApPersonService implements OnModuleInit {
 			user = { ...user, ...updates };
 
 			// Register to the cache
-			await this.cacheService.uriPersonCache.set(user.uri, user.id);
+			await this.uriPersonCache.set(user.uri, user.id);
 		} catch (err) {
 			// Permanent error implies hidden or inaccessible, which is a normal thing.
 			if (isRetryableError(err)) {
@@ -809,7 +845,7 @@ export class ApPersonService implements OnModuleInit {
 		}
 
 		//#region このサーバーに既に登録されていたらそれを返す
-		const exist = await this.fetchPerson(uri);
+		const exist = await this.fetchPerson(uri, { withDeleted: true });
 		if (exist) return exist;
 		//#endregion
 

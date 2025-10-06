@@ -107,6 +107,7 @@ export class RemoteUserResolveService {
 				}, {
 					uri: self.href,
 				});
+				await this.apPersonService.uriPersonCache.delete(user.uri); // Unmap the old URI
 			}
 
 			this.logger.info(`Corrected URI for ${acctLower} from ${user.uri} to ${self.href}`);
