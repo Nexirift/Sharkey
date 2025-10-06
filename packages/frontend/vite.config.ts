@@ -2,19 +2,23 @@ import path from 'path';
 import pluginReplace from '@rollup/plugin-replace';
 import pluginVue from '@vitejs/plugin-vue';
 import { defineConfig } from 'vite';
-import type { UserConfig } from 'vite';
-
+import { pluginReplaceIcons } from 'frontend-shared/util/vite.replaceIcons.js';
 import locales from '../../locales/index.js';
 import { localesVersion } from '../../locales/version.js';
-import meta from '../../package.json';
+import meta from '../../package.json' with { type: 'json' };
 import packageInfo from './package.json' with { type: 'json' };
+import tsconfigVue from './tsconfig.vue.json' with { type: 'json' };
 import pluginUnwindCssModuleClassName from './lib/rollup-plugin-unwind-css-module-class-name.js';
 import pluginJson5 from './vite.json5.js';
 import pluginCreateSearchIndex from './lib/vite-plugin-create-search-index.js';
+import type { TsconfigRaw } from 'esbuild';
+import type { UserConfig } from 'vite';
 import type { Options as SearchIndexOptions } from './lib/vite-plugin-create-search-index.js';
-import { pluginReplaceIcons } from './vite.replaceIcons.js';
 
 const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json', '.json5', '.svg', '.sass', '.scss', '.css', '.vue', '.wasm'];
+
+// https://github.com/rollup/plugins/issues/1541#issuecomment-3114729017
+const fix = <T>(f: { default: T }): T => f as unknown as T;
 
 /**
  * 検索インデックスの生成設定
@@ -110,7 +114,7 @@ export function getConfig(): UserConfig {
 			...pluginReplaceIcons(),
 			...process.env.NODE_ENV === 'production'
 				? [
-					pluginReplace({
+					fix(pluginReplace)({
 						preventAssignment: true,
 						values: {
 							'isChromatic()': JSON.stringify(false),
@@ -143,6 +147,7 @@ export function getConfig(): UserConfig {
 			},
 			preprocessorOptions: {
 				scss: {
+					// @ts-expect-error This produces an error, but all example code has it
 					api: 'modern-compiler',
 				},
 			},
@@ -160,7 +165,13 @@ export function getConfig(): UserConfig {
 			_DATA_TRANSFER_DECK_COLUMN_: JSON.stringify('mk_deck_column'),
 			__VUE_OPTIONS_API__: true,
 			__VUE_PROD_DEVTOOLS__: false,
-			_RUFFLE_VERSION_: JSON.stringify(packageInfo.dependencies['@ruffle-rs/ruffle'])
+			_RUFFLE_VERSION_: JSON.stringify(packageInfo.dependencies['@ruffle-rs/ruffle']),
+		},
+
+		esbuild: {
+			// https://github.com/vitejs/vite/discussions/8483#discussioncomment-14485974
+			// https://esbuild.github.io/api/#tsconfig-raw
+			tsconfigRaw: tsconfigVue as TsconfigRaw,
 		},
 
 		build: {

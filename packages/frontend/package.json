@@ -11,8 +11,12 @@
 		"chromatic": "chromatic",
 		"test": "vitest --run --globals",
 		"test-and-coverage": "vitest --run --coverage --globals",
-		"typecheck": "vue-tsc --noEmit",
-		"eslint": "eslint --quiet \"{src,test,js,@types}/**/*.{js,jsx,ts,tsx,vue}\" --cache",
+		"typecheck-all": "pnpm run --no-bail typecheck:vue && pnpm run --no-bail typecheck:test && pnpm run --no-bail typecheck:scripts",
+		"typecheck": "pnpm run typecheck:vue && pnpm run typecheck:test && pnpm run typecheck:scripts",
+		"typecheck:vue": "vue-tsc -p tsconfig.vue.json --noEmit",
+		"typecheck:test": "vue-tsc -p test/tsconfig.json --noEmit",
+		"typecheck:scripts": "tsc -p tsconfig.scripts.json --noEmit",
+		"eslint": "eslint --quiet --cache -c eslint.config.js .",
 		"lint": "pnpm typecheck && pnpm eslint"
 	},
 	"dependencies": {
@@ -58,7 +62,6 @@
 		"textarea-caret": "3.1.0",
 		"throttle-debounce": "5.0.2",
 		"tinycolor2": "1.6.0",
-		"typescript": "5.9.2",
 		"uuid": "13.0.0",
 		"v-code-diff": "1.13.1",
 		"vue": "3.5.21",
@@ -69,6 +72,7 @@
 		"cypress": "15.3.0"
 	},
 	"devDependencies": {
+		"@misskey-dev/eslint-plugin": "2.1.0",
 		"@misskey-dev/summaly": "npm:@transfem-org/summaly@5.2.3",
 		"@rollup/plugin-json": "6.1.0",
 		"@rollup/plugin-replace": "6.0.2",
@@ -138,6 +142,7 @@
 		"three": "0.180.0",
 		"tsc-alias": "1.8.16",
 		"tsconfig-paths": "4.2.0",
+		"typescript": "5.9.2",
 		"vite": "7.1.7",
 		"vite-plugin-turbosnap": "1.0.3",
 		"vitest": "3.2.4",

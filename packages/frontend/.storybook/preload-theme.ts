@@ -30,7 +30,7 @@ const keys = [
 	'd-u0',
 	'rosepine',
 	'rosepine-dawn',
-]
+];
 
 await Promise.all(keys.map((key) => readFile(new URL(`../../frontend-shared/themes/${key}.json5`, import.meta.url), 'utf8'))).then((sources) => {
 	writeFile(

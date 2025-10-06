@@ -16,6 +16,9 @@ export default [
 	...pluginVue.configs['flat/recommended'],
 	{
 		files: ['{src,test,js,@types}/**/*.{ts,vue}'],
+		ignores: [
+			'*.*',
+		],
 		plugins: { sharkey: { rules: { locale: localeRule } } },
 		languageOptions: {
 			globals: {
@@ -43,7 +46,7 @@ export default [
 			parserOptions: {
 				extraFileExtensions: ['.vue'],
 				parser: tsParser,
-				project: ['./tsconfig.json'],
+				project: ['./tsconfig.vue.json'],
 				sourceType: 'module',
 				tsconfigRootDir: import.meta.dirname,
 			},
@@ -168,18 +171,77 @@ export default [
 		files: ['src/**/*.stories.ts'],
 		rules: {
 			'no-restricted-globals': 'off',
-		}
+		},
+	},
+	{
+		files: [
+			".storybook/changes.ts",
+			".storybook/generate.tsx",
+			".storybook/preload-locale.ts",
+			".storybook/preload-theme.ts"
+		],
+		languageOptions: {
+			parserOptions: {
+				parser: tsParser,
+				project: ['.storybook/tsconfig.gen.json'],
+				sourceType: 'module',
+				tsconfigRootDir: import.meta.dirname,
+			},
+		},
+	},
+	{
+		files: ['.storybook/**/*.ts', '.storybook/**/*.tsx', '.storybook/**/*.js', '.storybook/**/*.jsx'],
+		ignores: [
+			".storybook/changes.ts",
+			".storybook/generate.tsx",
+			".storybook/preload-locale.ts",
+			".storybook/preload-theme.ts"
+		],
+		languageOptions: {
+			parserOptions: {
+				parser: tsParser,
+				project: ['.storybook/tsconfig.vue.json'],
+				sourceType: 'module',
+				tsconfigRootDir: import.meta.dirname,
+			},
+		},
+	},
+	{
+		files: ['test/**/*.ts', 'test/**/*.js'],
+		languageOptions: {
+			parserOptions: {
+				parser: tsParser,
+				project: ['test/tsconfig.json'],
+				sourceType: 'module',
+				tsconfigRootDir: import.meta.dirname,
+			},
+		},
+	},
+	{
+		files: ['*.js', '*.ts', 'lib/**/*.ts', 'lib/**/*.js'],
+		languageOptions: {
+			parserOptions: {
+				parser: tsParser,
+				project: ['./tsconfig.scripts.json'],
+				sourceType: 'module',
+				tsconfigRootDir: import.meta.dirname,
+			},
+		},
+		rules: {
+			'import/no-default-export': 'off',
+		},
 	},
 	{
 		ignores: [
-			"**/lib/",
-			"**/temp/",
-			"**/built/",
-			"**/coverage/",
-			"**/node_modules/",
-			"**/libopenmpt/",
-			"**/storybook-static/",
-			"*.*",
-		]
+			'**/lib/',
+			'**/temp/',
+			'**/built/',
+			'**/coverage/',
+			'**/node_modules/',
+			'**/libopenmpt/',
+			'**/storybook-static/',
+			'vue-shims.d.ts',
+			'assets/'
+		],
 	},
 ];

@@ -1,0 +1,35 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": "../shared/tsconfig.web.json",
+	"compilerOptions": {
+		"paths": {
+			"@/*": ["./src/*"],
+			"@@/*": ["../frontend-shared/*"]
+		},
+		"typeRoots": [
+			"./@types",
+			"./node_modules/@types",
+			"./node_modules/@vue-macros",
+			"./node_modules"
+		],
+		"types": [
+			"vite/client",
+			"vitest/importMeta"
+		],
+		"jsx": "preserve"
+	},
+	"include": [
+		"./lib/**/*.ts",
+		"./src/**/*.ts",
+		"./src/**/*.vue",
+		"./test/**/*.ts",
+		"./test/**/*.vue",
+		"./@types/**/*.ts",
+		"./vue-shims.d.ts"
+	],
+	"exclude": [
+		"node_modules",
+		".storybook/**/*",
+		"*.*"
+	]
+}

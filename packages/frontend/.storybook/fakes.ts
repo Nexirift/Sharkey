@@ -4,7 +4,7 @@
  */
 
 import { AISCRIPT_VERSION } from '@syuilo/aiscript';
-import type { entities } from 'misskey-js'
+import type { entities } from 'misskey-js';
 import { date, imageDataUrl, text } from "./fake-utils.js";
 
 export function abuseUserReport() {
@@ -124,7 +124,7 @@ export function galleryPost(isSensitive = false) {
 		isSensitive,
 		likedCount: 0,
 		isLiked: false,
-	}
+	};
 }
 
 export function file(isSensitive = false) {
@@ -318,13 +318,13 @@ export function userDetailed(id = 'someuserid', username = 'miskist', host: enti
 export function inviteCode(isUsed = false, hasExpiration = false, isExpired = false, isCreatedBySystem = false) {
 	const date = new Date();
 	const createdAt = new Date();
-	createdAt.setDate(date.getDate() - 1)
+	createdAt.setDate(date.getDate() - 1);
 	const expiresAt = new Date();
 
 	if (isExpired) {
-		expiresAt.setHours(date.getHours() - 1)
+		expiresAt.setHours(date.getHours() - 1);
 	} else {
-		expiresAt.setHours(date.getHours() + 1)
+		expiresAt.setHours(date.getHours() + 1);
 	}
 
 	return {
@@ -336,7 +336,7 @@ export function inviteCode(isUsed = false, hasExpiration = false, isExpired = fa
 		usedBy: isUsed ? userDetailed('3i3r2znx1v') : null,
 		usedAt: isUsed ? date.toISOString() : null,
 		used: isUsed,
-	}
+	};
 }
 
 export function role(params: {
@@ -385,7 +385,7 @@ export function role(params: {
 			values: []
 		},
 		policies: {},
-	}
+	};
 }
 
 export function emoji(params?: {
@@ -401,7 +401,7 @@ export function emoji(params?: {
 	license?: string,
 	isSensitive?: boolean,
 	localOnly?: boolean,
-	roleIdsThatCanBeUsedThisEmojiAsReaction?: {id:string, name:string}[],
+	roleIdsThatCanBeUsedThisEmojiAsReaction?: { id: string, name: string }[],
 	updatedAt?: string,
 }, seed?: string): entities.EmojiDetailedAdmin {
 	const _seed = seed ?? (params?.id ?? "DEFAULT_SEED");
@@ -409,7 +409,7 @@ export function emoji(params?: {
 	const name = params?.name ?? text(8, _seed);
 	const updatedAt = params?.updatedAt ?? date({}, _seed).toISOString();
 
-	const image = imageDataUrl({}, _seed)
+	const image = imageDataUrl({}, _seed);
 
 	return {
 		id: id,
@@ -426,5 +426,5 @@ export function emoji(params?: {
 		localOnly: params?.localOnly ?? false,
 		roleIdsThatCanBeUsedThisEmojiAsReaction: params?.roleIdsThatCanBeUsedThisEmojiAsReaction ?? [],
 		updatedAt: updatedAt,
-	}
+	};
 }

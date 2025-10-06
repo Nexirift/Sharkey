@@ -4,17 +4,14 @@
 	"compilerOptions": {
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
-		"baseUrl": "./",
-		"paths": {
-			"@/*": ["../src/*"]
-		},
-		"typeRoots": [
-			"../node_modules/@types"
-		],
-		"types": ["node"]
+		"forceConsistentCasingInFileNames": true,
+		"jsx": "react",
+		"jsxFactory": "h"
 	},
-	"include": [
-		"./**/*.ts",
-		"../src/**/*.vue"
+	"files": [
+		"./changes.ts",
+		"./generate.tsx",
+		"./preload-locale.ts",
+		"./preload-theme.ts"
 	]
 }

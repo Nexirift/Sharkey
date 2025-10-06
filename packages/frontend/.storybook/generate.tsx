@@ -72,7 +72,7 @@ const generator = {
 				break;
 			}
 			default: {
-				// @ts-ignore
+				// @ts-expect-error ???
 				this[node.expression.type](node.expression, state);
 				break;
 			}
@@ -94,7 +94,7 @@ type SplitCamel<
 		: SplitCamel<XR, `${YC}${XH}`, YN>
 	: YN;
 
-// @ts-ignore
+// @ts-expect-error ???
 type SplitKebab<T extends string> = T extends `${infer XH}-${infer XR}`
 	? [XH, ...SplitKebab<XR>]
 	: [T];
@@ -110,7 +110,7 @@ type ToKebab<T extends readonly string[]> = T extends readonly [
 	? `${XH}${XR extends readonly string[] ? `-${ToKebab<XR>}` : ''}`
 	: '';
 
-// @ts-ignore
+// @ts-expect-error ???
 type ToPascal<T extends readonly string[]> = T extends readonly [
 	infer XH extends string,
 	...infer XR extends readonly string[]
@@ -474,5 +474,5 @@ function toStories(component: string): Promise<string> {
 	await Promise.all(components.map(async (component) => {
 		const stories = component.replace(/\.vue$/, '.stories.ts');
 		await writeFile(stories, await toStories(component));
-	}))
+	}));
 })();

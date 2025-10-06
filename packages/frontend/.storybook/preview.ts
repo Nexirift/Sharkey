@@ -99,13 +99,13 @@ const preview = {
 				const channel = addons.getChannel();
 				const resetIndexedDBPromise = globalThis.indexedDB?.databases
 					? indexedDB.databases().then((r) => {
-							for (var i = 0; i < r.length; i++) {
+							for (let i = 0; i < r.length; i++) {
 								indexedDB.deleteDatabase(r[i].name!);
 							}
 						}).catch(() => {})
 					: Promise.resolve();
 				const resetDefaultStorePromise = import('../src/store').then(({ store }) => {
-					// @ts-expect-error
+					// @ts-expect-error ???
 					store.init();
 				}).catch(() => {});
 				Promise.all([resetIndexedDBPromise, resetDefaultStorePromise]).then(() => {
