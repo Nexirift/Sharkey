@@ -1,40 +1,37 @@
-/// <reference path="./entities/account.ts" />
-/// <reference path="./entities/activity.ts" />
-/// <reference path="./entities/announcement.ts" />
-/// <reference path="./entities/application.ts" />
-/// <reference path="./entities/async_attachment.ts" />
-/// <reference path="./entities/attachment.ts" />
-/// <reference path="./entities/card.ts" />
-/// <reference path="./entities/context.ts" />
-/// <reference path="./entities/conversation.ts" />
-/// <reference path="./entities/emoji.ts" />
-/// <reference path="./entities/featured_tag.ts" />
-/// <reference path="./entities/field.ts" />
-/// <reference path="./entities/filter.ts" />
-/// <reference path="./entities/history.ts" />
-/// <reference path="./entities/identity_proof.ts" />
-/// <reference path="./entities/instance.ts" />
-/// <reference path="./entities/list.ts" />
-/// <reference path="./entities/marker.ts" />
-/// <reference path="./entities/mention.ts" />
-/// <reference path="./entities/notification.ts" />
-/// <reference path="./entities/poll.ts" />
-/// <reference path="./entities/poll_option.ts" />
-/// <reference path="./entities/preferences.ts" />
-/// <reference path="./entities/push_subscription.ts" />
-/// <reference path="./entities/reaction.ts" />
-/// <reference path="./entities/relationship.ts" />
-/// <reference path="./entities/report.ts" />
-/// <reference path="./entities/results.ts" />
-/// <reference path="./entities/role.ts" />
-/// <reference path="./entities/scheduled_status.ts" />
-/// <reference path="./entities/source.ts" />
-/// <reference path="./entities/stats.ts" />
-/// <reference path="./entities/status.ts" />
-/// <reference path="./entities/status_params.ts" />
-/// <reference path="./entities/status_source.ts" />
-/// <reference path="./entities/tag.ts" />
-/// <reference path="./entities/token.ts" />
-/// <reference path="./entities/urls.ts" />
-
-export default MastodonEntity
+export type * from './entities/account.js';
+export type * from './entities/activity.js';
+export type * from './entities/announcement.js';
+export type * from './entities/application.js';
+export type * from './entities/async_attachment.js';
+export type * from './entities/attachment.js';
+export type * from './entities/card.js';
+export type * from './entities/context.js';
+export type * from './entities/conversation.js';
+export type * from './entities/emoji.js';
+export type * from './entities/featured_tag.js';
+export type * from './entities/field.js';
+export type * from './entities/filter.js';
+export type * from './entities/history.js';
+export type * from './entities/identity_proof.js';
+export type * from './entities/instance.js';
+export type * from './entities/list.js';
+export type * from './entities/marker.js';
+export type * from './entities/mention.js';
+export type * from './entities/notification.js';
+export type * from './entities/poll.js';
+export type * from './entities/poll_option.js';
+export type * from './entities/preferences.js';
+export type * from './entities/push_subscription.js';
+export type * from './entities/reaction.js';
+export type * from './entities/relationship.js';
+export type * from './entities/report.js';
+export type * from './entities/results.js';
+export type * from './entities/role.js';
+export type * from './entities/scheduled_status.js';
+export type * from './entities/source.js';
+export type * from './entities/stats.js';
+export type * from './entities/status.js';
+export type * from './entities/status_params.js';
+export type * from './entities/tag.js';
+export type * from './entities/token.js';
+export type * from './entities/urls.js';

@@ -1,10 +1,8 @@
-/// <reference path="history.ts" />
+import type { History } from './history.js';
 
-namespace MastodonEntity {
-  export type Tag = {
-    name: string
-    url: string
-    history: Array<History>
-    following?: boolean
-  }
+export interface Tag {
+	name: string
+	url: string
+	history: Array<History>
+	following?: boolean
 }

@@ -1,11 +1,9 @@
-/// <reference path="account.ts" />
-/// <reference path="status.ts" />
+import type { Account } from './account.js';
+import type { Status } from './status.js';
 
-namespace Entity {
-  export type Conversation = {
-    id: string
-    accounts: Array<Account>
-    last_status: Status | null
-    unread: boolean
-  }
+export interface Conversation {
+	id: string
+	accounts: Array<Account>
+	last_status: Status | null
+	unread: boolean
 }

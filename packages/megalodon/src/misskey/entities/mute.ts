@@ -1,10 +1,8 @@
-/// <reference path="userDetail.ts" />
+import type { UserDetail } from './userDetail.js';
 
-namespace MisskeyEntity {
-  export type Mute = {
-    id: string
-    createdAt: string
-    muteeId: string
-    mutee: UserDetail
-  }
+export interface Mute {
+	id: string
+	createdAt: string
+	muteeId: string
+	mutee: UserDetail
 }

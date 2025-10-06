@@ -1,8 +1,6 @@
-namespace Entity {
-  export type Mention = {
-    id: string
-    username: string
-    url: string
-    acct: string
-  }
+export interface Mention {
+	id: string
+	username: string
+	url: string
+	acct: string
 }

@@ -3,7 +3,16 @@
 * https://jestjs.io/docs/en/configuration.html
 */
 
-module.exports = {
+// https://kulshekhar.github.io/ts-jest/docs/getting-started/presets#createdefaultesmpresetoptions
+import { createDefaultEsmPreset, type JestConfigWithTsJest } from 'ts-jest';
+
+const presetConfig = createDefaultEsmPreset({
+	tsconfig: '<rootDir>/tsconfig.json'
+});
+
+export default {
+	...presetConfig,
+
 	// All imported modules in your tests should be mocked automatically
 	// automock: false,
 
@@ -20,7 +29,7 @@ module.exports = {
 	// collectCoverage: false,
 
 	// An array of glob patterns indicating a set of files for which coverage information should be collected
-	// collectCoverageFrom: undefined,
+	collectCoverageFrom: ['src/**/*.ts'],
 
 	// The directory where Jest should output its coverage files
 	coverageDirectory: "coverage",
@@ -60,7 +69,8 @@ module.exports = {
 	// globalTeardown: undefined,
 
 	// A set of global variables that need to be available in all test environments
-	// globals: {},
+	// globals: {
+	// },
 
 	// The maximum amount of workers used to run your tests. Can be specified as % or a number. E.g. maxWorkers: 10% will use 10% of your CPU amount + 1 as the maximum worker number. maxWorkers: 2 will use a maximum of 2 workers.
 	// maxWorkers: "50%",
@@ -79,6 +89,10 @@ module.exports = {
 	//   "tsx",
 	//   "node"
 	// ],
+	moduleFileExtensions: [
+		"ts",
+		"js"
+	],
 
 	// A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
 	moduleNameMapper: {
@@ -103,7 +117,8 @@ module.exports = {
 	// notifyMode: "failure-change",
 
 	// A preset that is used as a base for Jest's configuration
-	// preset: undefined,
+	//preset: "ts-jest/presets/js-with-ts-esm",
+	// "preset": "ts-jest/presets/default",
 
 	// Run tests from one or more projects
 	// projects: undefined,
@@ -118,17 +133,17 @@ module.exports = {
 	// resetModules: false,
 
 	// A path to a custom resolver
-	// resolver: undefined,
+	// resolver: './jest-resolver.cjs',
 
 	// Automatically restore mock state between every test
-	// restoreMocks: false,
+	restoreMocks: true,
 
 	// The root directory that Jest should scan for tests and modules within
 	// rootDir: undefined,
 
 	// A list of paths to directories that Jest should use to search for files in
 	roots: [
-		"<rootDir>"
+		"<rootDir>/test"
 	],
 
 	// Allows you to use a custom runner instead of Jest's default test runner
@@ -157,9 +172,7 @@ module.exports = {
 
 	// The glob patterns Jest uses to detect test files
 	testMatch: [
-		"**/__tests__/**/*.[jt]s?(x)",
-		"**/?(*.)+(spec|test).[tj]s?(x)",
-		"<rootDir>/test/**/*"
+		"<rootDir>/test/**/*.spec.ts"
 	],
 
 	// An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
@@ -183,9 +196,14 @@ module.exports = {
 	// timers: "real",
 
 	// A map from regular expressions to paths to transformers
-	transform: {
-		"^.+\\.(t|j)sx?$": ["@swc/jest"],
-	},
+	// transform: {
+	// 	"^.+\\.(ts|tsx)$": [
+	// 		"ts-jest",
+	// 		{
+	// 			"tsconfig": "tsconfig.json"
+	// 		}
+	// 	]
+	// },
 
 	// An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
 	// transformIgnorePatterns: [
@@ -204,4 +222,17 @@ module.exports = {
 
 	// Whether to use watchman for file crawling
 	// watchman: true,
-};
+
+	// extensionsToTreatAsEsm: ['.ts'],
+
+	// testTimeout: 60000,
+
+	// // Let Jest kill the test worker whenever it grows too much
+	// // (It seems there's a known memory leak issue in Node.js' vm.Script used by Jest)
+	// // https://github.com/facebook/jest/issues/11956
+	// maxWorkers: 1, // Make it use worker (that can be killed and restarted)
+	// logHeapUsage: true, // To debug when out-of-memory happens on CI
+	// workerIdleMemoryLimit: '1GiB', // Limit the worker to 1GB (GitHub Workflows dies at 2GB)
+	//
+	// maxConcurrency: 32,
+} satisfies JestConfigWithTsJest;

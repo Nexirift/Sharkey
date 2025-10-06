@@ -1,15 +1,13 @@
-/// <reference path="user.ts" />
-/// <reference path="note.ts" />
+import type { User } from './user.js';
+import type { Note } from './note.js';
 
-namespace MisskeyEntity {
-  export type Reaction = {
-    id: string
-    createdAt: string
-    user: User
-    type: string
-  }
+export interface Reaction {
+	id: string
+	createdAt: string
+	user: User
+	type: string
+}
 
-	export type NoteReaction = Reaction & {
-		note: Note
-	}
+export interface NoteReaction extends Reaction {
+	note: Note
 }

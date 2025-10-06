@@ -1,6 +1,6 @@
-import Response from './response'
-import OAuth from './oauth'
-import Entity from './entity'
+import { type Response } from './response.js'
+import * as OAuth from './oauth.js'
+import * as Entity from './entity.js'
 
 export interface MegalodonInterface {
   /**

@@ -1,11 +1,12 @@
 import FormData from 'form-data'
 import fs from 'fs';
-import MisskeyAPI from './misskey/api_client'
-import { DEFAULT_UA } from './default'
-import OAuth from './oauth'
-import Response from './response'
-import { MegalodonInterface, NoImplementedError, ArgumentError, UnexpectedError } from './megalodon'
-import { UnknownNotificationTypeError } from './notification'
+import * as MisskeyAPI from './misskey/api_client.js'
+import { DEFAULT_UA } from './default.js'
+import * as OAuth from './oauth.js'
+import { type Response } from './response.js'
+import * as Entity from './entity.js'
+import { type MegalodonInterface, NoImplementedError, ArgumentError, UnexpectedError } from './megalodon.js'
+import { UnknownNotificationTypeError } from './notification.js'
 
 export default class Misskey implements MegalodonInterface {
   public client: MisskeyAPI.Interface
@@ -717,7 +718,7 @@ export default class Misskey implements MegalodonInterface {
 	/**
 	 * POST /api/users/reactions
 	 */
-	public async getReactions(userId: string, options?: { limit?: number; max_id?: string; min_id?: string }): Promise<Response<MisskeyEntity.NoteReaction[]>> {
+	public async getReactions(userId: string, options?: { limit?: number; max_id?: string; min_id?: string }): Promise<Response<MisskeyAPI.Entity.NoteReaction[]>> {
 		let params = {
 			userId,
 		};

@@ -1,8 +1,6 @@
-/// <reference path="status.ts" />
+import type { Status } from './status.js';
 
-namespace Entity {
-  export type Context = {
-    ancestors: Array<Status>
-    descendants: Array<Status>
-  }
+export interface Context {
+	ancestors: Array<Status>
+	descendants: Array<Status>
 }

@@ -1,12 +1,10 @@
-/// <reference path="account.ts" />
+import type { Account } from './account.js';
 
-namespace Entity {
-  export type Reaction = {
-    count: number
-    me: boolean
-    name: string
-    accounts?: Array<Account>
-		url?: string
-		static_url?: string
-  }
+export type Reaction = {
+	count: number
+	me: boolean
+	name: string
+	accounts?: Array<Account>
+	url?: string
+	static_url?: string
 }

@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import Entity from './entity'
+import * as Entity from './entity.js'
 
 /**
  * Parser

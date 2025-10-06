@@ -1,11 +1,9 @@
-/// <reference path="account.ts" />
-/// <reference path="status.ts" />
-/// <reference path="tag.ts" />
+import type { Account } from './account.js';
+import type { Status } from './status.js';
+import type { Tag } from './tag.js';
 
-namespace Entity {
-  export type Results = {
-    accounts: Array<Account>
-    statuses: Array<Status>
-    hashtags: Array<Tag>
-  }
+export interface Results {
+	accounts: Array<Account>
+	statuses: Array<Status>
+	hashtags: Array<Tag>
 }

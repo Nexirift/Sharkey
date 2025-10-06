@@ -1,5 +1,6 @@
-import { Parser } from '@/parser'
-import Entity from '@/entity'
+import { Parser } from '../../src/parser.js'
+import * as Entity from '../../src/entity.js'
+import { jest } from '@jest/globals';
 
 const account: Entity.Account = {
   id: '1',

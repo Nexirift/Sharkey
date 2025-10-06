@@ -1,8 +1,15 @@
-import MisskeyEntity from '@/misskey/entity'
-import MisskeyNotificationType from '@/misskey/notification'
-import Misskey from '@/misskey'
-import * as MegalodonNotificationType from '@/notification'
-import axios, { AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import * as MisskeyEntity from '../../src/misskey/entity.js'
+import * as MisskeyNotificationType from '../../src/misskey/notification.js'
+import * as Misskey from '../../src/misskey.js'
+import * as MegalodonNotificationType from '../../src/notification.js'
+import * as Entity from '../../src/entity.js'
+import axios, {
+	AxiosHeaders,
+	type AxiosResponse,
+	type InternalAxiosRequestConfig,
+	type CancelTokenSource
+} from 'axios'
+import { jest } from '@jest/globals';
 
 jest.mock('axios')
 
@@ -122,20 +129,19 @@ const groupInvited: MisskeyEntity.Notification = {
   type: MisskeyNotificationType.GroupInvited
 }
 
-;(axios.CancelToken.source as any).mockImplementation(() => {
+jest.spyOn(axios.CancelToken, 'source').mockImplementation(() => {
   return {
     token: {
       throwIfRequested: () => {},
-      promise: {
-        then: () => {},
-        catch: () => {}
-      }
-    }
-  }
-})
+      promise: new Promise<never>(() => {}),
+			reason: undefined,
+    },
+		cancel: () => {},
+  } satisfies CancelTokenSource;
+});
 
 describe('getNotifications', () => {
-  const client = new Misskey('http://localhost', 'sample token')
+  const client = new Misskey.default('http://localhost', 'sample token')
   const cases: Array<{ event: MisskeyEntity.Notification; expected: Entity.NotificationType; title: string }> = [
     {
       event: follow,
@@ -195,7 +201,7 @@ describe('getNotifications', () => {
         headers: {},
         config: config
       }
-      ;(axios.post as any).mockResolvedValue(mockResponse)
+			jest.spyOn(axios, 'post').mockResolvedValueOnce(mockResponse);
       const res = await client.getNotifications()
       expect(res.data[0].type).toEqual(c.expected)
     })
@@ -211,7 +217,7 @@ describe('getNotifications', () => {
       headers: {},
       config: config
     }
-    ;(axios.post as any).mockResolvedValue(mockResponse)
+		jest.spyOn(axios, 'post').mockResolvedValueOnce(mockResponse);
     const res = await client.getNotifications()
     expect(res.data).toEqual([])
   })

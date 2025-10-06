@@ -1,5 +1,3 @@
-namespace Entity {
-  export type Role = {
-    name: string
-  }
+export interface Role {
+	name: string
 }

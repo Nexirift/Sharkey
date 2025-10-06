@@ -1,11 +1,9 @@
-/// <reference path="userDetail.ts" />
+import type { UserDetail } from './userDetail.js';
 
-namespace MisskeyEntity {
-  export type Follower = {
-    id: string
-    createdAt: string
-    followeeId: string
-    followerId: string
-    follower: UserDetail
-  }
+export interface Follower {
+	id: string
+	createdAt: string
+	followeeId: string
+	followerId: string
+	follower: UserDetail
 }

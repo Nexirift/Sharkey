@@ -1,8 +1,6 @@
-namespace MastodonEntity {
-  export type Activity = {
-    week: string
-    statuses: string
-    logins: string
-    registrations: string
-  }
+export interface Activity {
+	week: string
+	statuses: string
+	logins: string
+	registrations: string
 }

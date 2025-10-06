@@ -1,10 +1,8 @@
-/// <reference path="note.ts" />
+import type { Note } from './note.js';
 
-namespace MisskeyEntity {
-  export type Favorite = {
-    id: string
-    createdAt: string
-    noteId: string
-    note: Note
-  }
+export interface Favorite {
+	id: string
+	createdAt: string
+	noteId: string
+	note: Note
 }

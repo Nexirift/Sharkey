@@ -1,10 +1,8 @@
-/// <reference path="userDetail.ts" />
+import type { UserDetail } from './userDetail.js';
 
-namespace MisskeyEntity {
-  export type Blocking = {
-    id: string
-    createdAt: string
-    blockeeId: string
-    blockee: UserDetail
-  }
+export interface Blocking {
+	id: string
+	createdAt: string
+	blockeeId: string
+	blockee: UserDetail
 }
