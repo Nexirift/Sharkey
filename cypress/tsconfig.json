@@ -1,10 +1,8 @@
 {
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": "../packages/shared/tsconfig.web.json",
 	"compilerOptions": {
-		"lib": ["dom", "ESNext"],
-		"target": "ESNext",
 		"types": ["cypress", "node"],
-		"incremental": true,
-		"skipLibCheck": true,
 	},
 	"include": ["./**/*.ts"]
 }
