@@ -63,7 +63,7 @@ function buildDts() {
 	return execa(
 		'tsc',
 		[
-			'--project', 'tsconfig.json',
+			'--project', 'tsconfig.web.json',
 			'--outDir', 'js-built',
 			'--declaration', 'true',
 			'--emitDeclarationOnly', 'true',

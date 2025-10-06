@@ -1,0 +1,31 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": "../shared/tsconfig.web.json",
+	"compilerOptions": {
+		"module": "nodenext",
+		"moduleResolution": "nodenext",
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+		"inlineSources": true,
+		"removeComments": false,
+		"outDir": "./js-built/",
+		"strictFunctionTypes": true,
+		"paths": {
+			"@/*": ["./*"],
+			"@@/*": ["./*"]
+		},
+		"typeRoots": [
+			"./@types",
+			"./node_modules/@types"
+		]
+	},
+	"include": [
+		"./@types/**/*.ts",
+		"./js/**/*"
+	],
+	"exclude": [
+		"node_modules",
+		"js-built"
+	]
+}
