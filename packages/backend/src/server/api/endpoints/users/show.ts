@@ -116,7 +116,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					return [];
 				}
 
-				const users = await this.cacheService.getUsers(ps.userIds);
+				const users = await this.cacheService.findUsersById(ps.userIds);
 
 				// リクエストされた通りに並べ替え
 				// 順番は保持されるけど数は減ってる可能性がある
