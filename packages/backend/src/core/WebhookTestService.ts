@@ -495,7 +495,6 @@ export class WebhookTestService {
 			uri: null,
 			movedTo: null,
 			movedToUri: null,
-			alsoKnownAs: [],
 			createdAt: this.timeService.date.toISOString(),
 			updatedAt: user.updatedAt?.toISOString() ?? null,
 			lastFetchedAt: user.lastFetchedAt?.toISOString() ?? null,

@@ -34,21 +34,21 @@ const themeColor = chalk.hex('#86b300');
 function greet(logger: Logger, bootLogger: Logger, envOption: EnvOption) {
 	if (!envOption.quiet) {
 		//#region Misskey logo
-		logger.info(themeColor(' _____ _                _              '));
-		logger.info(themeColor('/  ___| |              | |             '));
-		logger.info(themeColor('\\ `--.| |__   __ _ _ __| | _____ _   _ '));
-		logger.info(themeColor(' `--. \\ \'_ \\ / _` | \'__| |/ / _ \\ | | |'));
-		logger.info(themeColor('/\\__/ / | | | (_| | |  |   <  __/ |_| |'));
-		logger.info(themeColor('\\____/|_| |_|\\__,_|_|  |_|\\_\\___|\\__, |'));
-		logger.info(themeColor('                                  __/ |'));
-		logger.info(themeColor('                                 |___/ '));
+		coreLogger.info(themeColor(' _____ _                _              '));
+		coreLogger.info(themeColor('/  ___| |              | |             '));
+		coreLogger.info(themeColor('\\ `--.| |__   __ _ _ __| | _____ _   _ '));
+		coreLogger.info(themeColor(' `--. \\ \'_ \\ / _` | \'__| |/ / _ \\ | | |'));
+		coreLogger.info(themeColor('/\\__/ / | | | (_| | |  |   <  __/ |_| |'));
+		coreLogger.info(themeColor('\\____/|_| |_|\\__,_|_|  |_|\\_\\___|\\__, |'));
+		coreLogger.info(themeColor('                                  __/ |'));
+		coreLogger.info(themeColor('                                 |___/ '));
 		//#endregion
 
-		logger.info(' Sharkey is an open-source decentralized microblogging platform.');
-		logger.info(chalk.rgb(255, 136, 0)(' If you like Sharkey, please donate to support development. https://opencollective.com/sharkey'));
+		coreLogger.info(' Sharkey is an open-source decentralized microblogging platform.');
+		coreLogger.info(chalk.rgb(255, 136, 0)(' If you like Sharkey, please donate to support development. https://opencollective.com/sharkey'));
 
-		logger.info('');
-		logger.info(chalkTemplate`--- ${os.hostname()} {gray (PID: ${process.pid.toString()})} ---`);
+		coreLogger.info('');
+		coreLogger.info(chalkTemplate`--- ${os.hostname()} {gray (PID: ${process.pid.toString()})} ---`);
 	}
 
 	bootLogger.info('Welcome to Sharkey!');
