@@ -20,6 +20,7 @@ import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { bindThis } from '@/decorators.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
 import { CacheService } from '@/core/CacheService.js';
+import { TimeService } from '@/core/TimeService.js';
 import * as Acct from '@/misc/acct.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { InternalEventService } from '@/core/InternalEventService.js';
@@ -43,6 +44,7 @@ export class RemoteUserResolveService {
 		private apPersonService: ApPersonService,
 		private readonly cacheService: CacheService,
 		private readonly internalEventService: InternalEventService,
+		private readonly timeService: TimeService,
 	) {
 		this.logger = this.remoteLoggerService.logger.createSubLogger('resolve-user');
 		this.selfHost = this.utilityService.toPuny(this.config.host);
@@ -99,7 +101,7 @@ export class RemoteUserResolveService {
 	private async tryUpdateUser(user: MiRemoteUser, acctLower: string): Promise<MiRemoteUser> {
 		// Don't update unless the user is at least 24 hours outdated.
 		// ユーザー情報が古い場合は、WebFingerからやりなおして返す
-		if (user.lastFetchedAt != null && Date.now() - user.lastFetchedAt.getTime() <= 1000 * 60 * 60 * 24) {
+		if (user.lastFetchedAt != null && this.timeService.now - user.lastFetchedAt.getTime() <= 1000 * 60 * 60 * 24) {
 			return user;
 		}
 
@@ -116,7 +118,7 @@ export class RemoteUserResolveService {
 			// Always mark as updated so we don't get stuck here for missing remote users.
 			// 繋がらないインスタンスに何回も試行するのを防ぐ, 後続の同様処理の連続試行を防ぐ ため 試行前にも更新する
 			await this.usersRepository.update(user.id, {
-				lastFetchedAt: new Date(),
+				lastFetchedAt: this.timeService.now,
 			});
 		}
 
