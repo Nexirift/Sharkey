@@ -289,7 +289,7 @@ export class UserEntityService implements OnModuleInit {
 			this.cacheService.userBlockingCache.fetch(me),
 			this.cacheService.userMutingsCache.fetch(me),
 			this.cacheService.renoteMutingsCache.fetch(me),
-			this.cacheService.getUsers(targets)
+			this.cacheService.findUsersById(targets)
 				.then(users => {
 					const record: Record<string, string | null> = {};
 					for (const [id, user] of users) {

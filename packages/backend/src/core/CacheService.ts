@@ -584,6 +584,11 @@ export class CacheService implements OnApplicationShutdown {
 	}
 
 	@bindThis
+	public async findUsersById(userIds: Iterable<string>): Promise<Map<string, MiUser>> {
+		return new Map(await this.userByIdCache.fetchMany(userIds));
+	}
+
+	@bindThis
 	public async findOptionalUserById(userId: MiUser['id']): Promise<MiUser | undefined> {
 		return await this.userByIdCache.fetchMaybe(userId);
 	}
@@ -693,11 +698,6 @@ export class CacheService implements OnApplicationShutdown {
 
 			return stats;
 		});
-	}
-
-	@bindThis
-	public async getUsers(userIds: Iterable<string>): Promise<Map<string, MiUser>> {
-		return new Map(await this.userByIdCache.fetchMany(userIds));
 	}
 
 	@bindThis

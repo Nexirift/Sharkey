@@ -238,7 +238,7 @@ export class NotificationEntityService implements OnModuleInit {
 			if (notification.type === 'reaction:grouped') userIds.push(...notification.reactions.map(x => x.userId));
 			if (notification.type === 'renote:grouped') userIds.push(...notification.userIds);
 		}
-		const users = await this.cacheService.getUsers(userIds);
+		const users = await this.cacheService.findUsersById(userIds);
 		const packedUsersArray = await this.userEntityService.packMany(Array.from(users.values()), me);
 		const packedUsers = new Map(packedUsersArray.map(p => [p.id, p]));
 
@@ -343,7 +343,7 @@ export class NotificationEntityService implements OnModuleInit {
 		] = await Promise.all([
 			this.cacheService.userMutingsCache.fetch(meId),
 			this.cacheService.userMutingsCache.fetch(meId),
-			this.cacheService.getUsers(notifierIds),
+			this.cacheService.findUsersById(notifierIds),
 		]);
 
 		const filteredNotifications = ((await Promise.all(notifications.map(async (notification) => {

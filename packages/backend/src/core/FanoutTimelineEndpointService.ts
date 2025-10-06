@@ -276,7 +276,7 @@ export class FanoutTimelineEndpointService {
 
 		// Fetch everything and populate users
 		const [users, instances] = await Promise.all([
-			this.cacheService.getUsers(usersToFetch),
+			this.cacheService.findUsersById(usersToFetch),
 			this.federatedInstanceService.federatedInstanceCache.fetchMany(instancesToFetch).then(i => new Map(i)),
 		]);
 		for (const [id, user] of Array.from(users)) {
