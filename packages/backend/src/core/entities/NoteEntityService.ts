@@ -491,7 +491,7 @@ export class NoteEntityService implements OnModuleInit {
 
 	@bindThis
 	public async packAttachedFiles(fileIds: MiNote['fileIds'], packedFiles: Map<MiNote['fileIds'][number], Packed<'DriveFile'> | null>): Promise<Packed<'DriveFile'>[]> {
-		const missingIds = [];
+		const missingIds: string[] = [];
 		for (const id of fileIds) {
 			if (!packedFiles.has(id)) missingIds.push(id);
 		}

@@ -149,7 +149,7 @@ class TypeORMLogger implements Logger {
 	@bindThis
 	private transformParameters(parameters?: unknown[]): Data | undefined {
 		if (this.props.enableQueryParamLogging && parameters && parameters.length > 0) {
-			return parameters.reduce((params: Record<string, string>, p, i) => {
+			return parameters.reduce<Record<string, string>>((params: Record<string, string>, p, i) => {
 				params[`$${i + 1}`] = stringifyParameter(p);
 				return params;
 			}, {} as Record<string, string>);

@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { RegistrationTicketsRepository } from '@/models/_.js';
+import type { RegistrationTicketsRepository, MiRegistrationTicket } from '@/models/_.js';
 import { InviteCodeEntityService } from '@/core/entities/InviteCodeEntityService.js';
 import { IdService } from '@/core/IdService.js';
 import { DI } from '@/di-symbols.js';
@@ -65,7 +65,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				throw new ApiError(meta.errors.invalidDateTime);
 			}
 
-			const ticketsPromises = [];
+			const ticketsPromises: Promise<MiRegistrationTicket>[] = [];
 
 			for (let i = 0; i < ps.count; i++) {
 				ticketsPromises.push(this.registrationTicketsRepository.insertOne({

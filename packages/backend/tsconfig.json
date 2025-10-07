@@ -5,6 +5,6 @@
 	"references": [
 		{ "path":  "./tsconfig.scripts.json" },
 		{ "path":  "./tsconfig.backend.json" },
-		{ "path":  "./jsconfig.frontend.json" }
+		{ "path":  "./tsconfig.frontend.json" }
 	]
 }

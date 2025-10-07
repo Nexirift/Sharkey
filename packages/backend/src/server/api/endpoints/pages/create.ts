@@ -5,7 +5,7 @@
 
 import ms from 'ms';
 import { Inject, Injectable } from '@nestjs/common';
-import type { DriveFilesRepository, PagesRepository } from '@/models/_.js';
+import type { DriveFilesRepository, PagesRepository, MiDriveFile } from '@/models/_.js';
 import { IdService } from '@/core/IdService.js';
 import { MiPage, pageNameSchema } from '@/models/Page.js';
 import { Endpoint } from '@/server/api/endpoint-base.js';
@@ -83,7 +83,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private readonly timeService: TimeService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			let eyeCatchingImage = null;
+			let eyeCatchingImage: MiDriveFile | null = null;
 			if (ps.eyeCatchingImageId != null) {
 				eyeCatchingImage = await this.driveFilesRepository.findOneBy({
 					id: ps.eyeCatchingImageId,

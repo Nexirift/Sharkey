@@ -51,8 +51,8 @@ export class MetaEntityService {
 			.getMany();
 
 		// クライアントの手間を減らすためあらかじめJSONに変換しておく
-		let defaultLightTheme = null;
-		let defaultDarkTheme = null;
+		let defaultLightTheme: string | null = null;
+		let defaultDarkTheme: string | null = null;
 		if (instance.defaultLightTheme) {
 			try {
 				defaultLightTheme = JSON.stringify(JSON5.parse(instance.defaultLightTheme));

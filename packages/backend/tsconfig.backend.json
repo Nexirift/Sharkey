@@ -1,19 +1,24 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": "../shared/tsconfig.node.json",
+	"extends": "../shared/tsconfig.node.jsonc",
 	"compilerOptions": {
-		"removeComments": false,
-		"verbatimModuleSyntax": false,
+		// Input
 		"rootDir": "./src",
-		"outDir": "./built",
+
+		// Checking
+		"verbatimModuleSyntax": false,
+		"noImplicitOverride": false,
+		"noImplicitAny": false,
+		"strictFunctionTypes": false,
+		"strictPropertyInitialization": false,
+
 		"paths": {
 			"@/*": ["./src/*"]
 		},
-		"typeRoots": [
-			"./src/@types",
-			"./node_modules/@types",
-			"./node_modules"
-		],
+
+		// Output
+		"removeComments": false,
+		"outDir": "./built"
 	},
 	"include": [
 		"./src/**/*.ts"

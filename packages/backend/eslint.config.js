@@ -151,7 +151,7 @@ export default [
 			},
 			parserOptions: {
 				parser: tsParser,
-				project: ['./jsconfig.frontend.json'],
+				project: ['./tsconfig.frontend.json'],
 				sourceType: 'module',
 				tsconfigRootDir: import.meta.dirname,
 			},

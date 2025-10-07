@@ -397,7 +397,7 @@ export class ImportNotesProcessorService {
 		const visibility = followers ? toot.cc.includes('https://www.w3.org/ns/activitystreams#Public') ? 'home' : 'followers' : 'public';
 
 		const date = new Date(toot.object.published);
-		let text = undefined;
+		let text: string | undefined = undefined;
 		const files: MiDriveFile[] = [];
 		let reply: MiNote | null = null;
 
@@ -464,7 +464,7 @@ export class ImportNotesProcessorService {
 		}
 
 		const date = new Date(post.object.published);
-		let text = undefined;
+		let text: string | undefined = undefined;
 		const files: MiDriveFile[] = [];
 		let reply: MiNote | null = null;
 
@@ -547,7 +547,7 @@ export class ImportNotesProcessorService {
 		const files: MiDriveFile[] = [];
 
 		function decodeIGString(str: string) {
-			const arr = [];
+			const arr: number[] = [];
 			for (let i = 0; i < str.length; i++) {
 				arr.push(str.charCodeAt(i));
 			}
@@ -700,7 +700,7 @@ export class ImportNotesProcessorService {
 		const files: MiDriveFile[] = [];
 
 		function decodeFBString(str: string) {
-			const arr = [];
+			const arr: number[] = [];
 			for (let i = 0; i < str.length; i++) {
 				arr.push(str.charCodeAt(i));
 			}
@@ -708,7 +708,7 @@ export class ImportNotesProcessorService {
 		}
 
 		if (post.attachments && this.isIterable(post.attachments)) {
-			const media = [];
+			const media: any[] = [];
 			for await (const data of post.attachments[0].data) {
 				if (data.media) {
 					media.push(data.media);

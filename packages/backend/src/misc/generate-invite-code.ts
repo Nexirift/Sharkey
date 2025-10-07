@@ -12,7 +12,7 @@ export function generateInviteCode(now: number): string {
 		chars: CHARS,
 	});
 
-	const uniqueId = [];
+	const uniqueId: string[] = [];
 	let n = Math.floor(now / 1000 / 60);
 	while (true) {
 		uniqueId.push(CHARS[n % CHARS.length]);

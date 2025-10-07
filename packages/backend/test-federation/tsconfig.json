@@ -1,15 +1,19 @@
 {
-	"extends": "../../shared/tsconfig.node.json",
+	"extends": "../../shared/tsconfig.node.jsonc",
 	"compilerOptions": {
+		// Checking
 		"types": ["jest", "node"],
 		"verbatimModuleSyntax": false,
-		"outDir": "./built",
+		"noImplicitOverride": false,
+		"noImplicitAny": false,
+		"strictFunctionTypes": false,
+		"strictPropertyInitialization": false,
 		"paths": {
 			"@/*": ["../src/*"]
 		},
-		"typeRoots": [
-			"../node_modules/@types"
-		]
+
+		// Output
+		"outDir": "./built"
 	},
 	"include": [
 		"daemon.ts",

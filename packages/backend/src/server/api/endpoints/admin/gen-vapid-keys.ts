@@ -17,7 +17,11 @@ export const meta = {
 	kind: 'write:admin:meta',
 } as const;
 
-export const paramDef = {} as const;
+export const paramDef = {
+	type: 'object',
+	properties: {},
+	required: [],
+} as const;
 
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export

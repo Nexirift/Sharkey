@@ -232,7 +232,7 @@ export class NotificationEntityService implements OnModuleInit {
 
 		validNotifications = validNotifications.filter(x => !('noteId' in x) || packedNotes.has(x.noteId));
 
-		const userIds = [];
+		const userIds: string[] = [];
 		for (const notification of validNotifications) {
 			if ('notifierId' in notification) userIds.push(notification.notifierId);
 			if (notification.type === 'reaction:grouped') userIds.push(...notification.reactions.map(x => x.userId));

@@ -26,7 +26,7 @@
 		"typecheck": "pnpm --filter megalodon build && pnpm run typecheck:scripts && pnpm run typecheck:backend && pnpm run typecheck:frontend && pnpm run typecheck:test && pnpm run typecheck:test-federation && pnpm run typecheck:test-server",
 		"typecheck:scripts": "tsc -p tsconfig.scripts.json --noEmit",
 		"typecheck:backend": "tsc -p tsconfig.backend.json --noEmit",
-		"typecheck:frontend": "tsc -p jsconfig.frontend.json --noEmit",
+		"typecheck:frontend": "tsc -p tsconfig.frontend.json --noEmit",
 		"typecheck:test": "tsc -p test/tsconfig.json --noEmit",
 		"typecheck:test-federation": "tsc -p test-federation/tsconfig.json --noEmit",
 		"typecheck:test-server": "tsc -p test-server/tsconfig.json --noEmit",

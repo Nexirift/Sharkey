@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
+import { createReadStream } from 'node:fs';
+import { Readable } from 'node:stream';
 import { Injectable } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
 import { getErrorData, getErrorException, getErrorStatus, MastodonLogger } from '@/server/api/mastodon/MastodonLogger.js';
@@ -118,7 +120,10 @@ export class MastodonApiServerService {
 			}
 
 			const client = this.clientService.getClient(_request);
-			const data = await client.uploadMedia(multipartData);
+			const data = await client.uploadMedia({
+				...multipartData,
+				stream: Readable.toWeb(createReadStream(multipartData.filepath)),
+			});
 			const response = convertAttachment(data.data as Entity.Attachment);
 
 			return reply.send(response);
@@ -131,7 +136,10 @@ export class MastodonApiServerService {
 			}
 
 			const client = this.clientService.getClient(_request);
-			const data = await client.uploadMedia(multipartData, _request.body);
+			const data = await client.uploadMedia({
+				...multipartData,
+				stream: Readable.toWeb(createReadStream(multipartData.filepath)),
+			}, _request.body);
 			const response = convertAttachment(data.data as Entity.Attachment);
 
 			return reply.send(response);

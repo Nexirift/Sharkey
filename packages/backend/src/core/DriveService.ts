@@ -767,7 +767,7 @@ export class DriveService {
 
 	@bindThis
 	public async deleteFileSync(file: MiDriveFile, isExpired = false, deleter?: { id: string }) {
-		const promises = [];
+		const promises: Promise<void>[] = [];
 
 		if (file.storedInternal) {
 			promises.push(this.deleteLocalFile(file.accessKey!));

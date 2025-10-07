@@ -147,7 +147,7 @@ export class ReactionsBufferingService implements OnApplicationShutdown {
 	// TODO: scanは重い可能性があるので、別途 bufferedNoteIds を直接Redis上に持っておいてもいいかもしれない
 	@bindThis
 	public async bake(): Promise<void> {
-		const bufferedNoteIds = [];
+		const bufferedNoteIds: string[] = [];
 		let cursor = '0';
 		do {
 			// https://github.com/redis/ioredis#transparent-key-prefixing
