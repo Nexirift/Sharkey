@@ -1,10 +1,11 @@
 import pluginReplace from '@rollup/plugin-replace';
 import type { RollupReplaceOptions } from '@rollup/plugin-replace';
+import type { Plugin } from 'rollup';
 
 // https://github.com/rollup/plugins/issues/1541#issuecomment-3114729017
 const fix = <T>(f: { default: T }): T => f as unknown as T;
 
-function iconsReplace(opts: RollupReplaceOptions) {
+function iconsReplace(opts: RollupReplaceOptions): Plugin {
 	return fix(pluginReplace)({
 		...opts,
 		preventAssignment: false,
@@ -14,7 +15,7 @@ function iconsReplace(opts: RollupReplaceOptions) {
 	});
 }
 
-export function pluginReplaceIcons() {
+export function pluginReplaceIcons(): Plugin[] {
 	return [
 		iconsReplace({
 			values: {
