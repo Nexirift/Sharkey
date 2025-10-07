@@ -251,6 +251,7 @@ async function generateApiClientJSDoc(
 		operationId: string;
 		path: string;
 		description: string;
+		bodyRequired: boolean;
 	}[] = [];
 
 	// misskey-jsはPOST固定で送っているので、こちらも決め打ちする。別メソッドに対応することがあればこちらも直す必要あり
@@ -271,6 +272,7 @@ async function generateApiClientJSDoc(
 				operationId: operationId,
 				path: operation._path_,
 				description: operation.description,
+				bodyRequired: operation.requestBody != null && 'required' in operation.requestBody && !!operation.requestBody.required,
 			});
 		}
 	}
@@ -292,7 +294,7 @@ async function generateApiClientJSDoc(
 			'     */',
 			`    request<E extends '${endpoint.path}', P extends Endpoints[E][\'req\']>(`,
 			'      endpoint: E,',
-			'      params: P,',
+			`      params${endpoint.bodyRequired ? ':' : '?:' } P,`,
 			'      credential?: string | null,',
 			'    ): Promise<SwitchCaseResponseType<E, P>>;',
 		);
