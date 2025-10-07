@@ -13,6 +13,22 @@ export function convertSchemaToOpenApiSchema(schema: Schema, type: 'param' | 're
 	const { optional, nullable, ref, selfRef, ..._res }: any = schema;
 	const res = deepClone(_res);
 
+	// "required" must be an array of strings, or undefined.
+	if (res.required !== undefined) {
+		// Single-item must be wrapped in array
+		if (!Array.isArray(res.required)) {
+			res.required = [res.required];
+		}
+
+		// Array must contain only strings
+		res.required = res.required.filter((required: unknown) => typeof(required) === 'string');
+
+		// Can't be an empty array
+		if (res.required.length === 0) {
+			delete res.required;
+		}
+	}
+
 	if (schema.type === 'object' && schema.properties) {
 		if (type === 'res') {
 			const required = Object.entries(schema.properties).filter(([k, v]) => !v.optional).map(([k]) => k);
