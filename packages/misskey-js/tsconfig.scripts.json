@@ -1,15 +1,18 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": "../shared/tsconfig.node.json",
+	"extends": "../shared/tsconfig.scripts.jsonc",
 	"compilerOptions": {
-		"noImplicitAny": false
+		"rootDirs": [
+			"./scripts",
+			"."
+		]
 	},
 	"include": [
 		"*.ts",
 		"*.js",
-		"scripts/**/*"
-	],
-	"exclude": [
-		"node_modules"
+		"scripts/**/*.ts",
+		"scripts/**/*.js",
+		"scripts/**/*.mjs",
+		"scripts/**/*.cjs"
 	]
 }

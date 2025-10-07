@@ -6,8 +6,8 @@
 
 import type { AuthenticationResponseJSON } from '@simplewebauthn/types';
 import { EventEmitter } from 'eventemitter3';
-import { Options } from 'reconnecting-websocket';
-import type { PublicKeyCredentialRequestOptionsJSON as PublicKeyCredentialRequestOptionsJSON_2 } from '@simplewebauthn/types';
+import type { Options } from 'reconnecting-websocket';
+import type { PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/types';
 import _ReconnectingWebSocket from 'reconnecting-websocket';
 
 // Warning: (ae-forgotten-export) The symbol "components" needs to be exported by the entry point index.d.ts
@@ -24,7 +24,7 @@ export type Acct = {
 declare namespace acct {
     export {
         parse,
-        toString_2 as toString,
+        toString,
         Acct
     }
 }
@@ -156,19 +156,10 @@ type AdminCaptchaSaveRequest = operations['admin___captcha___save']['requestBody
 type AdminCwInstanceRequest = operations['admin___cw-instance']['requestBody']['content']['application/json'];
 
 // @public (undocumented)
-type AdminCwInstanceResponse = operations['admin___cw-instance']['responses']['200']['content']['application/json'];
-
-// @public (undocumented)
 type AdminCwNoteRequest = operations['admin___cw-note']['requestBody']['content']['application/json'];
 
 // @public (undocumented)
-type AdminCwNoteResponse = operations['admin___cw-note']['responses']['200']['content']['application/json'];
-
-// @public (undocumented)
 type AdminCwUserRequest = operations['admin___cw-user']['requestBody']['content']['application/json'];
-
-// @public (undocumented)
-type AdminCwUserResponse = operations['admin___cw-user']['responses']['200']['content']['application/json'];
 
 // @public (undocumented)
 type AdminDeclineUserRequest = operations['admin___decline-user']['requestBody']['content']['application/json'];
@@ -568,6 +559,12 @@ class APIClient {
     fetch: FetchLike;
     // (undocumented)
     origin: string;
+    // Warning: (ae-forgotten-export) The symbol "EndpointsWithOptionalParams" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    request<E extends keyof EndpointsWithOptionalParams>(endpoint: E, params?: Record<string, never>, credential?: string | null): Promise<SwitchCaseResponseType<E, EmptyRequest>>;
+    // (undocumented)
+    request<E extends keyof Endpoints, P extends Endpoints[E]['req']>(endpoint: E, params: P, credential?: string | null): Promise<SwitchCaseResponseType<E, P>>;
 }
 
 // @public (undocumented)
@@ -685,7 +682,7 @@ export type Channels = {
     main: {
         params: null;
         events: {
-            notification: (payload: Notification_2) => void;
+            notification: (payload: Notification) => void;
             mention: (payload: Note) => void;
             reply: (payload: Note) => void;
             renote: (payload: Note) => void;
@@ -699,7 +696,7 @@ export type Channels = {
                 file: DriveFile;
             }) => void;
             readAllNotifications: () => void;
-            unreadNotification: (payload: Notification_2) => void;
+            unreadNotification: (payload: Notification) => void;
             notificationFlushed: () => void;
             unreadAntenna: (payload: Antenna) => void;
             newChatMessage: (payload: ChatMessage) => void;
@@ -1564,11 +1561,8 @@ declare namespace entities {
         AdminCaptchaCurrentResponse,
         AdminCaptchaSaveRequest,
         AdminCwInstanceRequest,
-        AdminCwInstanceResponse,
         AdminCwNoteRequest,
-        AdminCwNoteResponse,
         AdminCwUserRequest,
-        AdminCwUserResponse,
         AdminDeclineUserRequest,
         AdminDeleteAccountRequest,
         AdminDeleteAllFilesOfAUserRequest,
@@ -1973,7 +1967,6 @@ declare namespace entities {
         IReadAnnouncementRequest,
         IRegenerateTokenRequest,
         IRegistryGetRequest,
-        IRegistryGetResponse,
         IRegistryGetAllRequest,
         IRegistryGetAllResponse,
         IRegistryGetDetailRequest,
@@ -2211,7 +2204,7 @@ declare namespace entities {
         Note,
         NoteReaction,
         NoteFavorite,
-        Notification_2 as Notification,
+        Notification,
         DriveFile,
         DriveFolder,
         Following,
@@ -2330,8 +2323,8 @@ type FetchExternalResourcesResponse = operations['fetch-external-resources']['re
 type FetchLike = (input: string, init?: {
     method?: string;
     body?: Blob | FormData | string;
-    credentials?: RequestCredentials;
-    cache?: RequestCache;
+    credentials?: 'include' | 'omit' | 'same-origin';
+    cache?: 'default' | 'force-cache' | 'no-cache' | 'no-store' | 'only-if-cached' | 'reload';
     headers: {
         [key in string]: string;
     };
@@ -2736,9 +2729,6 @@ type IRegistryGetDetailResponse = operations['i___registry___get-detail']['respo
 
 // @public (undocumented)
 type IRegistryGetRequest = operations['i___registry___get']['requestBody']['content']['application/json'];
-
-// @public (undocumented)
-type IRegistryGetResponse = operations['i___registry___get']['responses']['200']['content']['application/json'];
 
 // @public (undocumented)
 type IRegistryGetUnsecureRequest = operations['i___registry___get-unsecure']['requestBody']['content']['application/json'];
@@ -3366,7 +3356,7 @@ type NotesVersionsResponse = operations['notes___versions']['responses']['200'][
 export const noteVisibilities: readonly ["public", "home", "followers", "specified"];
 
 // @public (undocumented)
-type Notification_2 = components['schemas']['Notification'];
+type Notification = components['schemas']['Notification'];
 
 // @public (undocumented)
 type NotificationsCreateRequest = operations['notifications___create']['requestBody']['content']['application/json'];
@@ -3649,12 +3639,12 @@ type SigninFlowResponse = {
 } | {
     finished: false;
     next: 'passkey';
-    authRequest: PublicKeyCredentialRequestOptionsJSON_2;
+    authRequest: PublicKeyCredentialRequestOptionsJSON;
 };
 
 // @public (undocumented)
 type SigninWithPasskeyInitResponse = {
-    option: PublicKeyCredentialRequestOptionsJSON_2;
+    option: PublicKeyCredentialRequestOptionsJSON;
     context: string;
 };
 
@@ -3785,7 +3775,7 @@ type TestRequest = operations['test']['requestBody']['content']['application/jso
 type TestResponse = operations['test']['responses']['200']['content']['application/json'];
 
 // @public (undocumented)
-function toString_2(acct: Acct): string;
+function toString(acct: Acct): string;
 
 // @public (undocumented)
 type User = components['schemas']['User'];
@@ -3982,7 +3972,7 @@ type V2AdminEmojiListResponse = operations['v2___admin___emoji___list']['respons
 // Warnings were encountered during analysis:
 //
 // built/entities.d.ts:32:5 - (ae-forgotten-export) The symbol "ModerationLogPayloads" needs to be exported by the entry point index.d.ts
-// built/streaming.d.ts:39:9 - (ae-forgotten-export) The symbol "ReconnectingWebSocket" needs to be exported by the entry point index.d.ts
+// built/streaming.d.ts:40:9 - (ae-forgotten-export) The symbol "ReconnectingWebSocket" needs to be exported by the entry point index.d.ts
 // built/streaming.types.d.ts:219:13 - (ae-forgotten-export) The symbol "ReversiUpdateKey" needs to be exported by the entry point index.d.ts
 // built/streaming.types.d.ts:233:13 - (ae-forgotten-export) The symbol "ReversiUpdateSettings" needs to be exported by the entry point index.d.ts
 

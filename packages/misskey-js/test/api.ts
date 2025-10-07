@@ -1,9 +1,12 @@
-import fetchMock from 'jest-fetch-mock';
+import _fetchMock from 'jest-fetch-mock';
 import { APIClient, isAPIError } from '../src/api.js';
+import type { Endpoints } from '../src/index.js';
 
-fetchMock.enableMocks();
+_fetchMock.enableFetchMocks();
+const fetchMock = _fetchMock.default;
 
-function getFetchCall(call: any[]) {
+function getFetchCall(call: any[] | undefined) {
+	if (!call) return undefined;
 	const { body, method } = call[1];
 	const contentType = call[1].headers['Content-Type'];
 	if (
@@ -25,7 +28,7 @@ describe('API', () => {
 	test('success', async () => {
 		fetchMock.resetMocks();
 		fetchMock.mockResponse(async (req) => {
-			const body = await req.json();
+			const body = await req.json() as Record<string, unknown>;
 			if (req.method === 'POST' && req.url === 'https://misskey.test/api/i') {
 				if (body.i === 'TOKEN') {
 					return JSON.stringify({ id: 'foo' });
@@ -59,7 +62,7 @@ describe('API', () => {
 	test('with params', async () => {
 		fetchMock.resetMocks();
 		fetchMock.mockResponse(async (req) => {
-			const body = await req.json();
+			const body = await req.json() as Record<string, unknown>;
 			if (req.method === 'POST' && req.url === 'https://misskey.test/api/notes/show') {
 				if (body.i === 'TOKEN' && body.noteId === 'aaaaa') {
 					return JSON.stringify({ id: 'foo' });
@@ -161,7 +164,7 @@ describe('API', () => {
 	test('インスタンスの credential が指定されていても引数で credential が null ならば null としてリクエストされる', async () => {
 		fetchMock.resetMocks();
 		fetchMock.mockResponse(async (req) => {
-			const body = await req.json();
+			const body = await req.json() as Record<string, unknown>;
 			if (req.method === 'POST' && req.url === 'https://misskey.test/api/i') {
 				if (typeof body.i === 'string') {
 					return JSON.stringify({ id: 'foo' });
@@ -196,7 +199,7 @@ describe('API', () => {
 
 	test('api error', async () => {
 		fetchMock.resetMocks();
-		fetchMock.mockResponse(async (req) => {
+		fetchMock.mockResponse(async () => {
 			return {
 				status: 500,
 				body: JSON.stringify({
@@ -241,7 +244,7 @@ describe('API', () => {
 
 	test('json parse error', async () => {
 		fetchMock.resetMocks();
-		fetchMock.mockResponse(async (req) => {
+		fetchMock.mockResponse(async () => {
 			return {
 				status: 500,
 				body: '<html>I AM NOT JSON</html>',
@@ -274,7 +277,7 @@ describe('API', () => {
 			origin: 'https://misskey.test',
 			credential: 'TOKEN',
 		});
-		await cli.request('admin/roles/create', {
+		await cli.request<'admin/roles/create', Endpoints['admin/roles/create']['req']>('admin/roles/create', {
 			name: 'aaa',
 			asBadge: false,
 			canEditMembersByModerator: false,

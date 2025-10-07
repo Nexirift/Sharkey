@@ -5,6 +5,6 @@
 	"references": [
 		{ "path":  "./tsconfig.generator.json" },
 		{ "path":  "./tsconfig.autogen.json" },
-		{ "path":  "./jsconfig.scripts.json" }
+		{ "path":  "./tsconfig.scripts.json" }
 	]
 }

@@ -10,7 +10,7 @@
 		"typecheck": "pnpm run typecheck:generator && pnpm run typecheck:autogen && pnpm run typecheck:scripts",
 		"typecheck:generator": "tsc -p tsconfig.generator.json --noEmit",
 		"typecheck:autogen": "tsc -p tsconfig.autogen.json --noEmit",
-		"typecheck:scripts": "tsc -p jsconfig.scripts.json --noEmit",
+		"typecheck:scripts": "tsc -p tsconfig.scripts.json --noEmit",
 		"lint": "pnpm typecheck && pnpm eslint"
 	},
 	"devDependencies": {

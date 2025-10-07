@@ -13595,14 +13595,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK (with results) */
-            200: {
+            /** @description OK (without any results) */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    'application/json': unknown;
-                };
+                content?: never;
             };
             /** @description Client error */
             400: {
@@ -13668,14 +13666,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK (with results) */
-            200: {
+            /** @description OK (without any results) */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    'application/json': unknown;
-                };
+                content?: never;
             };
             /** @description Client error */
             400: {
@@ -13741,14 +13737,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK (with results) */
-            200: {
+            /** @description OK (without any results) */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    'application/json': unknown;
-                };
+                content?: never;
             };
             /** @description Client error */
             400: {
@@ -14242,7 +14236,7 @@ export interface operations {
                     /** Format: misskey:id */
                     fileId?: string;
                     url?: string;
-                } | unknown | unknown;
+                };
             };
         };
         responses: {
@@ -15275,7 +15269,7 @@ export interface operations {
                     isSensitive?: boolean;
                     localOnly?: boolean;
                     roleIdsThatCanBeUsedThisEmojiAsReaction?: string[];
-                } | unknown | unknown;
+                };
             };
         };
         responses: {
@@ -27957,7 +27951,7 @@ export interface operations {
                     /** Format: misskey:id */
                     fileId?: string;
                     url?: string;
-                } | unknown | unknown;
+                };
             };
         };
         responses: {
@@ -36226,14 +36220,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK (with results) */
-            200: {
+            /** @description OK (without any results) */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    'application/json': unknown;
-                };
+                content?: never;
             };
             /** @description Client error */
             400: {
@@ -36958,7 +36950,7 @@ export interface operations {
                     /** Format: misskey:id */
                     tokenId?: string;
                     token?: string | null;
-                } | unknown | unknown;
+                };
             };
         };
         responses: {
@@ -37257,145 +37249,25 @@ export interface operations {
                     chatScope?: 'everyone' | 'followers' | 'following' | 'mutual' | 'none';
                     /** Format: misskey:id */
                     pinnedPageId?: string | null;
-                    mutedWords?: (string[] | string)[];
-                    hardMutedWords?: (string[] | string)[];
+                    mutedWords?: unknown[];
+                    hardMutedWords?: unknown[];
                     mutedInstances?: string[];
                     notificationRecieveConfig?: {
-                        note?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        follow?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        mention?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        reply?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        renote?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        quote?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        reaction?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        pollEnded?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        receiveFollowRequest?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        followRequestAccepted?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        roleAssigned?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        chatRoomInvitationReceived?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        achievementEarned?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        app?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
-                        test?: {
-                            /** @enum {string} */
-                            type: 'all' | 'following' | 'follower' | 'mutualFollow' | 'followingOrFollower' | 'never';
-                        } | {
-                            /** @enum {string} */
-                            type: 'list';
-                            /** Format: misskey:id */
-                            userListId: string;
-                        };
+                        note?: Record<string, never>;
+                        follow?: Record<string, never>;
+                        mention?: Record<string, never>;
+                        reply?: Record<string, never>;
+                        renote?: Record<string, never>;
+                        quote?: Record<string, never>;
+                        reaction?: Record<string, never>;
+                        pollEnded?: Record<string, never>;
+                        receiveFollowRequest?: Record<string, never>;
+                        followRequestAccepted?: Record<string, never>;
+                        roleAssigned?: Record<string, never>;
+                        chatRoomInvitationReceived?: Record<string, never>;
+                        achievementEarned?: Record<string, never>;
+                        app?: Record<string, never>;
+                        test?: Record<string, never>;
                     };
                     emailNotificationTypes?: string[];
                     alsoKnownAs?: string[];
@@ -41160,7 +41032,7 @@ export interface operations {
                     scheduleNote: {
                         scheduledAt?: number;
                     };
-                } | unknown | unknown | unknown | unknown | unknown;
+                };
             };
         };
         responses: {
@@ -41545,7 +41417,7 @@ export interface operations {
                     tag?: string;
                     /** @description The outer arrays are chained with OR, the inner arrays are chained with AND. */
                     query?: string[][];
-                } | unknown | unknown;
+                };
             };
         };
         responses: {
@@ -43110,7 +42982,7 @@ export interface operations {
                     pageId?: string;
                     name?: string;
                     username?: string;
-                } | unknown | unknown;
+                };
             };
         };
         responses: {
@@ -46301,7 +46173,7 @@ export interface operations {
                     username?: string;
                     /** @description The local host is represented with `null`. */
                     host?: string | null;
-                } | unknown | unknown;
+                };
             };
         };
         responses: {
@@ -46392,7 +46264,7 @@ export interface operations {
                     /** @description The local host is represented with `null`. */
                     host?: string | null;
                     birthday?: string | null;
-                } | unknown | unknown;
+                };
             };
         };
         responses: {
@@ -48002,7 +47874,7 @@ export interface operations {
         requestBody: {
             content: {
                 'application/json': {
-                    userId: string | string[];
+                    userId: unknown;
                 };
             };
         };
@@ -48285,7 +48157,7 @@ export interface operations {
                     detail?: boolean;
                     username?: string | null;
                     host?: string | null;
-                } | unknown | unknown;
+                };
             };
         };
         responses: {
@@ -48372,7 +48244,7 @@ export interface operations {
                     host?: string | null;
                     /** @default true */
                     detail?: boolean;
-                } | unknown | unknown | unknown;
+                };
             };
         };
         responses: {

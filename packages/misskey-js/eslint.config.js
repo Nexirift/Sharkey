@@ -8,11 +8,10 @@ export default [
 	{
 		ignores: [
 			'generator',
-			'**/lib/',
-			'**/temp/',
-			'**/built/',
-			'**/coverage/',
-			'**/node_modules/',
+			'temp',
+			'built',
+			'coverage',
+			'node_modules',
 		],
 	},
 	{
@@ -20,7 +19,7 @@ export default [
 		languageOptions: {
 			parserOptions: {
 				parser: tsParser,
-				project: ['./tsconfig.lib.json'],
+				project: ['src/tsconfig.json'],
 				sourceType: 'module',
 				tsconfigRootDir: import.meta.dirname,
 			},
@@ -31,7 +30,7 @@ export default [
 		languageOptions: {
 			parserOptions: {
 				parser: tsParser,
-				projectService: ['./tsconfig.test.json'],
+				projectService: ['test/tsconfig.json'],
 				sourceType: 'module',
 				tsconfigRootDir: import.meta.dirname,
 			},
@@ -42,18 +41,18 @@ export default [
 		languageOptions: {
 			parserOptions: {
 				parser: tsParser,
-				projectService: ['./tsconfig.test-d.json'],
+				projectService: ['test-d/tsconfig.json'],
 				sourceType: 'module',
 				tsconfigRootDir: import.meta.dirname,
 			},
 		},
 	},
 	{
-		files: ['*.ts', '*.js', 'scripts/**/*'],
+		files: ['*.ts', '*.js', 'scripts/**/*.ts', 'scripts/**/*.js', 'scripts/**/*.mjs', 'scripts/**/*.cjs'],
 		languageOptions: {
 			parserOptions: {
 				parser: tsParser,
-				project: ['./tsconfig.scripts.json'],
+				project: ['tsconfig.scripts.json'],
 				sourceType: 'module',
 				tsconfigRootDir: import.meta.dirname,
 			},

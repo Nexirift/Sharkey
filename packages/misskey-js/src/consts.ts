@@ -9,7 +9,6 @@ import type {
 	Role,
 	ReversiGameDetailed,
 	SystemWebhook,
-	UserLite,
 	ChatRoom,
 } from './autogen/models.js';
 

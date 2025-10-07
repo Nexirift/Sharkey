@@ -39,11 +39,8 @@ import type {
 	AdminCaptchaCurrentResponse,
 	AdminCaptchaSaveRequest,
 	AdminCwInstanceRequest,
-	AdminCwInstanceResponse,
 	AdminCwNoteRequest,
-	AdminCwNoteResponse,
 	AdminCwUserRequest,
-	AdminCwUserResponse,
 	AdminDeclineUserRequest,
 	AdminDeleteAccountRequest,
 	AdminDeleteAllFilesOfAUserRequest,
@@ -448,7 +445,6 @@ import type {
 	IReadAnnouncementRequest,
 	IRegenerateTokenRequest,
 	IRegistryGetRequest,
-	IRegistryGetResponse,
 	IRegistryGetAllRequest,
 	IRegistryGetAllResponse,
 	IRegistryGetDetailRequest,
@@ -700,9 +696,9 @@ export type Endpoints = {
 	'admin/avatar-decorations/update': { req: AdminAvatarDecorationsUpdateRequest; res: EmptyResponse };
 	'admin/captcha/current': { req: EmptyRequest; res: AdminCaptchaCurrentResponse };
 	'admin/captcha/save': { req: AdminCaptchaSaveRequest; res: EmptyResponse };
-	'admin/cw-instance': { req: AdminCwInstanceRequest; res: AdminCwInstanceResponse };
-	'admin/cw-note': { req: AdminCwNoteRequest; res: AdminCwNoteResponse };
-	'admin/cw-user': { req: AdminCwUserRequest; res: AdminCwUserResponse };
+	'admin/cw-instance': { req: AdminCwInstanceRequest; res: EmptyResponse };
+	'admin/cw-note': { req: AdminCwNoteRequest; res: EmptyResponse };
+	'admin/cw-user': { req: AdminCwUserRequest; res: EmptyResponse };
 	'admin/decline-user': { req: AdminDeclineUserRequest; res: EmptyResponse };
 	'admin/delete-account': { req: AdminDeleteAccountRequest; res: EmptyResponse };
 	'admin/delete-all-files-of-a-user': { req: AdminDeleteAllFilesOfAUserRequest; res: EmptyResponse };
@@ -977,7 +973,7 @@ export type Endpoints = {
 	'i/pin': { req: IPinRequest; res: IPinResponse };
 	'i/read-announcement': { req: IReadAnnouncementRequest; res: EmptyResponse };
 	'i/regenerate-token': { req: IRegenerateTokenRequest; res: EmptyResponse };
-	'i/registry/get': { req: IRegistryGetRequest; res: IRegistryGetResponse };
+	'i/registry/get': { req: IRegistryGetRequest; res: EmptyResponse };
 	'i/registry/get-all': { req: IRegistryGetAllRequest; res: IRegistryGetAllResponse };
 	'i/registry/get-detail': { req: IRegistryGetDetailRequest; res: IRegistryGetDetailResponse };
 	'i/registry/get-unsecure': { req: IRegistryGetUnsecureRequest; res: EmptyResponse };
