@@ -1,25 +1,23 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"extends": "../shared/tsconfig.scripts.jsonc",
-	"compilerOptions": {
-		"typeRoots": [
-			"./node_modules/@types",
-			"./node_modules"
-		],
-		"types": [
-			"vite/client",
-			"vitest/importMeta",
-		]
-	},
 	"include": [
 		"*.js",
 		"*.ts",
 		"lib/**/*.ts",
-		"lib/**/*.js"
+		"lib/**/*.js",
+		"scripts/**/*.ts",
+		"scripts/**/*.js",
+		"scripts/**/*.mjs",
+		"scripts/**/*.cjs"
 	],
 	"exclude": [
 		"node_modules",
-		".storybook/**/*",
-		"vue-shims.d.ts"
+		".storybook",
+		"vue-shims.d.ts",
+		"src",
+		"test",
+		"@types",
+		"assets"
 	]
 }

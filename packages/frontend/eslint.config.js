@@ -217,11 +217,32 @@ export default [
 		},
 	},
 	{
-		files: ['*.js', '*.ts', 'lib/**/*.ts', 'lib/**/*.js'],
+		files: [
+			'*.js',
+			'*.ts',
+			'lib/**/*.ts',
+			'lib/**/*.js',
+			'scripts/**/*.ts',
+			'scripts/**/*.js',
+			'scripts/**/*.mjs',
+			'scripts/**/*.cjs',
+		],
+		ignores: [
+			'node_modules',
+			'.storybook',
+			'vue-shims.d.ts',
+			'src',
+			'test',
+			'@types',
+			'assets',
+		],
+		globals: {
+			...globals.node,
+		},
 		languageOptions: {
 			parserOptions: {
 				parser: tsParser,
-				project: ['./tsconfig.scripts.json'],
+				project: ['tsconfig.scripts.json'],
 				sourceType: 'module',
 				tsconfigRootDir: import.meta.dirname,
 			},
