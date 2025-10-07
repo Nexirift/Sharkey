@@ -8,7 +8,7 @@ import { addons } from '@storybook/preview-api';
 import { setup } from '@storybook/vue3';
 import isChromatic from 'chromatic/isChromatic';
 import { initialize, mswLoader } from 'msw-storybook-addon';
-import userDetailed from './fakes.js';
+import { userDetailed } from './fakes.js';
 import locale from './locale.js';
 import { commonHandlers, onUnhandledRequest } from './mocks.js';
 import themes from './themes.js';

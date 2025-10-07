@@ -286,7 +286,7 @@ export function userLite(id = 'someuserid', username = 'miskist', host: entities
 	};
 }
 
-function userDetailed(id = 'someuserid', username = 'miskist', host: entities.UserDetailed['host'] = 'misskey-hub.net', name: entities.UserDetailed['name'] = 'Misskey User'): entities.UserDetailed {
+export function userDetailed(id = 'someuserid', username = 'miskist', host: entities.UserDetailed['host'] = 'misskey-hub.net', name: entities.UserDetailed['name'] = 'Misskey User'): entities.UserDetailed {
 	return {
 		...userLite(id, username, host, name),
 		bannerBlurhash: 'eQA^IW^-MH8w9tE8I=S^o{$*R4RikXtSxutRozjEnNR.RQadoyozog',
