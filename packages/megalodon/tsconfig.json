@@ -1,23 +1,10 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": "../shared/tsconfig.node.json",
-	"compilerOptions": {
-		"types": ["node", "jest"],
-		"declaration": true,
-		"declarationMap": true,
-		"sourceMap": true,
-		"inlineSources": true,
-		"removeComments": false,
-		"outDir": "./lib",
-		"rootDir": "./",
-	},
-	"include": [
-		"./src",
-		"./test",
-		"./jest.config.ts"
-	],
-	"exclude": [
-		"node_modules",
-		"./lib"
+	"files": [],
+	// WebStorm only reads one tsconfig per directory, so this tricks it into loading both.
+	"references": [
+		{ "path":  "src/lib/tsconfig.json" },
+		{ "path":  "src/test/tsconfig.json" },
+		{ "path":  "./tsconfig.scripts.json" }
 	]
 }

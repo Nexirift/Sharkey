@@ -1,8 +1,8 @@
-import * as MisskeyEntity from '../../src/misskey/entity.js'
-import * as MisskeyNotificationType from '../../src/misskey/notification.js'
-import * as Misskey from '../../src/misskey.js'
-import * as MegalodonNotificationType from '../../src/notification.js'
-import * as Entity from '../../src/entity.js'
+import * as MisskeyEntity from '../../lib/misskey/entity.js'
+import * as MisskeyNotificationType from '../../lib/misskey/notification.js'
+import * as Misskey from '../../lib/misskey.js'
+import * as MegalodonNotificationType from '../../lib/notification.js'
+import * as Entity from '../../lib/entity.js'
 import axios, {
 	AxiosHeaders,
 	type AxiosResponse,

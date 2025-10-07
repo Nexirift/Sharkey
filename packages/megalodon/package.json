@@ -4,11 +4,14 @@
 	"version": "7.0.1",
 	"private": true,
 	"description": "Mastodon API client for node.js and browser",
-	"main": "./lib/src/index.js",
-	"typings": "./lib/src/index.d.ts",
+	"main": "./built/lib/index.js",
+	"typings": "./built/lib/index.d.ts",
 	"scripts": {
-		"build": "tsc -p tsconfig.json",
-		"typecheck": "tsc -p tsconfig.json --noEmit",
+		"build": "tsc -p src/lib/tsconfig.json",
+		"typecheck-all": "pnpm run --no-bail typecheck:lib && pnpm run --no-bail typecheck:test",
+		"typecheck": "pnpm run typecheck:lib && pnpm run typecheck:test",
+		"typecheck:lib": "tsc -p src/lib/tsconfig.json --noEmit",
+		"typecheck:test": "tsc -p src/test/tsconfig.json --noEmit",
 		"lint": "pnpm run typecheck",
 		"jest": "cross-env NODE_ENV=test node --no-experimental-require-module --experimental-vm-modules --experimental-import-meta-resolve node_modules/jest/bin/jest.js --coverage --detectOpenHandles",
 		"test": "pnpm run jest"

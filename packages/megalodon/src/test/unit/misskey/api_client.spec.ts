@@ -1,8 +1,8 @@
-import * as MisskeyAPI from '../../../src/misskey/api_client.js'
-import * as MegalodonEntity from '../../../src/entity.js'
-import * as MisskeyEntity from '../../../src/misskey/entity.js'
-import * as MegalodonNotificationType from '../../../src/notification.js'
-import * as MisskeyNotificationType from '../../../src/misskey/notification.js'
+import * as MisskeyAPI from '../../../lib/misskey/api_client.js'
+import * as MegalodonEntity from '../../../lib/entity.js'
+import * as MisskeyEntity from '../../../lib/misskey/entity.js'
+import * as MegalodonNotificationType from '../../../lib/notification.js'
+import * as MisskeyNotificationType from '../../../lib/misskey/notification.js'
 
 const user: MisskeyEntity.User = {
   id: '1',

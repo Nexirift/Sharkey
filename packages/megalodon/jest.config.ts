@@ -7,7 +7,7 @@
 import { createDefaultEsmPreset, type JestConfigWithTsJest } from 'ts-jest';
 
 const presetConfig = createDefaultEsmPreset({
-	tsconfig: '<rootDir>/tsconfig.json'
+	tsconfig: '<rootDir>/src/test/tsconfig.json'
 });
 
 export default {
@@ -29,7 +29,7 @@ export default {
 	// collectCoverage: false,
 
 	// An array of glob patterns indicating a set of files for which coverage information should be collected
-	collectCoverageFrom: ['src/**/*.ts'],
+	collectCoverageFrom: ['src/lib/**/*.ts'],
 
 	// The directory where Jest should output its coverage files
 	coverageDirectory: "coverage",
@@ -143,7 +143,7 @@ export default {
 
 	// A list of paths to directories that Jest should use to search for files in
 	roots: [
-		"<rootDir>/test"
+		"<rootDir>/src/test"
 	],
 
 	// Allows you to use a custom runner instead of Jest's default test runner
@@ -172,7 +172,7 @@ export default {
 
 	// The glob patterns Jest uses to detect test files
 	testMatch: [
-		"<rootDir>/test/**/*.spec.ts"
+		"<rootDir>/src/test/**/*.spec.ts"
 	],
 
 	// An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
