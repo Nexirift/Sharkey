@@ -48,8 +48,14 @@ export function convertSchemaToOpenApiSchema(schema: Schema, type: 'param' | 're
 	}
 
 	for (const o of ['anyOf', 'oneOf', 'allOf'] as const) {
-		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-		if (o in schema) res[o] = schema[o]!.map(schema => convertSchemaToOpenApiSchema(schema, type, includeSelfRef));
+		if (type === 'param') {
+			// params cannot contain oneOf/allOf/anyOf/etc.
+			// https://stackoverflow.com/a/29708580
+			delete res[o];
+		} else {
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+			if (o in schema) res[o] = schema[o]!.map(schema => convertSchemaToOpenApiSchema(schema, type, includeSelfRef));
+		}
 	}
 
 	if (type === 'res' && schema.ref && (!schema.selfRef || includeSelfRef)) {
