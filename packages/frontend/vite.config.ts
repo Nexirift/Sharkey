@@ -7,11 +7,9 @@ import locales from '../../locales/index.js';
 import { localesVersion } from '../../locales/version.js';
 import meta from '../../package.json' with { type: 'json' };
 import packageInfo from './package.json' with { type: 'json' };
-import tsconfigVue from './tsconfig.vue.json' with { type: 'json' };
 import pluginUnwindCssModuleClassName from './lib/rollup-plugin-unwind-css-module-class-name.js';
 import pluginJson5 from './vite.json5.js';
 import pluginCreateSearchIndex from './lib/vite-plugin-create-search-index.js';
-import type { TsconfigRaw } from 'esbuild';
 import type { UserConfig } from 'vite';
 import type { Options as SearchIndexOptions } from './lib/vite-plugin-create-search-index.js';
 
@@ -166,12 +164,6 @@ export function getConfig(): UserConfig {
 			__VUE_OPTIONS_API__: true,
 			__VUE_PROD_DEVTOOLS__: false,
 			_RUFFLE_VERSION_: JSON.stringify(packageInfo.dependencies['@ruffle-rs/ruffle']),
-		},
-
-		esbuild: {
-			// https://github.com/vitejs/vite/discussions/8483#discussioncomment-14485974
-			// https://esbuild.github.io/api/#tsconfig-raw
-			tsconfigRaw: tsconfigVue as TsconfigRaw,
 		},
 
 		build: {

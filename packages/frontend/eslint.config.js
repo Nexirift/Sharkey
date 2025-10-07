@@ -170,6 +170,7 @@ export default [
 				autofix: true,
 			}],
 			'vue/attribute-hyphenation': ['error', 'never'],
+			'import/no-default-export': 'off',
 		},
 	},
 	{
