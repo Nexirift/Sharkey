@@ -1,8 +1,19 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": "../shared/tsconfig.web.json",
+	"extends": "../shared/tsconfig.web.jsonc",
 	"compilerOptions": {
-		"outDir": "./built/",
+		// Output
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+		"inlineSources": true,
+		"removeComments": false,
+		"noEmitOnError": false,
+		"noEmit": false,
+		"composite": true,
+		"outDir": "built",
+		"rootDir": "src",
+		"tsBuildInfoFile": "built/tsconfig.game.json"
 	},
 	"include": [
 		"./src/**/*.ts"
