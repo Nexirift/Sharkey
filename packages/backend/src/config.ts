@@ -144,7 +144,6 @@ type Source = {
 			disableQueryTruncation?: boolean,
 			enableQueryParamLogging?: boolean,
 		};
-		verbose?: boolean;
 	}
 
 	activityLogging?: {
@@ -290,7 +289,6 @@ export type Config = {
 			disableQueryTruncation?: boolean,
 			enableQueryParamLogging?: boolean,
 		};
-		verbose?: boolean;
 	}
 
 	version: string;
@@ -671,7 +669,6 @@ function applyEnvOverrides(config: Source) {
 	_apply_top(['import', ['downloadTimeout', 'maxFileSize']]);
 	_apply_top([['signToActivityPubGet', 'checkActivityPubGetSignature', 'setupPassword', 'disallowExternalApRedirect']]);
 	_apply_top(['logging', 'sql', ['disableQueryTruncation', 'enableQueryParamLogging']]);
-	_apply_top(['logging', ['verbose']]);
 	_apply_top(['activityLogging', ['enabled', 'preSave', 'maxAge']]);
 	_apply_top(['customHtml', ['head']]);
 }
