@@ -180,7 +180,7 @@ const $TimeService: Provider[] = [
 ];
 const $EnvService: Provider[] = [EnvService, { provide: 'EnvService', useExisting: EnvService }];
 const $LoggerService: Provider[] = [LoggerService, { provide: 'LoggerService', useExisting: LoggerService }];
-const $Console: Provider[] = [{ provide: DI.console, useValue: global.console }];
+const $Console: Provider[] = [{ provide: DI.console, useFactory: () => global.console }]; // useValue will break overrideProvider for some reason
 const $DependencyService: Provider[] = [DependencyService, { provide: 'DependencyService', useExisting: DependencyService }];
 
 @Global()
