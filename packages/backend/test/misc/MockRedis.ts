@@ -6,6 +6,7 @@
 import { Injectable } from '@nestjs/common';
 import { FakeRedis, ok, type RedisString } from './FakeRedis.js';
 import type { RedisKey, RedisNumber, RedisValue, RedisCallback, Ok } from './FakeRedis.js';
+import type { ChainableCommander } from 'ioredis';
 import { TimeService, NativeTimeService } from '@/global/TimeService.js';
 import { bindThis } from '@/decorators.js';
 
@@ -49,6 +50,48 @@ export interface MockEntry {
 	expiration: number | null;
 }
 
+/** TODO implement the other commands */
+class MockTransactionImpl extends FakeRedis {
+	private readonly commands: [keyof MockRedis, ...unknown[]][];
+
+	get length() {
+		return this.commands.length;
+	}
+
+	constructor(
+		private readonly mockRedis: MockRedis,
+		commands: unknown[][] = [],
+	) {
+		super();
+		this.commands = commands.map(([command, ...args]) => ([
+			String(command).toLowerCase() as keyof MockRedis,
+			...args,
+		]));
+	}
+
+	@bindThis
+	public async exec(callback?: RedisCallback<[error: Error | null, result: unknown][] | null>): Promise<[error: Error | null, result: unknown][] | null> {
+		const results: [error: Error | null, result: unknown][] = [];
+
+		for (const [command, ...args] of this.commands) {
+			try {
+				const res = await (this.mockRedis[command] as (...args: unknown[]) => Promise<unknown>)(...args);
+				results.push([null, res]);
+			} catch (err) {
+				const error = err instanceof Error ? err : new Error('Unknown error', { cause: err });
+				results.push([error, undefined]);
+			}
+		}
+
+		callback?.(null, results);
+		return results;
+	}
+}
+
+const MockTransaction = MockTransactionImpl as unknown as {
+	new (mockRedis: unknown, commands?: unknown[][]): ChainableCommander;
+};
+
 /**
  * Mock implementation of Redis that works in-memory and exposes functions to manipulate the values.
  * Throws on any unsupported operation, and never actually connects.
@@ -56,9 +99,6 @@ export interface MockEntry {
 export const MockRedis: MockRedisConstructor = createMockRedis();
 
 function createMockRedis(): MockRedisConstructor {
-	/**
-	 * TODO implement pipeline: MULTI/EXEC
-	 */
 	@Injectable()
 	class MockRedis extends FakeRedis implements MockRedis {
 		private readonly timeService: TimeService;
@@ -193,8 +233,32 @@ function createMockRedis(): MockRedisConstructor {
 		}
 
 		@bindThis
+		public pipeline(commands?: unknown[][]): ChainableCommander {
+			return this.multi(commands);
+		}
+
+		public multi(options: { pipeline: false }): Promise<Ok>;
+		public multi(options: { pipeline: true }): ChainableCommander;
+		public multi(commands?: unknown[][]): ChainableCommander;
+		@bindThis
+		public multi(commandsOrOptions?: unknown[][] | { pipeline: boolean }): Promise<Ok> | ChainableCommander {
+			if (Array.isArray(commandsOrOptions)) {
+				return new MockTransaction(this, commandsOrOptions);
+			} else if (commandsOrOptions == null || commandsOrOptions.pipeline) {
+				return new MockTransaction(this);
+			} else {
+				return Promise.resolve(ok);
+			}
+		}
+
+		@bindThis
 		public async get(key: RedisKey, callback?: RedisCallback<string | null>): Promise<string | null> {
-			const value = this.mockGet(key);
+			let value = this.mockGet(key);
+
+			// Emulate implicit casts
+			if (typeof(value) === 'number') {
+				value = String(value);
+			}
 
 			if (value != null && typeof(value) !== 'string') {
 				const err = new Error('get failed: cannot GET a non-string value');
@@ -208,10 +272,15 @@ function createMockRedis(): MockRedisConstructor {
 
 		@bindThis
 		public async getBuffer(key: RedisKey, callback?: RedisCallback<Buffer | null>): Promise<Buffer | null> {
-			const value = this.mockGet(key);
+			let value = this.mockGet(key);
+
+			// Emulate implicit casts
+			if (typeof(value) === 'number') {
+				value = String(value);
+			}
 
 			if (value != null && !Buffer.isBuffer(value)) {
-				const err = new Error('getBuffer failed: cannot GET a non-string value');
+				const err = new Error('getBuffer failed: cannot GET a non-buffer value');
 				callback?.(err);
 				throw err;
 			}
@@ -222,7 +291,12 @@ function createMockRedis(): MockRedisConstructor {
 
 		@bindThis
 		public async getDel(key: RedisKey, callback?: RedisCallback<string | null>): Promise<string | null> {
-			const value = this.mockGet(key);
+			let value = this.mockGet(key);
+
+			// Emulate implicit casts
+			if (typeof(value) === 'number') {
+				value = String(value);
+			}
 
 			if (value != null && typeof(value) !== 'string') {
 				const err = new Error('getDel failed: cannot GETDEL a non-string value');
@@ -285,12 +359,16 @@ function createMockRedis(): MockRedisConstructor {
 		}
 
 		@bindThis
-		public async del(...args: (RedisKey | RedisKey[] | RedisCallback<number>)[]): Promise<number> {
+		public async del(...args: (RedisKey | RedisKey[] | RedisCallback<number> | undefined)[]): Promise<number> {
 			const callback = args.find(a => typeof(a) === 'function');
 			const keys = args.filter(a => typeof(a) !== 'function').flat();
 
 			let total = 0;
 			for (const key of keys) {
+				if (key == null) {
+					continue;
+				}
+
 				const entry = this.mockGet(key);
 				if (entry) {
 					total++;
@@ -353,6 +431,64 @@ function createMockRedis(): MockRedisConstructor {
 
 			callback?.(null, value);
 			return value;
+		}
+
+		expire(key: RedisKey, seconds: RedisNumber, callback?: RedisCallback<number>): Promise<number>;
+		expire(key: RedisKey, seconds: RedisNumber, flag: 'NX', callback?: RedisCallback<number>): Promise<number>;
+		expire(key: RedisKey, seconds: RedisNumber, flag: 'XX', callback?: RedisCallback<number>): Promise<number>;
+		expire(key: RedisKey, seconds: RedisNumber, flag: 'GT', callback?: RedisCallback<number>): Promise<number>;
+		expire(key: RedisKey, seconds: RedisNumber, flag: 'LT', callback?: RedisCallback<number>): Promise<number>;
+		@bindThis
+		public async expire(key: RedisKey, seconds: RedisNumber, callbackOrFlag?: RedisCallback<number> | 'NX' | 'XX' | 'GT' | 'LT', orCallback?: RedisCallback<number>): Promise<number> {
+			const flag = typeof(callbackOrFlag) === 'string' ? callbackOrFlag : null;
+			const callback = typeof(callbackOrFlag) === 'function' ? callbackOrFlag : orCallback;
+
+			const expiresSec = parseNumber(seconds);
+			if (expiresSec == null) {
+				const err = new Error('expire failed: cannot parse seconds as integer');
+				callback?.(err);
+				throw err;
+			}
+
+			// Non-positive expires should execute DEL instead.
+			// https://redis.io/docs/latest/commands/expire
+			if (expiresSec < 1) {
+				return await this.del(key, callback);
+			}
+
+			const entry = this.mockGetEntry(key);
+			if (!entry) {
+				callback?.(null, 0);
+				return 0;
+			}
+
+			if (flag === 'NX' && entry.expiration != null) {
+				callback?.(null, 0);
+				return 0;
+			}
+
+			if (flag === 'XX' && entry.expiration == null) {
+				callback?.(null, 0);
+				return 0;
+			}
+
+			const expiresAt = this.timeService.now + (expiresSec * 1000);
+			if (entry.expiration != null) {
+				if (flag === 'GT' && expiresAt <= entry.expiration) {
+					callback?.(null, 0);
+					return 0;
+				}
+
+				if (flag === 'LT' && expiresAt >= entry.expiration) {
+					callback?.(null, 0);
+					return 0;
+				}
+			}
+
+			// Success! update it
+			entry.expiration = expiresAt;
+			callback?.(null, 1);
+			return 1;
 		}
 
 		@bindThis
