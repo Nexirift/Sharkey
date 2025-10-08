@@ -4,6 +4,8 @@
  */
 
 import { GodOfTimeService } from '../../../misc/GodOfTimeService.js';
+import { MockEnvService } from '../../../misc/MockEnvService.js';
+import { MockInternalEventService } from '../../../misc/MockInternalEventService.js';
 import type Redis from 'ioredis';
 import type { MiUser } from '@/models/User.js';
 import type { RolePolicies, RoleService } from '@/core/RoleService.js';
@@ -11,18 +13,19 @@ import type { Config } from '@/config.js';
 import { SkRateLimiterService } from '@/server/SkRateLimiterService.js';
 import { BucketRateLimit, Keyed, LegacyRateLimit } from '@/misc/rate-limit-utils.js';
 import { CacheManagementService } from '@/core/CacheManagementService.js';
-import { InternalEventService } from '@/core/InternalEventService.js';
 
 describe(SkRateLimiterService, () => {
+	let cacheManagementService: CacheManagementService;
+	let mockInternalEventService: MockInternalEventService;
 	let mockTimeService: GodOfTimeService;
 	let mockRedis: Array<(command: [string, ...unknown[]]) => [Error | null, unknown] | null>;
 	let mockRedisExec: (batch: [string, ...unknown[]][]) => Promise<[Error | null, unknown][] | null>;
-	let mockEnvironment: Record<string, string | undefined>;
+	let mockEnvService: MockEnvService;
 	let serviceUnderTest: () => SkRateLimiterService;
 	let mockDefaultUserPolicies: Partial<RolePolicies>;
 	let mockUserPolicies: Record<string, Partial<RolePolicies>>;
 
-	beforeEach(() => {
+	beforeAll(() => {
 		mockTimeService = new GodOfTimeService();
 
 		function callMockRedis(command: [string, ...unknown[]]) {
@@ -65,11 +68,12 @@ describe(SkRateLimiterService, () => {
 			off() {},
 		} as unknown as Redis.Redis;
 
-		mockEnvironment = Object.create(process.env);
-		mockEnvironment.NODE_ENV = 'production';
-		const mockEnvService = {
-			env: mockEnvironment,
-		};
+		const fakeConfig = { host: 'example.com' } as unknown as Config;
+		mockInternalEventService = new MockInternalEventService(fakeConfig);
+		cacheManagementService = new CacheManagementService(mockRedisClient, mockTimeService, mockInternalEventService);
+
+		mockEnvService = new MockEnvService(cacheManagementService);
+		mockEnvService.env.NODE_ENV = 'production';
 
 		mockDefaultUserPolicies = { rateLimitFactor: 1 };
 		mockUserPolicies = {};
@@ -80,14 +84,25 @@ describe(SkRateLimiterService, () => {
 			},
 		} as unknown as RoleService;
 
-		const fakeConfig = { host: 'example.com' } as unknown as Config;
-		const internalEventService = new InternalEventService(mockRedisClient, mockRedisClient, fakeConfig);
-		const cacheManagementService = new CacheManagementService(mockRedisClient, mockTimeService, internalEventService);
-
 		let service: SkRateLimiterService | undefined = undefined;
 		serviceUnderTest = () => {
 			return service ??= new SkRateLimiterService(mockRedisClient, mockRoleService, mockTimeService, mockEnvService, cacheManagementService);
 		};
+	});
+
+	afterAll(() => {
+		cacheManagementService.dispose();
+		mockInternalEventService.dispose();
+	});
+
+	beforeEach(() => {
+		mockTimeService.reset();
+	});
+
+	afterEach(() => {
+		cacheManagementService.clear();
+		mockInternalEventService.mockReset();
+		mockEnvService.mockReset();
 	});
 
 	describe('limit', () => {
@@ -173,7 +188,7 @@ describe(SkRateLimiterService, () => {
 		});
 
 		it('should bypass in test environment', async () => {
-			mockEnvironment.NODE_ENV = 'test';
+			mockEnvService.env.NODE_ENV = 'test';
 
 			const info = await serviceUnderTest().limit({ key: 'l', type: undefined, max: 0 }, actor);
 
