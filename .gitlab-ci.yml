@@ -128,10 +128,7 @@ backend_tests:
     - name: redis
       pull_policy: if-not-present
   script:
-    - pnpm run --filter misskey-js build
-    - pnpm run --filter misskey-bubble-game build
-    - pnpm run --filter misskey-reversi build
-    - pnpm run --filter megalodon build
+    - pnpm run --filter backend build:pre
     - pnpm run --filter backend build
     - pnpm run --filter backend migrate
     - pnpm run --filter backend test
@@ -152,11 +149,7 @@ backend_tests:
 frontend_tests:
   <<: *test_common
   script:
-    - pnpm run --filter misskey-js build
-    - pnpm run --filter misskey-bubble-game build
-    - pnpm run --filter misskey-reversi build
-    - pnpm run --filter sw build
-    - pnpm run --filter frontend-shared build
+    - pnpm run --filter frontend build:pre
     - pnpm run --filter frontend build
     - pnpm run --filter frontend test
   # Same as common, but MRs are only run if they modify the frontend.

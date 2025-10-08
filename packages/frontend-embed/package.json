@@ -5,7 +5,7 @@
 	"scripts": {
 		"watch": "node scripts/build.mjs --watch",
 		"build": "node scripts/build.mjs",
-		"build:pre": "pnpm run --filter misskey-js build && pnpm run --filter sw build && pnpm run --filter frontend_shared build",
+		"build:pre": "pnpm run -w build-pre && pnpm run --filter misskey-js build && pnpm run --filter sw build && pnpm run --filter frontend_shared build",
 		"typecheck-all": "pnpm run --no-bail typecheck:vue && pnpm run --no-bail typecheck:scripts",
 		"typecheck": "pnpm run typecheck:vue && pnpm run typecheck:scripts",
 		"typecheck:vue": "vue-tsc -p tsconfig.vue.json --noEmit",

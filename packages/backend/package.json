@@ -16,7 +16,7 @@
 		"revert": "pnpm typeorm migration:revert -d ormconfig.js",
 		"check:connect": "node ./scripts/check_connect.js",
 		"build": "swc src -d built -D --strip-leading-paths",
-		"build:pre": "pnpm run --filter megalodon build && pnpm run --filter misskey-js build && pnpm run --filter misskey-reversi build && pnpm run --filter misskey-bubble-game build && pnpm run -w build-assets",
+		"build:pre": "pnpm run -w build-pre && pnpm run --filter megalodon build && pnpm run --filter misskey-js build && pnpm run --filter misskey-reversi build && pnpm run --filter misskey-bubble-game build && pnpm run -w build-assets",
 		"build:test": "swc test-server -d built-test -D --config-file test-server/.swcrc --strip-leading-paths",
 		"build:tsc": "tsc -p tsconfig.backend.json && tsc-alias -p tsconfig.backend.json",
 		"watch": "pnpm run build:pre && node ./scripts/watch.mjs",
