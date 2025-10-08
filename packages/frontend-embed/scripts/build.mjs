@@ -19,7 +19,7 @@ await nodeFs.rename(tsConfig, tsConfigBak);
 await nodeFs.copyFile(tsConfigVue, tsConfig);
 
 try {
-	console.log('Starting vite...')
+	console.log('Starting vite...');
 	await execa(
 		'vite',
 		mode === 'build'
