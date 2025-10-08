@@ -15,15 +15,8 @@ export default [
 	},
 	...pluginVue.configs['flat/recommended'],
 	{
-		files: ['{src,test,js,@types}/**/*.{ts,vue}', '.storybook/**/*.ts', '.storybook/**/*.tsx', '.storybook/**/*.js', '.storybook/**/*.jsx'],
-		ignores: [
-			'*.*',
-			'.storybook/changes.ts',
-			'.storybook/main.ts',
-			'.storybook/generate.tsx',
-			'.storybook/preload-locale.ts',
-			'.storybook/preload-theme.ts',
-		],
+		files: ['{src,test,js,@types}/**/*.{ts,vue}'],
+		ignores: ['*.*'],
 		plugins: { sharkey: { rules: { locale: localeRule } } },
 		languageOptions: {
 			globals: {
@@ -184,6 +177,27 @@ export default [
 		rules: {
 			'import/no-default-export': 'off',
 			'no-restricted-globals': 'off',
+		},
+	},
+	{
+		files: ['.storybook/**/*.ts', '.storybook/**/*.tsx', '.storybook/**/*.js', '.storybook/**/*.jsx'],
+		ignores: [
+			'.storybook/changes.ts',
+			'.storybook/main.ts',
+			'.storybook/generate.tsx',
+			'.storybook/preload-locale.ts',
+			'.storybook/preload-theme.ts',
+		],
+		languageOptions: {
+			parserOptions: {
+				parser: tsParser,
+				project: ['tsconfig.vue.storybook.json'],
+				sourceType: 'module',
+				tsconfigRootDir: import.meta.dirname,
+			},
+		},
+		rules: {
+			'import/no-default-export': 'off',
 		},
 	},
 	{
