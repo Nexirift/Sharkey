@@ -103,6 +103,8 @@ import type {
 	AdminResetPasswordRequest,
 	AdminResetPasswordResponse,
 	AdminResolveAbuseUserReportRequest,
+	AdminRolesAnnotateConditionRequest,
+	AdminRolesAnnotateConditionResponse,
 	AdminRolesAssignRequest,
 	AdminRolesCloneRequest,
 	AdminRolesCloneResponse,
@@ -460,6 +462,7 @@ import type {
 	IRegistryScopesWithDomainResponse,
 	IRegistrySetRequest,
 	IRevokeTokenRequest,
+	ISharedAccessListRequest,
 	ISharedAccessListResponse,
 	ISharedAccessLoginRequest,
 	ISharedAccessLoginResponse,
@@ -751,6 +754,7 @@ export type Endpoints = {
 	'admin/relays/remove': { req: AdminRelaysRemoveRequest; res: EmptyResponse };
 	'admin/reset-password': { req: AdminResetPasswordRequest; res: AdminResetPasswordResponse };
 	'admin/resolve-abuse-user-report': { req: AdminResolveAbuseUserReportRequest; res: EmptyResponse };
+	'admin/roles/annotate-condition': { req: AdminRolesAnnotateConditionRequest; res: AdminRolesAnnotateConditionResponse };
 	'admin/roles/assign': { req: AdminRolesAssignRequest; res: EmptyResponse };
 	'admin/roles/clone': { req: AdminRolesCloneRequest; res: AdminRolesCloneResponse };
 	'admin/roles/create': { req: AdminRolesCreateRequest; res: AdminRolesCreateResponse };
@@ -983,7 +987,7 @@ export type Endpoints = {
 	'i/registry/scopes-with-domain': { req: EmptyRequest; res: IRegistryScopesWithDomainResponse };
 	'i/registry/set': { req: IRegistrySetRequest; res: EmptyResponse };
 	'i/revoke-token': { req: IRevokeTokenRequest; res: EmptyResponse };
-	'i/shared-access/list': { req: EmptyRequest; res: ISharedAccessListResponse };
+	'i/shared-access/list': { req: ISharedAccessListRequest; res: ISharedAccessListResponse };
 	'i/shared-access/login': { req: ISharedAccessLoginRequest; res: ISharedAccessLoginResponse };
 	'i/signin-history': { req: ISigninHistoryRequest; res: ISigninHistoryResponse };
 	'i/unpin': { req: IUnpinRequest; res: IUnpinResponse };
