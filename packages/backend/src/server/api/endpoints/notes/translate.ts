@@ -15,7 +15,7 @@ import { DI } from '@/di-symbols.js';
 import { hasText } from '@/models/Note.js';
 import { ApiLoggerService } from '@/server/api/ApiLoggerService.js';
 import { NoteVisibilityService } from '@/core/NoteVisibilityService.js';
-import { CacheManagementService, type ManagedRedisKVCache } from '@/core/CacheManagementService.js';
+import { CacheManagementService, type ManagedRedisKVCache } from '@/global/CacheManagementService.js';
 import { ApiError } from '@/server/api/error.js';
 import { bindThis } from '@/decorators.js';
 
