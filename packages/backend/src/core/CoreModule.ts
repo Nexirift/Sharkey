@@ -41,7 +41,6 @@ import { HttpRequestService } from './HttpRequestService.js';
 import { IdService } from './IdService.js';
 import { ImageProcessingService } from './ImageProcessingService.js';
 import { SystemAccountService } from './SystemAccountService.js';
-import { InternalEventService } from './InternalEventService.js';
 import { InternalStorageService } from './InternalStorageService.js';
 import { MetaService } from './MetaService.js';
 import { MfmService } from './MfmService.js';
@@ -343,7 +342,6 @@ const $SponsorsService: Provider = { provide: 'SponsorsService', useExisting: Sp
 		HttpRequestService,
 		IdService,
 		ImageProcessingService,
-		InternalEventService,
 		InternalStorageService,
 		MetaService,
 		MfmService,
@@ -653,7 +651,6 @@ const $SponsorsService: Provider = { provide: 'SponsorsService', useExisting: Sp
 		HttpRequestService,
 		IdService,
 		ImageProcessingService,
-		InternalEventService,
 		InternalStorageService,
 		MetaService,
 		MfmService,
