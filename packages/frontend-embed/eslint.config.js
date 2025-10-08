@@ -117,10 +117,10 @@ export default [
 			'@types',
 			'assets',
 		],
-		globals: {
-			...globals.node,
-		},
 		languageOptions: {
+			globals: {
+				...globals.node,
+			},
 			parserOptions: {
 				parser: tsParser,
 				project: ['tsconfig.scripts.json'],
