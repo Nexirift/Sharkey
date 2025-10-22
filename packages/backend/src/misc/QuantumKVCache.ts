@@ -10,6 +10,7 @@ import { MemoryKVCache, type MemoryCacheServices } from '@/misc/cache.js';
 import { makeKVPArray, type KVPArray } from '@/misc/kvp-array.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
 import { isRetryableSymbol } from '@/misc/is-retryable-error.js';
+import { EntityNotFoundError } from 'typeorm';
 
 export interface QuantumKVOpts<T> {
 	/**
@@ -451,6 +452,10 @@ export class QuantumKVCache<T> implements Iterable<readonly [key: string, value:
 			const value = await this.fetcher(key, this);
 			return value ?? undefined;
 		} catch (err) {
+			if (err instanceof EntityNotFoundError) {
+				return undefined;
+			}
+
 			throw new FetchFailedError(this.name, key, renderInlineError(err), { cause: err });
 		}
 	}
