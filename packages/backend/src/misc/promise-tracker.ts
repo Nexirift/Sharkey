@@ -14,9 +14,6 @@ export function trackTask(task: () => Promise<unknown>): void {
  * and makes sure they are all settled before fully closing down the server.
  */
 export function trackPromise(promise: Promise<unknown>) {
-	if (process.env.NODE_ENV !== 'test') {
-		return;
-	}
 	const ref = new WeakRef(promise);
 	promiseRefs.add(ref);
 	promise.finally(() => promiseRefs.delete(ref));
