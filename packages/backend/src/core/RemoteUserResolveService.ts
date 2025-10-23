@@ -118,7 +118,7 @@ export class RemoteUserResolveService {
 			// Always mark as updated so we don't get stuck here for missing remote users.
 			// 繋がらないインスタンスに何回も試行するのを防ぐ, 後続の同様処理の連続試行を防ぐ ため 試行前にも更新する
 			await this.usersRepository.update(user.id, {
-				lastFetchedAt: this.timeService.now,
+				lastFetchedAt: this.timeService.date,
 			});
 		}
 
