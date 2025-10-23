@@ -47,7 +47,6 @@ import { ScheduleNotePostProcessorService } from './processors/ScheduleNotePostP
 
 @Module({
 	imports: [
-		GlobalModule,
 		CoreModule,
 	],
 	providers: [

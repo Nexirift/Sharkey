@@ -159,6 +159,7 @@ import { QueueModule } from './QueueModule.js';
 import { QueueService } from './QueueService.js';
 import { SponsorsService } from './SponsorsService.js';
 import type { Provider } from '@nestjs/common';
+import { GlobalModule } from '@/GlobalModule.js';
 
 //#region 文字列ベースでのinjection用(循環参照対応のため)
 const $AbuseReportService: Provider = { provide: 'AbuseReportService', useExisting: AbuseReportService };
@@ -316,6 +317,7 @@ const $SponsorsService: Provider = { provide: 'SponsorsService', useExisting: Sp
 
 @Module({
 	imports: [
+		GlobalModule,
 		QueueModule,
 	],
 	providers: [
