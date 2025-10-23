@@ -38,9 +38,7 @@ export const meta = {
 	limit: {
 		type: 'bucket',
 		size: 20,
-
-		duration: 1000,
-		max: 2,
+		dripRate: 200,
 	},
 } as const;
 
