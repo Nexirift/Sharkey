@@ -6,15 +6,18 @@
 import Redis from 'ioredis';
 import { loadConfig } from '../built/config.js';
 import { createPostgresDataSource } from '../built/postgres.js';
-import Logger from '../built/logger.js';
+import { LoggerService } from '../built/core/LoggerService.js';
+import { NativeTimeService } from '../built/global/TimeService.js';
+import { EnvService } from '../built/global/EnvService.js';
 
-const config = loadConfig();
+const loggerService = new LoggerService(console, new NativeTimeService(), new EnvService());
+const config = loadConfig(loggerService);
 
 // createPostgresDataSource handles primaries and replicas automatically.
 // usually, it only opens connections first use, so we force it using
 // .initialize()
 async function connectToPostgres() {
-	const source = createPostgresDataSource(config, new Logger('check-connect'));
+	const source = createPostgresDataSource(config, loggerService);
 	await source.initialize();
 	await source.destroy();
 }
