@@ -54,19 +54,14 @@ export function removeCustomEmojis(emojis: Misskey.entities.EmojiSimple[]) {
 
 export async function fetchCustomEmojis(force = false) {
 	const now = Date.now();
+	const lastFetchedAt = await get('lastEmojisFetchedAt');
 
-	let res;
-	if (force) {
-		res = await misskeyApi('emojis', {});
-	} else {
-		const lastFetchedAt = await get('lastEmojisFetchedAt');
-		if (lastFetchedAt && (now - lastFetchedAt) < 1000 * 60 * 60) return;
-		res = await misskeyApiGet('emojis', {});
+	if (force || !lastFetchedAt || Date.now() - lastFetchedAt > 1000 * 60) {
+		const res = await misskeyApi('emojis', {});
+		customEmojis.value = res.emojis;
+		await set('emojis', res.emojis);
+		await set('lastEmojisFetchedAt', now);
 	}
-
-	customEmojis.value = res.emojis;
-	set('emojis', res.emojis);
-	set('lastEmojisFetchedAt', now);
 }
 
 export function getCustomEmojiTags() {
