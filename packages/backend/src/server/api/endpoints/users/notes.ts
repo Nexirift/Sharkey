@@ -230,10 +230,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			this.queryService.andIsNotQuote(query, 'note');
 		}
 
-		if (ps.withReplies) {
+		if (!ps.withReplies) {
 			this.queryService.generateExcludedRepliesQueryForNotes(query, me);
-		} else {
-			query.andWhere('note.replyId IS NULL');
 		}
 
 		if (!ps.withNonPublic) {
