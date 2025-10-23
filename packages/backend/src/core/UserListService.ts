@@ -21,10 +21,13 @@ import type { RoleService } from '@/core/RoleService.js';
 import { SystemAccountService } from '@/core/SystemAccountService.js';
 import { InternalEventService } from '@/global/InternalEventService.js';
 import { CacheService } from '@/core/CacheService.js';
+import { CacheManagementService, type ManagedQuantumKVCache } from '@/global/CacheManagementService.js';
 
 @Injectable()
 export class UserListService implements OnModuleInit {
 	public static TooManyUsersError = class extends Error {};
+
+	public readonly userListsCache: ManagedQuantumKVCache<MiUserList>;
 
 	private roleService: RoleService;
 
@@ -53,7 +56,15 @@ export class UserListService implements OnModuleInit {
 		private systemAccountService: SystemAccountService,
 		private readonly internalEventService: InternalEventService,
 		private readonly cacheService: CacheService,
-	) {}
+
+		cacheManagementService: CacheManagementService,
+	) {
+		this.userListsCache = cacheManagementService.createQuantumKVCache('userLists', {
+			lifetime: 1000 * 60 * 30, // 30m
+			fetcher: async id => await this.userListsRepository.findOneBy({ id }),
+			bulkFetcher: async ids => await this.userListsRepository.findBy({ id: In(ids) }).then(ls => ls.map(l => [l.id, l])),
+		});
+	}
 
 	@bindThis
 	async onModuleInit() {
@@ -120,14 +131,10 @@ export class UserListService implements OnModuleInit {
 	@bindThis
 	public async bulkAddMember(target: { id: MiUser['id'] }, memberships: { userListId: MiUserList['id'], withReplies?: boolean }[]): Promise<void> {
 		const userListIds = memberships.map(m => m.userListId);
+		const userLists = await this.userListsCache.fetchMany(userListIds);
 
 		// Map userListId => userListUserId
-		const listUserIds = await this.userListsRepository
-			.find({
-				where: { id: In(userListIds) },
-				select: { id: true, userId: true },
-			})
-			.then(ls => new Map(ls.map(l => [l.id, l.userId])));
+		const listUserIds = new Map(userLists.values.map(l => [l.id, l.userId]));
 
 		const toInsert = memberships.map(membership => ({
 			id: this.idService.gen(),

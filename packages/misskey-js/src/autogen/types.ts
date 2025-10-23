@@ -10356,9 +10356,13 @@ export type components = {
             id: string;
             /** Format: date-time */
             createdAt: string;
+            /** Format: id */
+            createdBy: string;
             name: string;
-            userIds?: string[];
+            userIds: string[];
             isPublic: boolean;
+            isLiked?: boolean;
+            likedCount?: number;
         };
         Achievement: {
             name: components['schemas']['AchievementName'];

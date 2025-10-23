@@ -91,14 +91,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			const [user, blockings, userList, exist] = await Promise.all([
 				this.cacheService.findOptionalUserById(ps.userId),
 				this.cacheService.userBlockingCache.fetch(ps.userId),
-				this.userListsRepository.findOneBy({
-					id: ps.listId,
-					userId: me.id,
-				}),
+				this.userListService.userListsCache.fetchMaybe(ps.listId),
 				this.cacheService.listUserMembershipsCache.fetch(ps.listId).then(ms => ms.has(ps.userId)),
 			]);
 
-			if (userList == null) {
+			if (userList == null || userList.userId !== me.id) {
 				throw new ApiError(meta.errors.noSuchList);
 			}
 

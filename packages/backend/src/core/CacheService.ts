@@ -6,7 +6,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import { In, IsNull, Not } from 'typeorm';
-import type { BlockingsRepository, FollowingsRepository, MutingsRepository, RenoteMutingsRepository, MiUserProfile, UserProfilesRepository, UsersRepository, MiFollowing, NoteThreadMutingsRepository, ChannelFollowingsRepository, UserListMembershipsRepository } from '@/models/_.js';
+import type { BlockingsRepository, FollowingsRepository, MutingsRepository, RenoteMutingsRepository, MiUserProfile, UserProfilesRepository, UsersRepository, MiFollowing, NoteThreadMutingsRepository, ChannelFollowingsRepository, UserListMembershipsRepository, UserListFavoritesRepository } from '@/models/_.js';
 import type { MiLocalUser, MiRemoteUser, MiUser } from '@/models/User.js';
 import type { MiUserListMembership } from '@/models/UserListMembership.js';
 import { isLocalUser, isRemoteUser } from '@/models/User.js';
@@ -41,6 +41,20 @@ export class CacheService implements OnApplicationShutdown {
 	public readonly userBlockedCache: ManagedQuantumKVCache<Set<string>>; // NOTE: 「被」Blockキャッシュ
 	public readonly userListMembershipsCache: ManagedQuantumKVCache<Map<string, MiUserListMembership>>;
 	public readonly listUserMembershipsCache: ManagedQuantumKVCache<Map<string, MiUserListMembership>>;
+
+	/**
+	 * Maps user IDs (key) to the set of list IDs (value) that are favorited by that user
+	 */
+	public readonly userListFavoritesCache: ManagedQuantumKVCache<Set<string>>;
+
+	/**
+	 * Maps list IDs (key) to the set of user IDs (value) who have favorited this list.
+	 */
+	public readonly listUserFavoritesCache: ManagedQuantumKVCache<Set<string>>;
+
+	/**
+	 * Maps user IDs (key) to the set of user IDs (value) who's renotes are muted by that user.
+	 */
 	public readonly renoteMutingsCache: ManagedQuantumKVCache<Set<string>>;
 	public readonly threadMutingsCache: ManagedQuantumKVCache<Set<string>>;
 	public readonly noteMutingsCache: ManagedQuantumKVCache<Set<string>>;
@@ -83,6 +97,9 @@ export class CacheService implements OnApplicationShutdown {
 
 		@Inject(DI.userListMembershipsRepository)
 		private readonly userListMembershipsRepository: UserListMembershipsRepository,
+
+		@Inject(DI.userListFavoritesRepository)
+		private readonly userListFavoritesRepository: UserListFavoritesRepository,
 
 		private readonly internalEventService: InternalEventService,
 		private readonly cacheManagementService: CacheManagementService,
@@ -171,6 +188,32 @@ export class CacheService implements OnApplicationShutdown {
 						usersForList.set(m.userId, m);
 						return groups;
 					}, new Map<string, Map<string, MiUserListMembership>>)),
+		});
+
+		this.userListFavoritesCache = cacheManagementService.createQuantumKVCache<Set<string>>('userListFavorites', {
+			lifetime: 1000 * 60 * 30, // 30m
+			fetcher: async userId => await this.userListFavoritesRepository.findBy({ userId }).then(fs => new Set(fs.map(f => f.userListId))),
+			bulkFetcher: async userIds => await this.userListFavoritesRepository
+				.createQueryBuilder('favorite')
+				.select('"favorite"."userId"', 'userId')
+				.addSelect('array_agg("favorite"."userListId")', 'userListIds')
+				.where({ userId: In(userIds) })
+				.groupBy('favorite.userId')
+				.getRawMany<{ userId: string, userListIds: string[] }>()
+				.then(fs => fs.map(f => [f.userId, new Set(f.userListIds)])),
+		});
+
+		this.listUserFavoritesCache = cacheManagementService.createQuantumKVCache<Set<string>>('listUserFavorites', {
+			lifetime: 1000 * 60 * 30, // 30m
+			fetcher: async userListId => await this.userListFavoritesRepository.findBy({ userListId }).then(fs => new Set(fs.map(f => f.userId))),
+			bulkFetcher: async userListIds => await this.userListFavoritesRepository
+				.createQueryBuilder('favorite')
+				.select('"favorite"."userListId"', 'userListId')
+				.addSelect('array_agg("favorite"."userId")', 'userIds')
+				.where({ userListId: In(userListIds) })
+				.groupBy('favorite.userListId')
+				.getRawMany<{ userListId: string, userIds: string[] }>()
+				.then(fs => fs.map(f => [f.userListId, new Set(f.userIds)])),
 		});
 
 		this.renoteMutingsCache = this.cacheManagementService.createQuantumKVCache<Set<string>>('renoteMutings', {

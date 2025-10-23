@@ -9,6 +9,7 @@ import { IdService } from '@/core/IdService.js';
 import type { UserListsRepository, AntennasRepository } from '@/models/_.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { AntennaEntityService } from '@/core/entities/AntennaEntityService.js';
+import { UserListService } from '@/core/UserListService.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { TimeService } from '@/global/TimeService.js';
@@ -99,6 +100,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private idService: IdService,
 		private globalEventService: GlobalEventService,
 		private readonly timeService: TimeService,
+		private readonly userListService: UserListService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			if (ps.keywords.flat().every(x => x === '') && ps.excludeKeywords.flat().every(x => x === '')) {
@@ -115,12 +117,13 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			let userList;
 
 			if (ps.src === 'list' && ps.userListId) {
-				userList = await this.userListsRepository.findOneBy({
-					id: ps.userListId,
-					userId: me.id,
-				});
+				userList = await this.userListService.userListsCache.fetchMaybe(ps.userListId);
 
 				if (userList == null) {
+					throw new ApiError(meta.errors.noSuchUserList);
+				}
+
+				if (!userList.isPublic && userList.userId !== me.id) {
 					throw new ApiError(meta.errors.noSuchUserList);
 				}
 			}

@@ -88,7 +88,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				isPublic: true,
 			});
 
-			return await Promise.all(userLists.map(x => this.userListEntityService.pack(x)));
+			return await Promise.all(userLists.map(x => this.userListEntityService.pack(x, me?.id)));
 		});
 	}
 }

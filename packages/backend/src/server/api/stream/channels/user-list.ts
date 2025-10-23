@@ -7,6 +7,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { MiUserListMembership, UserListMembershipsRepository, UserListsRepository } from '@/models/_.js';
 import type { Packed } from '@/misc/json-schema.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
+import { UserListService } from '@/core/UserListService.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { isPackedPureRenote } from '@/misc/is-renote.js';
@@ -25,6 +26,7 @@ class UserListChannel extends Channel {
 	constructor(
 		private userListsRepository: UserListsRepository,
 		private userListMembershipsRepository: UserListMembershipsRepository,
+		private readonly userListService: UserListService,
 		noteEntityService: NoteEntityService,
 
 		id: string,
@@ -43,13 +45,9 @@ class UserListChannel extends Channel {
 		this.withRenotes = !!(params.withRenotes ?? true);
 
 		// Check existence and owner
-		const listExist = await this.userListsRepository.exists({
-			where: {
-				id: this.listId,
-				userId: this.user!.id,
-			},
-		});
+		const listExist = await this.userListService.userListsCache.fetchMaybe(this.listId);
 		if (!listExist) return;
+		if (!listExist.isPublic && listExist.userId !== this.user?.id) return;
 
 		// Subscribe stream
 		this.subscriber?.on(`userListStream:${this.listId}`, this.send);
@@ -97,6 +95,7 @@ export class UserListChannelService implements MiChannelService<true> {
 		private userListMembershipsRepository: UserListMembershipsRepository,
 
 		private noteEntityService: NoteEntityService,
+		private readonly userListService: UserListService,
 	) {
 	}
 
@@ -105,6 +104,7 @@ export class UserListChannelService implements MiChannelService<true> {
 		return new UserListChannel(
 			this.userListsRepository,
 			this.userListMembershipsRepository,
+			this.userListService,
 			this.noteEntityService,
 			id,
 			connection,
