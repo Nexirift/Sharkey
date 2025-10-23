@@ -4,6 +4,7 @@
  */
 
 import { Inject, Injectable } from '@nestjs/common';
+import { IsNull } from 'typeorm';
 import type { EmojisRepository, MiEmoji } from '@/models/_.js';
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
@@ -67,11 +68,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		super(meta, paramDef, async (ps, me) => {
 			// Fetch the latest emoji list
 			const emojiIds = await this.localEmojiIdsCache.fetch(async () => {
-				const emojis = await this.emojisRepository.createQueryBuilder()
-					.select('id')
-					.where('host IS NULL')
-					.orderBy('LOWER(category)', 'ASC')
-					.addOrderBy('LOWER(name)', 'ASC')
+				const emojis = await this.emojisRepository.createQueryBuilder('emoji')
+					.select('emoji.id')
+					.where({ host: IsNull() })
+					.orderBy('LOWER(emoji.category)', 'ASC')
+					.addOrderBy('LOWER(emoji.name)', 'ASC')
 					.getMany() as { id: MiEmoji['id'] }[];
 
 				return emojis.map(e => e.id);
