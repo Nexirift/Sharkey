@@ -6,6 +6,7 @@
 import Redis from 'ioredis';
 import { loadConfig } from '../built/config.js';
 import { createPostgresDataSource } from '../built/postgres.js';
+import Logger from '../src/logger.js';
 
 const config = loadConfig();
 
@@ -13,7 +14,7 @@ const config = loadConfig();
 // usually, it only opens connections first use, so we force it using
 // .initialize()
 async function connectToPostgres() {
-	const source = createPostgresDataSource(config);
+	const source = createPostgresDataSource(config, new Logger('check-connect'));
 	await source.initialize();
 	await source.destroy();
 }
