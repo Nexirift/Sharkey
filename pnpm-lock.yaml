@@ -147,9 +147,6 @@ importers:
       '@smithy/node-http-handler':
         specifier: 4.2.1
         version: 4.2.1
-      '@twemoji/parser':
-        specifier: 16.0.0
-        version: 16.0.0
       accepts:
         specifier: 1.3.8
         version: 1.3.8
@@ -280,8 +277,8 @@ importers:
         specifier: 0.53.0
         version: 0.53.0
       mfm-js:
-        specifier: npm:@transfem-org/sfm-js@0.26.0
-        version: '@transfem-org/sfm-js@0.26.0'
+        specifier: npm:@transfem-org/sfm-js@0.26.1
+        version: '@transfem-org/sfm-js@0.26.1'
       mime-types:
         specifier: 3.0.1
         version: 3.0.1
@@ -888,9 +885,6 @@ importers:
       '@testing-library/vue':
         specifier: 8.1.0
         version: 8.1.0(@vue/compiler-sfc@3.5.21)(vue@3.5.21(typescript@5.9.2))
-      '@twemoji/parser':
-        specifier: 16.0.0
-        version: 16.0.0
       '@types/canvas-confetti':
         specifier: 1.9.0
         version: 1.9.0
@@ -979,8 +973,8 @@ importers:
         specifier: 0.30.19
         version: 0.30.19
       mfm-js:
-        specifier: npm:@transfem-org/sfm-js@0.26.0
-        version: '@transfem-org/sfm-js@0.26.0'
+        specifier: npm:@transfem-org/sfm-js@0.26.1
+        version: '@transfem-org/sfm-js@0.26.1'
       micromatch:
         specifier: 4.0.8
         version: 4.0.8
@@ -1079,8 +1073,8 @@ importers:
         specifier: 2.2.3
         version: 2.2.3
       mfm-js:
-        specifier: npm:@transfem-org/sfm-js@0.26.0
-        version: '@transfem-org/sfm-js@0.26.0'
+        specifier: npm:@transfem-org/sfm-js@0.26.1
+        version: '@transfem-org/sfm-js@0.26.1'
       misskey-js:
         specifier: workspace:*
         version: link:../misskey-js
@@ -1118,9 +1112,6 @@ importers:
       '@testing-library/vue':
         specifier: 8.1.0
         version: 8.1.0(@vue/compiler-sfc@3.5.21)(vue@3.5.21(typescript@5.9.2))
-      '@twemoji/parser':
-        specifier: 16.0.0
-        version: 16.0.0
       '@types/estree':
         specifier: 1.0.8
         version: 1.0.8
@@ -4184,8 +4175,8 @@ packages:
     resolution: {integrity: sha1-50hzNdDZoxqKTCy+G9PdW3VDVso=, tarball: https://activitypub.software/api/v4/projects/229/packages/npm/@transfem-org/cli-highlight/-/@transfem-org/cli-highlight-2.1.13.tgz}
     engines: {node: ^22.0.0}
 
-  '@transfem-org/sfm-js@0.26.0':
-    resolution: {integrity: sha1-+nAMjUP72w2pdvayBOWJ/Zd9ARc=, tarball: https://activitypub.software/api/v4/projects/2/packages/npm/@transfem-org/sfm-js/-/@transfem-org/sfm-js-0.26.0.tgz}
+  '@transfem-org/sfm-js@0.26.1':
+    resolution: {integrity: sha1-42SS8z0rQLz7gjyg5fbNeUIHHVk=, tarball: https://activitypub.software/api/v4/projects/2/packages/npm/@transfem-org/sfm-js/-/@transfem-org/sfm-js-0.26.1.tgz}
     engines: {node: ^22.0.0}
 
   '@transfem-org/summaly@5.2.3':
@@ -14245,9 +14236,7 @@ snapshots:
       highlight.js: 11.11.1
       htmlparser2: 10.0.0
 
-  '@transfem-org/sfm-js@0.26.0':
-    dependencies:
-      '@twemoji/parser': 16.0.0
+  '@transfem-org/sfm-js@0.26.1': {}
 
   '@transfem-org/summaly@5.2.3':
     dependencies:

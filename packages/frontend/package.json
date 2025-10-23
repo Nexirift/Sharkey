@@ -126,7 +126,7 @@
 		"happy-dom": "18.0.1",
 		"intersection-observer": "0.12.2",
 		"magic-string": "0.30.19",
-		"mfm-js": "npm:@transfem-org/sfm-js@0.26.0",
+		"mfm-js": "npm:@transfem-org/sfm-js@0.26.1",
 		"micromatch": "4.0.8",
 		"minimatch": "10.0.3",
 		"msw": "2.11.3",

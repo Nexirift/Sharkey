@@ -144,7 +144,7 @@
 		"juice": "11.0.1",
 		"megalodon": "workspace:*",
 		"meilisearch": "0.53.0",
-		"mfm-js": "npm:@transfem-org/sfm-js@0.26.0",
+		"mfm-js": "npm:@transfem-org/sfm-js@0.26.1",
 		"mime-types": "3.0.1",
 		"misskey-js": "workspace:*",
 		"misskey-reversi": "workspace:*",
