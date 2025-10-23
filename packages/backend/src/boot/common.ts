@@ -12,7 +12,7 @@ import { QueueStatsService } from '@/daemons/QueueStatsService.js';
 import { ServerStatsService } from '@/daemons/ServerStatsService.js';
 import { ServerService } from '@/server/ServerService.js';
 import { MainModule } from '@/MainModule.js';
-import { envOption } from '@/env.js';
+import { EnvService } from '@/global/EnvService.js';
 import { ApLogCleanupService } from '@/daemons/ApLogCleanupService.js';
 
 export async function server() {
@@ -27,7 +27,9 @@ export async function server() {
 	if (process.env.NODE_ENV !== 'test') {
 		app.get(ChartManagementService).start();
 	}
-	if (!envOption.noDaemons) {
+
+	const envService = app.get(EnvService);
+	if (!envService.options.noDaemons) {
 		app.get(QueueStatsService).start();
 		app.get(ServerStatsService).start();
 		app.get(ApLogCleanupService).start();

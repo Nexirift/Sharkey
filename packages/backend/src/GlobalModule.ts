@@ -27,20 +27,15 @@ import type { Provider, OnApplicationShutdown } from '@nestjs/common';
 
 const $config: Provider = {
 	provide: DI.config,
-	useValue: loadConfig(),
+	useFactory: (loggerService: LoggerService) => loadConfig(loggerService),
+	inject: [LoggerService],
 };
 
 const $db: Provider = {
 	provide: DI.db,
 	useFactory: async (config: Config, loggerService: LoggerService) => {
-		const dbLogger = loggerService.getLogger('db');
-		try {
-			const db = createPostgresDataSource(config, dbLogger);
-			return await db.initialize();
-		} catch (e) {
-			dbLogger.error('failed to initialize database connection', { e });
-			throw e;
-		}
+		const db = createPostgresDataSource(config, loggerService);
+		return await db.initialize();
 	},
 	inject: [DI.config, LoggerService],
 };

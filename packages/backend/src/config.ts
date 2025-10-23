@@ -14,6 +14,7 @@ import type * as Sentry from '@sentry/node';
 import type * as SentryVue from '@sentry/vue';
 import type { RedisOptions } from 'ioredis';
 import type { IPv4, IPv6 } from 'ipaddr.js';
+import type { LoggerService } from '@/core/LoggerService.js';
 
 type RedisOptionsSource = Partial<RedisOptions> & {
 	host?: string;
@@ -159,8 +160,6 @@ type Source = {
 	}
 };
 
-const configLogger = new Logger('config');
-
 export type PrivateNetworkSource = string | { network?: string, ports?: number[] };
 
 export type PrivateNetwork = {
@@ -179,10 +178,10 @@ export type PrivateNetwork = {
 
 export type CIDR = [ip: IPv4 | IPv6, prefixLength: number];
 
-export function parsePrivateNetworks(patterns: PrivateNetworkSource[]): PrivateNetwork[];
-export function parsePrivateNetworks(patterns: undefined): undefined;
-export function parsePrivateNetworks(patterns: PrivateNetworkSource[] | undefined): PrivateNetwork[] | undefined;
-export function parsePrivateNetworks(patterns: PrivateNetworkSource[] | undefined): PrivateNetwork[] | undefined {
+export function parsePrivateNetworks(patterns: PrivateNetworkSource[], configLogger: Logger): PrivateNetwork[];
+export function parsePrivateNetworks(patterns: undefined, configLogger: Logger): undefined;
+export function parsePrivateNetworks(patterns: PrivateNetworkSource[] | undefined, configLogger: Logger): PrivateNetwork[] | undefined;
+export function parsePrivateNetworks(patterns: PrivateNetworkSource[] | undefined, configLogger: Logger): PrivateNetwork[] | undefined {
 	if (!patterns) return undefined;
 	return patterns
 		.map(e => {
@@ -368,7 +367,9 @@ const path = process.env.MISSKEY_CONFIG_YML
 		? resolve(dir, 'test.yml')
 		: resolve(dir, 'default.yml');
 
-export function loadConfig(): Config {
+export function loadConfig(loggerService: LoggerService): Config {
+	const configLogger = loggerService.getLogger('config');
+
 	const meta = JSON.parse(fs.readFileSync(`${_dirname}/../../../built/meta.json`, 'utf-8'));
 
 	const frontendManifestExists = fs.existsSync(_dirname + '/../../../built/_frontend_vite_/manifest.json');
@@ -456,7 +457,7 @@ export function loadConfig(): Config {
 		proxy: config.proxy,
 		proxySmtp: config.proxySmtp,
 		proxyBypassHosts: config.proxyBypassHosts,
-		allowedPrivateNetworks: parsePrivateNetworks(config.allowedPrivateNetworks),
+		allowedPrivateNetworks: parsePrivateNetworks(config.allowedPrivateNetworks, configLogger),
 		disallowExternalApRedirect: config.disallowExternalApRedirect ?? false,
 		maxFileSize: config.maxFileSize ?? 262144000,
 		maxNoteLength: config.maxNoteLength ?? 3000,

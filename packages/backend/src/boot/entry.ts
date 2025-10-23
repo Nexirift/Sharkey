@@ -13,8 +13,10 @@ import { inspect } from 'node:util';
 import chalk from 'chalk';
 import Xev from 'xev';
 import Logger from '@/logger.js';
+import { EnvService } from '@/global/EnvService.js';
+import { LoggerService } from '@/core/LoggerService.js';
+import { NativeTimeService } from '@/global/TimeService.js';
 import { prepEnv } from '@/boot/prepEnv.js';
-import { envOption } from '../env.js';
 import { masterMain } from './master.js';
 import { workerMain } from './worker.js';
 import { readyRef } from './ready.js';
@@ -25,14 +27,20 @@ process.title = `Misskey (${cluster.isPrimary ? 'master' : 'worker'})`;
 
 prepEnv();
 
-const logger = new Logger('core', 'cyan');
-const clusterLogger = logger.createSubLogger('cluster', 'orange');
 const ev = new Xev();
 
 // We wrap this in a main function, that gets called,
 // because not all platforms support top level await :/
 
 async function main() {
+	const envService = new EnvService();
+	const envOption = envService.options;
+
+	// eslint-disable-next-line no-restricted-globals
+	const loggerService = new LoggerService(console, new NativeTimeService(), envService);
+	const logger = loggerService.getLogger('core', 'cyan');
+	const clusterLogger = logger.createSubLogger('cluster', 'orange');
+
 	//#region Events
 	// Listen new workers
 	cluster.on('fork', worker => {
@@ -97,18 +105,18 @@ async function main() {
 	if (!envOption.disableClustering) {
 		if (cluster.isPrimary) {
 			logger.info(`Start main process... pid: ${process.pid}`);
-			await masterMain();
+			await masterMain(loggerService, envService);
 			ev.mount();
 		} else if (cluster.isWorker) {
 			logger.info(`Start worker process... pid: ${process.pid}`);
-			await workerMain();
+			await workerMain(loggerService, envService);
 		} else {
 			throw new Error('Unknown process type');
 		}
 	} else {
 		// 非clusterの場合はMasterのみが起動するため、Workerの処理は行わない(cluster.isWorker === trueの状態でこのブロックに来ることはない)
 		logger.info(`Start main process... pid: ${process.pid}`);
-		await masterMain();
+		await masterMain(loggerService, envService);
 		ev.mount();
 	}
 

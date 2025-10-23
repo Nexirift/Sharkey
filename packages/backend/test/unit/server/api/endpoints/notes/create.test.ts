@@ -6,11 +6,16 @@
 process.env.NODE_ENV = 'test';
 
 import { describe, test, expect } from '@jest/globals';
-import { loadConfig } from '@/config.js';
+import { MockConsole } from '../../../../../misc/MockConsole.js';
 import { getValidator } from '../../../../../../test/prelude/get-api-validator.js';
+import { loadConfig } from '@/config.js';
 import { paramDef } from '@/server/api/endpoints/notes/create.js';
+import { NativeTimeService } from '@/global/TimeService.js';
+import { EnvService } from '@/global/EnvService.js';
+import { LoggerService } from '@/core/LoggerService.js';
 
-const config = loadConfig();
+const loggerService = new LoggerService(new MockConsole, new NativeTimeService(), new EnvService());
+const config = loadConfig(loggerService);
 
 const VALID = true;
 const INVALID = false;

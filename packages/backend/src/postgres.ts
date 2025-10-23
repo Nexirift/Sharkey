@@ -9,7 +9,9 @@ import { DataSource, Logger, type QueryRunner } from 'typeorm';
 import * as highlight from 'cli-highlight';
 import { entities as charts } from '@/core/chart/entities.js';
 import { Config } from '@/config.js';
-import MisskeyLogger, { type Data } from '@/logger.js';
+import type MisskeyLogger from '@/logger.js';
+import type { Data } from '@/logger.js';
+import type { LoggerService } from '@/core/LoggerService.js';
 import { bindThis } from '@/decorators.js';
 
 import { MiAbuseUserReport } from '@/models/AbuseUserReport.js';
@@ -298,7 +300,8 @@ export const entities = [
 
 const log = process.env.NODE_ENV !== 'production';
 
-export function createPostgresDataSource(config: Config, dbLogger: MisskeyLogger) {
+export function createPostgresDataSource(config: Config, loggerService: LoggerService) {
+	const dbLogger = loggerService.getLogger('db');
 	return new DataSource({
 		type: 'postgres',
 		host: config.db.host,
