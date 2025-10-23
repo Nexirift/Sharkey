@@ -145,8 +145,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				ignoreAuthorFromInstanceBlock: true,
 				ignoreAuthorFromUserSuspension: true,
 				ignoreAuthorFromUserSilence: true,
-				excludeReplies: ps.withChannelNotes && !ps.withReplies, // userTimelineWithChannel may include replies
-				excludeNoFiles: ps.withChannelNotes && ps.withFiles, // userTimelineWithChannel may include notes without files
+				excludeReplies: !ps.withChannelNotes && !ps.withReplies, // userTimelineWithChannel may include replies
+				excludeNoFiles: !ps.withChannelNotes && ps.withFiles, // userTimelineWithChannel may include notes without files
 				excludePureRenotes: !ps.withRenotes,
 				excludeBots: !ps.withBots,
 				noteFilter: note => {
