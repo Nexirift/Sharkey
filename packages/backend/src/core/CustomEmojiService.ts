@@ -247,7 +247,7 @@ export class CustomEmojiService {
 			: await this.emojisByKeyCache.fetch(encodeEmojiKey(criteria));
 
 		// Update the system logs
-		this.logger.info(`Creating emoji name=${emoji.name} host=${emoji.host}...`);
+		this.logger.info(`Updating emoji name=${emoji.name} host=${emoji.host}...`);
 
 		// If changing the name, then make sure we don't have a conflict.
 		const doNameUpdate = data.name !== undefined && data.name !== emoji.name;
