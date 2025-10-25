@@ -79,7 +79,7 @@ Detailed view of a note in the Sharkey style. Used when opening a note onto its 
 						<span v-if="appearNote.updatedAt" ref="menuVersionsButton" style="margin-left: 0.5em;" title="Edited" @mousedown="menuVersions()"><i class="ph-pencil-simple ph-bold ph-lg"></i></span>
 						<span v-if="appearNote.localOnly" style="margin-left: 0.5em;" :title="i18n.ts._visibility['disableFederation']"><i class="ti ti-rocket-off"></i></span>
 					</div>
-					<SkInstanceTicker v-if="showTicker" :host="appearNote.user.host" :instance="appearNote.user.instance"/>
+					<SkInstanceTicker v-if="showTicker" style="cursor: pointer;" :host="appearNote.user.host" :instance="appearNote.user.instance" @click.stop="showOnRemote(props.note)"/>
 				</div>
 			</div>
 		</header>
@@ -290,6 +290,7 @@ import SkNoteTranslation from '@/components/SkNoteTranslation.vue';
 import { getSelfNoteIds } from '@/utility/get-self-note-ids.js';
 import SkUrlPreviewGroup from '@/components/SkUrlPreviewGroup.vue';
 import MkNoteSub from '@/components/MkNoteSub.vue';
+import { showOnRemote } from '@/utility/show-on-remote.js';
 
 const props = withDefaults(defineProps<{
 	note: Misskey.entities.Note;
