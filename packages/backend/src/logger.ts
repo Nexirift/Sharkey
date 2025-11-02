@@ -72,6 +72,11 @@ export default class Logger {
 	private log(level: Level, message: string, data?: Data, important = false, subContexts: Context[] = []): void {
 		if (this.envService.options.quiet) return;
 
+		// Debugging logging is disabled in production unless MK_VERBOSE is set.
+		if (level === 'debug' && process.env.NODE_ENV === 'production' && !this.envService.options.verbose) {
+			return;
+		}
+
 		if (this.parentLogger) {
 			this.parentLogger.log(level, message, data, important, [this.context].concat(subContexts));
 			return;
@@ -138,9 +143,7 @@ export default class Logger {
 
 	@bindThis
 	public debug(message: string, data?: Data, important = false): void { // デバッグ用に使う(開発者に必要だが利用者に不要な情報)
-		if (process.env.NODE_ENV !== 'production' || this.envService.options.verbose) {
-			this.log('debug', message, data, important);
-		}
+		this.log('debug', message, data, important);
 	}
 
 	@bindThis
