@@ -14,7 +14,54 @@ import { bindThis } from '@/decorators.js';
  */
 @Injectable()
 export class MockEnvService extends EnvService {
-	private _env: Partial<Record<string, string>> = process.env;
+	public readonly _env: typeof process['env'];
+
+	private overrides: Partial<Record<string, string | null>> = {};
+
+	constructor() {
+		super();
+		this._env = new Proxy(process.env, {
+			get: (env, key) => {
+				if (key in this.overrides && this.overrides[key as string] !== undefined) {
+					return this.overrides[key as string] ?? undefined;
+				} else {
+					return env[key as string];
+				}
+			},
+			has: (env, key) => {
+				if (key in this.overrides && this.overrides[key as string] !== undefined) {
+					return this.overrides[key as string] != null;
+				} else {
+					return key in env;
+				}
+			},
+			set: (_, key, value) => {
+				this.overrides[key as string] = value;
+				return true;
+			},
+			deleteProperty: (_, key) => {
+				this.overrides[key as string] = null;
+				return true;
+			},
+			ownKeys: (env) => {
+				const envKeys = Reflect.ownKeys(env);
+				const allKeys = new Set(envKeys);
+
+				const overrides = Object.entries(this.overrides);
+				for (const [key, value] of overrides) {
+					if (value !== undefined) {
+						if (value === null) {
+							allKeys.delete(key);
+						} else {
+							allKeys.add(key);
+						}
+					}
+				}
+
+				return Array.from(allKeys);
+			},
+		});
+	}
 
 	/**
 	 * Gets the mocked environment.
@@ -25,15 +72,24 @@ export class MockEnvService extends EnvService {
 	}
 
 	/**
-	 * Replaces the entire mocked environment.
-	 * Pass undefined to restore the original un-mocked values.
+	 * Returns a variable from the mocked environment.
 	 */
-	set env(value: Partial<Record<string, string>> | undefined) {
-		if (value !== undefined) {
-			this._env = value;
-		} else {
-			this._env = process.env;
-		}
+	public get(key: string): string | undefined {
+		return this.env[key];
+	}
+
+	/**
+	 * Sets a variable in the mocked environment.
+	 */
+	public set(key: string, value: string): void {
+		this.overrides[key] = value;
+	}
+
+	/**
+	 * Removes a variable from the mocked environment.
+	 */
+	public delete(key: string): void {
+		this.overrides[key] = null;
 	}
 
 	/**
@@ -41,6 +97,6 @@ export class MockEnvService extends EnvService {
 	 */
 	@bindThis
 	public mockReset(): void {
-		this._env = process.env;
+		this.overrides = {};
 	}
 }
