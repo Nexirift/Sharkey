@@ -52,6 +52,8 @@ import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { LatestNoteService } from '@/core/LatestNoteService.js';
 import { CollapsedQueue } from '@/misc/collapsed-queue.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
+import { NoteVisibilityService } from '@/core/NoteVisibilityService.js';
+import { isPureRenote } from '@/misc/is-renote.js';
 
 type NotificationType = 'reply' | 'renote' | 'quote' | 'mention' | 'edited';
 
@@ -220,6 +222,7 @@ export class NoteEditService implements OnApplicationShutdown {
 		private cacheService: CacheService,
 		private latestNoteService: LatestNoteService,
 		private noteCreateService: NoteCreateService,
+		private readonly noteVisibilityService: NoteVisibilityService,
 	) {
 		this.updateNotesCountQueue = new CollapsedQueue(process.env.NODE_ENV !== 'test' ? 60 * 1000 * 5 : 0, this.collapseNotesCount, this.performUpdateNotesCount);
 	}
@@ -303,8 +306,8 @@ export class NoteEditService implements OnApplicationShutdown {
 		}
 
 		if (this.isRenote(data)) {
-			if (data.renote.id === oldnote.id) {
-				throw new IdentifiableError('ea93b7c2-3d6c-4e10-946b-00d50b1a75cb', `edit failed for ${oldnote.id}: cannot renote itself`);
+			if (isPureRenote(data.renote)) {
+				throw new IdentifiableError('fd4cc33e-2a37-48dd-99cc-9b806eb2031a', 'Cannot renote a pure renote (boost)');
 			}
 
 			switch (data.renote.visibility) {
@@ -320,7 +323,7 @@ export class NoteEditService implements OnApplicationShutdown {
 				case 'followers':
 					// 他人のfollowers noteはreject
 					if (data.renote.userId !== user.id) {
-						throw new IdentifiableError('b6352a84-e5cd-4b05-a26c-63437a6b98ba', 'Renote target is not public or home');
+						throw new IdentifiableError('be9529e9-fe72-4de0-ae43-0b363c4938af', 'Renote target is not public or home');
 					}
 
 					// Renote対象がfollowersならfollowersにする
@@ -328,24 +331,44 @@ export class NoteEditService implements OnApplicationShutdown {
 					break;
 				case 'specified':
 					// specified / direct noteはreject
-					throw new IdentifiableError('b6352a84-e5cd-4b05-a26c-63437a6b98ba', 'Renote target is not public or home');
+					throw new IdentifiableError('be9529e9-fe72-4de0-ae43-0b363c4938af', 'Renote target is not public or home');
+			}
+
+			if (data.renote.userId !== user.id) {
+				// Check local-only
+				if (data.renote.localOnly && user.host != null) {
+					throw new IdentifiableError('12e23cec-edd9-442b-aa48-9c21f0c3b215', 'Remote user cannot renote a local-only note');
+				}
+
+				// Check visibility
+				const visibilityCheck = await this.noteVisibilityService.checkNoteVisibilityAsync(data.renote, user.id);
+				if (!visibilityCheck.accessible) {
+					throw new IdentifiableError('be9529e9-fe72-4de0-ae43-0b363c4938af', 'Cannot renote an invisible note');
+				}
+
+				// Check blocking
+				if (await this.userBlockingService.checkBlocked(data.renote.userId, user.id)) {
+					throw new IdentifiableError('b6352a84-e5cd-4b05-a26c-63437a6b98ba', 'Renote target is blocked');
+				}
+			}
+
+			// Check for recursion
+			if (data.renote.id === oldnote.id) {
+				throw new IdentifiableError('33510210-8452-094c-6227-4a6c05d99f02', `edit failed for ${oldnote.id}: note cannot quote itself`);
+			}
+			for (let nextRenoteId = data.renote.renoteId; nextRenoteId != null;) {
+				if (nextRenoteId === oldnote.id) {
+					throw new IdentifiableError('ea93b7c2-3d6c-4e10-946b-00d50b1a75cb', `edit failed for ${oldnote.id}: note cannot quote a quote of itself`);
+				}
+
+				// TODO create something like threadId but for quotes, that way we don't need full recursion
+				const next = await this.notesRepository.findOne({ where: { id: nextRenoteId }, select: { renoteId: true } });
+				nextRenoteId = next?.renoteId ?? null;
 			}
 		}
 
 		// Check quote permissions
 		await this.noteCreateService.checkQuotePermissions(data, user);
-
-		// Check blocking
-		if (this.isRenote(data) && !this.isQuote(data)) {
-			if (data.renote.userHost === null) {
-				if (data.renote.userId !== user.id) {
-					const blocked = await this.userBlockingService.checkBlocked(data.renote.userId, user.id);
-					if (blocked) {
-						throw new Error('blocked');
-					}
-				}
-			}
-		}
 
 		// 返信対象がpublicではないならhomeにする
 		if (data.reply && data.reply.visibility !== 'public' && data.visibility === 'public') {
