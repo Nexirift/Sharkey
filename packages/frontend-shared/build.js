@@ -16,11 +16,12 @@ const entryPoints = globSync('./js/**/**.{ts,tsx}');
 const options = {
 	entryPoints,
 	minify: process.env.NODE_ENV === 'production',
-	outdir: './js-built',
+	outdir: './js-built/js',
 	target: 'es2022',
 	platform: 'browser',
 	format: 'esm',
 	sourcemap: 'linked',
+	tsconfig: 'tsconfig.web.json',
 };
 
 const args = process.argv.slice(2).map(arg => arg.toLowerCase());
