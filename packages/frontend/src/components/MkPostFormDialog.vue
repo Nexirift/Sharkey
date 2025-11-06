@@ -32,7 +32,6 @@ import MkModal from '@/components/MkModal.vue';
 import MkPostForm from '@/components/MkPostForm.vue';
 
 const props = withDefaults(defineProps<PostFormProps & {
-	instant?: boolean;
 	fixed?: boolean;
 	autofocus?: boolean;
 	editId?: Misskey.entities.Note['id'];
