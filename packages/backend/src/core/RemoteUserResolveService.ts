@@ -20,10 +20,10 @@ import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { bindThis } from '@/decorators.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
 import { CacheService } from '@/core/CacheService.js';
-import { TimeService } from '@/core/TimeService.js';
+import { TimeService } from '@/global/TimeService.js';
 import * as Acct from '@/misc/acct.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
-import { InternalEventService } from '@/core/InternalEventService.js';
+import { InternalEventService } from '@/global/InternalEventService.js';
 
 @Injectable()
 export class RemoteUserResolveService {
