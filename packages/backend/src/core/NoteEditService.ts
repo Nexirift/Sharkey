@@ -350,12 +350,12 @@ export class NoteEditService implements OnApplicationShutdown {
 			}
 
 			// Check for recursion
-			if (data.renote.id === oldnote.id) {
-				throw new IdentifiableError('33510210-8452-094c-6227-4a6c05d99f02', `edit failed for ${oldnote.id}: note cannot quote itself`);
+			if (data.renote.id === oldNote.id) {
+				throw new IdentifiableError('33510210-8452-094c-6227-4a6c05d99f02', `edit failed for ${oldNote.id}: note cannot quote itself`);
 			}
 			for (let nextRenoteId = data.renote.renoteId; nextRenoteId != null;) {
-				if (nextRenoteId === oldnote.id) {
-					throw new IdentifiableError('ea93b7c2-3d6c-4e10-946b-00d50b1a75cb', `edit failed for ${oldnote.id}: note cannot quote a quote of itself`);
+				if (nextRenoteId === oldNote.id) {
+					throw new IdentifiableError('ea93b7c2-3d6c-4e10-946b-00d50b1a75cb', `edit failed for ${oldNote.id}: note cannot quote a quote of itself`);
 				}
 
 				// TODO create something like threadId but for quotes, that way we don't need full recursion

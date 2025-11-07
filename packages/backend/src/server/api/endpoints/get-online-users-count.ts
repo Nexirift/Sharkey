@@ -75,6 +75,6 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			});
 		});
 
-		this.cache = cacheManagementService.createMemorySingleCache<{ count: number, countAcrossNetwork: number }>(1000 * 60); // 1 minute
+		this.cache = cacheManagementService.createMemorySingleCache<{ count: number, countAcrossNetwork: number }>('onlineUsers', { lifetime: 1000 * 60 }); // 1 minute
 	}
 }
