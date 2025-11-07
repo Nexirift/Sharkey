@@ -21,6 +21,7 @@ import type { EnvService } from '@/global/EnvService.js';
 import type { EnvOption } from '@/env.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
 import { showMachineInfo } from '@/misc/show-machine-info.js';
+import { coreLogger } from '@/boot/coreLogger.js';
 import { jobQueue, server } from './common.js';
 
 const _filename = fileURLToPath(import.meta.url);
