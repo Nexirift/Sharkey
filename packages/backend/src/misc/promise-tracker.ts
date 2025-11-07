@@ -5,7 +5,7 @@
 
 import { coreLogger } from '@/boot/coreLogger.js';
 
-const logger = coreLogger.createSubLogger('background');
+const backgroundLogger = coreLogger.createSubLogger('background');
 const promiseRefs: Set<WeakRef<Promise<unknown>>> = new Set();
 
 export function trackTask(task: () => Promise<unknown>): void {
@@ -20,7 +20,7 @@ export function trackPromise(promise: Promise<unknown>) {
 	const ref = new WeakRef(promise);
 	promiseRefs.add(ref);
 	promise
-		.catch(err => logger.error('Unhandled error in tracked background task:', { err }))
+		.catch(err => backgroundLogger.error('Unhandled error in tracked background task:', { err }))
 		.finally(() => promiseRefs.delete(ref));
 }
 
