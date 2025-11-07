@@ -10,7 +10,7 @@ import type { Config } from '@/config.js';
 import { MemoryKVCache } from '@/misc/cache.js';
 import type { MiUserPublickey } from '@/models/UserPublickey.js';
 import { CacheService } from '@/core/CacheService.js';
-import { TimeService } from '@/core/TimeService.js';
+import { TimeService } from '@/global/TimeService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import type { MiNote } from '@/models/Note.js';
 import { bindThis } from '@/decorators.js';
