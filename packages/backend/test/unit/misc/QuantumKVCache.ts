@@ -778,7 +778,7 @@ describe(QuantumKVCache, () => {
 		});
 	});
 
-	describe('refresh', () => {
+	describe('reset', () => {
 		it('should erase all items', async () => {
 			const cache = makeCache<string>();
 			await cache.set('foo', 'bar');
