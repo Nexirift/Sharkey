@@ -7,8 +7,8 @@ import { EnvService } from '@/global/EnvService.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { NativeTimeService } from '@/global/TimeService.js';
 
-export const envService = new EnvService();
+export const coreEnvService = new EnvService();
 
 // eslint-disable-next-line no-restricted-globals
-export const loggerService = new LoggerService(console, new NativeTimeService(), envService);
-export const coreLogger = loggerService.getLogger('core', 'cyan');
+export const coreLoggerService = new LoggerService(console, new NativeTimeService(), coreEnvService);
+export const coreLogger = coreLoggerService.getLogger('core', 'cyan');

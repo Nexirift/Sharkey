@@ -12,7 +12,7 @@ import { EventEmitter } from 'node:events';
 import { inspect } from 'node:util';
 import chalk from 'chalk';
 import Xev from 'xev';
-import { coreLogger, envService, loggerService } from '@/boot/coreLogger.js';
+import { coreLogger, coreEnvService, coreLoggerService } from '@/boot/coreLogger.js';
 import { prepEnv } from '@/boot/prepEnv.js';
 import { masterMain } from './master.js';
 import { workerMain } from './worker.js';
@@ -30,7 +30,7 @@ const ev = new Xev();
 // because not all platforms support top level await :/
 
 async function main() {
-	const envOption = envService.options;
+	const envOption = coreEnvService.options;
 	const clusterLogger = coreLogger.createSubLogger('cluster', 'orange');
 	const logger = coreLogger;
 
@@ -98,18 +98,18 @@ async function main() {
 	if (!envOption.disableClustering) {
 		if (cluster.isPrimary) {
 			logger.info(`Start main process... pid: ${process.pid}`);
-			await masterMain(loggerService, envService);
+			await masterMain(coreLoggerService, coreEnvService);
 			ev.mount();
 		} else if (cluster.isWorker) {
 			logger.info(`Start worker process... pid: ${process.pid}`);
-			await workerMain(loggerService, envService);
+			await workerMain(coreLoggerService, coreEnvService);
 		} else {
 			throw new Error('Unknown process type');
 		}
 	} else {
 		// 非clusterの場合はMasterのみが起動するため、Workerの処理は行わない(cluster.isWorker === trueの状態でこのブロックに来ることはない)
 		logger.info(`Start main process... pid: ${process.pid}`);
-		await masterMain(loggerService, envService);
+		await masterMain(coreLoggerService, coreEnvService);
 		ev.mount();
 	}
 
