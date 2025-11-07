@@ -179,18 +179,18 @@ export class QueueService implements OnModuleInit {
 			});
 
 		await this.systemQueue.upsertJobScheduler(
-				'hibernateUsers-scheduler',
-				{ pattern: '30 1 * * *' }, // every day at 01:30 (avoid bakeBufferedReactions)
-				{
-					name: 'hibernateUsers',
-					opts: {
-						removeOnComplete: 10,
-						removeOnFail: 30,
-					},
-				});
+			'hibernateUsers-scheduler',
+			{ pattern: '30 1 * * *' }, // every day at 01:30 (avoid bakeBufferedReactions)
+			{
+				name: 'hibernateUsers',
+				opts: {
+					removeOnComplete: 10,
+					removeOnFail: 30,
+				},
+			});
 
-			// Slot '40 1 * * *' is available for future work
-			// Slot '50 1 * * *' is available for future work
+		// Slot '40 1 * * *' is available for future work
+		// Slot '50 1 * * *' is available for future work
 	}
 
 	@bindThis
