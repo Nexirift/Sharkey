@@ -107,15 +107,25 @@ export class ApDbResolverService implements OnApplicationShutdown {
 		if (parsed.local) {
 			if (parsed.type !== 'users') return null;
 
-			return await this.cacheService.userByIdCache.fetchMaybe(
-				parsed.id,
-				() => this.usersRepository.findOneBy({ id: parsed.id, isDeleted: false }).then(x => x ?? undefined),
-			) as MiLocalUser | undefined ?? null;
+			const u = await this.cacheService.findOptionalUserById(parsed.id);
+
+			if (u == null || u.isDeleted) {
+				return null;
+			}
+
+			return u as MiLocalUser | MiRemoteUser;
 		} else {
-			return await this.cacheService.uriPersonCache.fetch(
-				parsed.uri,
-				() => this.usersRepository.findOneBy({ uri: parsed.uri, isDeleted: false }),
-			) as MiRemoteUser | null;
+			const uid = await this.apPersonService.uriPersonCache.fetchMaybe(parsed.uri);
+			if (uid == null) {
+				return null;
+			}
+
+			const u = await this.cacheService.findOptionalUserById(uid);
+			if (u == null || u.isDeleted) {
+				return null;
+			}
+
+			return u as MiLocalUser | MiRemoteUser;
 		}
 	}
 

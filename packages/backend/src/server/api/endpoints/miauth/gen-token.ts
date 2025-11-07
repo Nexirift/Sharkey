@@ -84,7 +84,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		super(meta, paramDef, async (ps, me) => {
 			// Validate grantees
 			if (ps.grantees && ps.grantees.length > 0) {
-				const grantees = await this.cacheService.getUsers(ps.grantees);
+				const grantees = await this.cacheService.findUsersById(ps.grantees);
 
 				if (grantees.size !== ps.grantees.length) {
 					throw new ApiError(meta.errors.noSuchUser);
