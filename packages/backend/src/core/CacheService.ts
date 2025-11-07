@@ -15,6 +15,7 @@ import { bindThis } from '@/decorators.js';
 import type { InternalEventTypes } from '@/core/GlobalEventService.js';
 import { InternalEventService } from '@/global/InternalEventService.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
+import { TimeService } from '@/global/TimeService.js';
 import {
 	CacheManagementService,
 	type ManagedMemoryKVCache,
@@ -104,6 +105,7 @@ export class CacheService implements OnApplicationShutdown {
 
 		private readonly internalEventService: InternalEventService,
 		private readonly cacheManagementService: CacheManagementService,
+		private readonly timeService: TimeService,
 	) {
 		//this.onMessage = this.onMessage.bind(this);
 
@@ -128,7 +130,7 @@ export class CacheService implements OnApplicationShutdown {
 				.where({ muterId: In(muterIds) })
 				.andWhere(new Brackets(qb => qb
 					.orWhere({ expiresAt: IsNull() })
-					.orWhere({ expiresAt: MoreThan(new Date()) })))
+					.orWhere({ expiresAt: MoreThan(this.timeService.date) })))
 				.groupBy('muting.muterId')
 				.getRawMany<{ muterId: string, muteeIds: string[] }>()
 				.then(ms => ms.map(m => [m.muterId, new Set(m.muteeIds)])),
@@ -144,7 +146,7 @@ export class CacheService implements OnApplicationShutdown {
 				.where({ muteeId: In(muteeIds) })
 				.andWhere(new Brackets(qb => qb
 					.orWhere({ expiresAt: IsNull() })
-					.orWhere({ expiresAt: MoreThan(new Date()) })))
+					.orWhere({ expiresAt: MoreThan(this.timeService.date) })))
 				.groupBy('muting.muteeId')
 				.getRawMany<{ muteeId: string, muterIds: string[] }>()
 				.then(ms => ms.map(m => [m.muteeId, new Set(m.muterIds)])),
