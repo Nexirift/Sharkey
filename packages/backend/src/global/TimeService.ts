@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, type OnApplicationShutdown } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
 
 const timerTokenSymbol = Symbol('timerToken');

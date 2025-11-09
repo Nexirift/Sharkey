@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import * as Redis from 'ioredis';
+import type * as Redis from 'ioredis';
 import { bindThis } from '@/decorators.js';
-import { TimeService } from '@/global/TimeService.js';
+import type { TimeService } from '@/global/TimeService.js';
 
 export interface RedisCacheServices extends MemoryCacheServices {
 	readonly redisClient: Redis.Redis

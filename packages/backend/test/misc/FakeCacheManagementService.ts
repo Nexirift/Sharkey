@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import * as Redis from 'ioredis';
 import { Injectable } from '@nestjs/common';
 import { GodOfTimeService } from './GodOfTimeService.js';
 import { MockInternalEventService } from './MockInternalEventService.js';
 import { MockRedis } from './MockRedis.js';
+import type * as Redis from 'ioredis';
 import type { QuantumKVOpts } from '@/misc/QuantumKVCache.js';
 import type { RedisKVCacheOpts, RedisSingleCacheOpts, MemoryCacheOpts } from '@/misc/cache.js';
 import type { TimeService } from '@/global/TimeService.js';

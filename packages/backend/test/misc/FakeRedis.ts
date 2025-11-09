@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import * as Redis from 'ioredis';
+import { Redis as RedisConstructor } from 'ioredis';
+import type * as Redis from 'ioredis';
 
 export type RedisKey = Redis.RedisKey;
 export type RedisString = Buffer | string;
@@ -14,7 +15,7 @@ export type RedisCallback<T = unknown> = Redis.Callback<T>;
 export type Ok = 'OK';
 export const ok = 'OK' as const;
 
-export type FakeRedis = Redis.Redis;
+export type FakeRedis = RedisConstructor;
 export interface FakeRedisConstructor {
 	new (): FakeRedis;
 }
@@ -25,7 +26,7 @@ export interface FakeRedisConstructor {
 export const FakeRedis: FakeRedisConstructor = createFakeRedis();
 
 function createFakeRedis(): FakeRedisConstructor {
-	class FakeRedis implements Partial<Redis.Redis> {
+	class FakeRedis implements Partial<RedisConstructor> {
 		async connect(callback?: RedisCallback<void>): Promise<void> {
 			// no-op
 			callback?.(null);
@@ -71,8 +72,8 @@ function createFakeRedis(): FakeRedisConstructor {
 		}
 	}
 
-	const fakeProto = FakeRedis.prototype as Partial<Redis.Redis>;
-	const redisProto = Redis.Redis.prototype as Partial<Redis.Redis>;
+	const fakeProto = FakeRedis.prototype as Partial<RedisConstructor>;
+	const redisProto = RedisConstructor.prototype as Partial<RedisConstructor>;
 
 	// Override all methods and accessors from Redis
 	for (const [key, property] of allProps(redisProto)) {
@@ -102,7 +103,7 @@ function createFakeRedis(): FakeRedisConstructor {
 
 	// test
 	const test = new FakeRedis();
-	if (!(test instanceof Redis.Redis)) {
+	if (!(test instanceof RedisConstructor)) {
 		throw new Error('failed to extend');
 	}
 

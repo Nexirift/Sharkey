@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
-import * as Redis from 'ioredis';
+import { Inject, Injectable, type OnApplicationShutdown } from '@nestjs/common';
 import {
 	MemoryKVCache,
 	MemorySingleCache,
@@ -26,6 +25,7 @@ import { DI } from '@/di-symbols.js';
 import { TimeService, type TimerHandle } from '@/global/TimeService.js';
 import { InternalEventService } from '@/global/InternalEventService.js';
 import { callAllOn } from '@/misc/call-all.js';
+import type * as Redis from 'ioredis';
 
 // This is the one place that's *supposed* to new() up caches.
 /* eslint-disable no-restricted-syntax */

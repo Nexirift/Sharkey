@@ -4,13 +4,14 @@
  */
 
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
-import Redis from 'ioredis';
 import { DI } from '@/di-symbols.js';
+import { bindThis } from '@/decorators.js';
 import type { GlobalEvents, InternalEventTypes } from '@/core/GlobalEventService.js';
 import type { Config } from '@/config.js';
-import { bindThis } from '@/decorators.js';
+import type Redis from 'ioredis';
 
-export type Listener<K extends keyof InternalEventTypes> = (value: InternalEventTypes[K], key: K, isLocal: boolean) => void | Promise<void>;
+export type EventTypes = InternalEventTypes;
+export type Listener<K extends keyof EventTypes> = (value: EventTypes[K], key: K, isLocal: boolean) => void | Promise<void>;
 
 export interface ListenerProps {
 	ignoreLocal?: boolean,
@@ -19,7 +20,7 @@ export interface ListenerProps {
 
 @Injectable()
 export class InternalEventService implements OnApplicationShutdown {
-	private readonly listeners = new Map<keyof InternalEventTypes, Map<Listener<keyof InternalEventTypes>, ListenerProps>>();
+	private readonly listeners = new Map<keyof EventTypes, Map<Listener<keyof EventTypes>, ListenerProps>>();
 
 	constructor(
 		@Inject(DI.redisForSub)
@@ -35,7 +36,7 @@ export class InternalEventService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public on<K extends keyof InternalEventTypes>(type: K, listener: Listener<K>, props?: ListenerProps): void {
+	public on<K extends keyof EventTypes>(type: K, listener: Listener<K>, props?: ListenerProps): void {
 		let set = this.listeners.get(type);
 		if (!set) {
 			set = new Map();
@@ -43,16 +44,16 @@ export class InternalEventService implements OnApplicationShutdown {
 		}
 
 		// Functionally, this is just a set with metadata on the values.
-		set.set(listener as Listener<keyof InternalEventTypes>, props ?? {});
+		set.set(listener as Listener<keyof EventTypes>, props ?? {});
 	}
 
 	@bindThis
-	public off<K extends keyof InternalEventTypes>(type: K, listener: Listener<K>): void {
-		this.listeners.get(type)?.delete(listener as Listener<keyof InternalEventTypes>);
+	public off<K extends keyof EventTypes>(type: K, listener: Listener<K>): void {
+		this.listeners.get(type)?.delete(listener as Listener<keyof EventTypes>);
 	}
 
 	@bindThis
-	public async emit<K extends keyof InternalEventTypes>(type: K, value: InternalEventTypes[K]): Promise<void> {
+	public async emit<K extends keyof EventTypes>(type: K, value: EventTypes[K]): Promise<void> {
 		await this.emitInternal(type, value, true);
 		await this.redisForPub.publish(this.config.host, JSON.stringify({
 			channel: 'internal',
@@ -61,7 +62,7 @@ export class InternalEventService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async emitInternal<K extends keyof InternalEventTypes>(type: K, value: InternalEventTypes[K], isLocal: boolean): Promise<void> {
+	private async emitInternal<K extends keyof EventTypes>(type: K, value: EventTypes[K], isLocal: boolean): Promise<void> {
 		const listeners = this.listeners.get(type);
 		if (!listeners) {
 			return;
@@ -84,7 +85,7 @@ export class InternalEventService implements OnApplicationShutdown {
 		if (obj.channel === 'internal') {
 			const { type, body } = obj.message as GlobalEvents['internal']['payload'];
 			if (!isLocalInternalEvent(body) || body._pid !== process.pid) {
-				await this.emitInternal(type, body as InternalEventTypes[keyof InternalEventTypes], false);
+				await this.emitInternal(type, body as EventTypes[keyof EventTypes], false);
 			}
 		}
 	}

@@ -7,7 +7,7 @@ import { Injectable } from '@nestjs/common';
 import { FakeRedis, ok, type RedisString } from './FakeRedis.js';
 import type { RedisKey, RedisNumber, RedisValue, RedisCallback, Ok } from './FakeRedis.js';
 import type { ChainableCommander } from 'ioredis';
-import { TimeService, NativeTimeService } from '@/global/TimeService.js';
+import { NativeTimeService, type TimeService } from '@/global/TimeService.js';
 import { bindThis } from '@/decorators.js';
 
 export interface MockRedisConstructor {
