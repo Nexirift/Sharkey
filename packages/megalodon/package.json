@@ -44,14 +44,14 @@
 		"oauth": "0.10.2"
 	},
 	"devDependencies": {
-		"@jest/globals": "30.1.2",
+		"@jest/globals": "30.2.0",
 		"@types/jest": "30.0.0",
 		"@types/node": "22.18.1",
 		"@types/oauth": "0.9.6",
-		"jest": "30.1.3",
-		"jest-mock": "30.0.5",
+		"jest": "30.2.0",
+		"jest-mock": "30.2.0",
 		"jest-worker": "30.1.0",
-		"ts-jest": "29.4.4",
+		"ts-jest": "29.4.5",
 		"ts-node": "10.9.2",
 		"typescript": "5.9.2"
 	}
