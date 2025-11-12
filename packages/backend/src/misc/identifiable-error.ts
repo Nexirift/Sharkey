@@ -7,6 +7,9 @@
  * ID付きエラー
  */
 export class IdentifiableError extends Error {
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
+
 	public message: string;
 	public id: string;
 

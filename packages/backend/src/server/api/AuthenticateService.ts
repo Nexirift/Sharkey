@@ -18,6 +18,9 @@ import { CacheManagementService, type ManagedMemoryKVCache } from '@/global/Cach
 import { TimeService } from '@/global/TimeService.js';
 
 export class AuthenticationError extends Error {
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
+
 	constructor(message: string) {
 		super(message);
 		this.name = 'AuthenticationError';

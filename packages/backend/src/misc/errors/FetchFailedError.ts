@@ -4,6 +4,10 @@ import { QuantumCacheError } from '@/misc/errors/QuantumCacheError.js';
  * Thrown when a fetch failed for any reason.
  */
 export class FetchFailedError extends QuantumCacheError {
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
+
+
 	/**
 	 * Name of the key(s) that could not be fetched.
 	 * Will be an array if bulkFetcher() failed, and a string if regular fetch() failed.

@@ -13,10 +13,8 @@ export const AdminSignup = 'admin.sign_up' as const;
 export const AdminReport = 'admin.report' as const;
 
 export class UnknownNotificationTypeError extends Error {
-  constructor() {
-    super()
-    Object.setPrototypeOf(this, UnknownNotificationTypeError.prototype)
-  }
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
 }
 
 export const notificationTypes = [

@@ -14,6 +14,9 @@ export const captchaErrorCodes = {
 export type CaptchaErrorCode = typeof captchaErrorCodes[keyof typeof captchaErrorCodes];
 
 export class CaptchaError extends Error {
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
+
 	public readonly code: CaptchaErrorCode;
 	public readonly cause?: unknown;
 

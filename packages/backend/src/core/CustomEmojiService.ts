@@ -768,6 +768,9 @@ export class CustomEmojiService {
 }
 
 export class InvalidEmojiError extends Error {
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
+
 	public readonly [isRetryableSymbol] = false;
 }
 

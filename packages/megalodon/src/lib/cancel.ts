@@ -1,5 +1,8 @@
 export class RequestCanceledError extends Error {
-  public isCancel: boolean
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
+
+	public isCancel: boolean
 
   constructor(msg: string) {
     super(msg)

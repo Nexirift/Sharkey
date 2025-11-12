@@ -1354,37 +1354,21 @@ export interface MegalodonInterface {
 }
 
 export class NoImplementedError extends Error {
-  constructor(err?: string) {
-    super(err)
-
-    this.name = new.target.name
-    Object.setPrototypeOf(this, new.target.prototype)
-  }
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
 }
 
 export class ArgumentError extends Error {
-  constructor(err?: string) {
-    super(err)
-
-    this.name = new.target.name
-    Object.setPrototypeOf(this, new.target.prototype)
-  }
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
 }
 
 export class UnexpectedError extends Error {
-  constructor(err?: string) {
-    super(err)
-
-    this.name = new.target.name
-    Object.setPrototypeOf(this, new.target.prototype)
-  }
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
 }
 
 export class NodeinfoError extends Error {
-  constructor(err?: string) {
-    super(err)
-
-    this.name = new.target.name
-    Object.setPrototypeOf(this, new.target.prototype)
-  }
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
 }

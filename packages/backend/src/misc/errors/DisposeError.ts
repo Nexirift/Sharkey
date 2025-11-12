@@ -7,6 +7,9 @@
  * Common base class for DisposedError and DisposingError - please use only for catch() blocks.
  */
 export abstract class DisposeError extends Error {
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
+
 	public readonly source: string | undefined;
 
 	protected constructor(opts?: { source?: string, message?: string }) {
@@ -19,6 +22,9 @@ export abstract class DisposeError extends Error {
  * Thrown when an attempt is made to use an object that has been disposed.
  */
 export class DisposedError extends DisposeError {
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
+
 	constructor(opts?: { source?: string, message?: string }) {
 		super({
 			source: opts?.source,
@@ -31,6 +37,9 @@ export class DisposedError extends DisposeError {
  * Thrown when an object is use begins disposing.
  */
 export class DisposingError extends DisposeError {
+	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
+	override name = this.constructor.name;
+
 	constructor(opts?: { source?: string, message?: string }) {
 		super({
 			source: opts?.source,
