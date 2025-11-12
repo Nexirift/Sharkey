@@ -919,6 +919,180 @@ describe(QuantumKVCache, () => {
 		});
 	});
 
+	describe('refreshMaybe', () => {
+		it('should return value when found by fetcher', async () => {
+			const cache = makeCache<string>({
+				optionalFetcher: () => 'bar',
+			});
+
+			const result = await cache.refreshMaybe('foo');
+
+			expect(result).toBe('bar');
+		});
+
+		it('should persist value when found by fetcher', async () => {
+			const cache = makeCache<string>({
+				optionalFetcher: () => 'bar',
+			});
+
+			await cache.refreshMaybe('foo');
+			const result = cache.get('foo');
+
+			expect(result).toBe('bar');
+		});
+
+		it('should call onChanged when found by fetcher', async () => {
+			const fakeOnChanged = jest.fn(() => Promise.resolve());
+			const cache = makeCache<string>({
+				optionalFetcher: () => 'bar',
+				onChanged: fakeOnChanged,
+			});
+
+			await cache.refreshMaybe('foo');
+
+			expect(fakeOnChanged).toHaveBeenCalledWith(['foo'], expect.objectContaining({ cache }));
+		});
+
+		it('should return undefined when fetcher returns undefined', async () => {
+			const cache = makeCache<string>({
+				optionalFetcher: () => undefined,
+			});
+
+			const result = await cache.refreshMaybe('foo');
+
+			expect(result).toBe(undefined);
+		});
+
+		it('should call onChanged when fetcher returns undefined', async () => {
+			const fakeOnChanged = jest.fn(() => Promise.resolve());
+			const cache = makeCache<string>({
+				optionalFetcher: () => undefined,
+				onChanged: fakeOnChanged,
+			});
+
+			await cache.refreshMaybe('foo');
+
+			expect(fakeOnChanged).toHaveBeenCalledWith(['foo'], expect.objectContaining({ cache }));
+		});
+
+		it('should return undefined when fetcher returns null', async () => {
+			const cache = makeCache<string>({
+				optionalFetcher: () => null,
+			});
+
+			const result = await cache.refreshMaybe('foo');
+
+			expect(result).toBe(undefined);
+		});
+
+		it('should call onChanged when fetcher returns null', async () => {
+			const fakeOnChanged = jest.fn(() => Promise.resolve());
+			const cache = makeCache<string>({
+				optionalFetcher: () => null,
+				onChanged: fakeOnChanged,
+			});
+
+			await cache.refreshMaybe('foo');
+
+			expect(fakeOnChanged).toHaveBeenCalledWith(['foo'], expect.objectContaining({ cache }));
+		});
+
+		it('should throw FetchFailedError when fetcher throws error', async () => {
+			const cache = makeCache<string>({
+				optionalFetcher: () => { throw new Error('test error'); },
+			});
+
+			await assert.throwsAsync(FetchFailedError, async () => {
+				return await cache.refreshMaybe('foo');
+			});
+		});
+
+		it('should fall back on fetcher when optionalFetcher is not defined', async () => {
+			const cache = makeCache<string>({
+				fetcher: () => 'bar',
+			});
+
+			const result = await cache.refreshMaybe('foo');
+
+			expect(result).toBe('bar');
+		});
+
+		it('should replace the value if it exists', async () => {
+			const cache = makeCache<string>({
+				optionalFetcher: key => `value#${key}`,
+			});
+
+			await cache.set('foo', 'bar');
+			const result = await cache.refreshMaybe('foo');
+
+			expect(result).toBe('value#foo');
+		});
+
+		it('should emit event when found', async () => {
+			const cache = makeCache<string>({
+				name: 'fake',
+				optionalFetcher: key => `value#${key}`,
+			});
+
+			await cache.refreshMaybe('foo');
+
+			expect(mockInternalEventService._calls).toContainEqual(['emit', ['quantumCacheUpdated', { name: 'fake', keys: ['foo'] }]]);
+		});
+
+		it('should emit event when not found', async () => {
+			const cache = makeCache<string>({
+				name: 'fake',
+				optionalFetcher: () => undefined,
+			});
+
+			await cache.refreshMaybe('foo');
+
+			expect(mockInternalEventService._calls).toContainEqual(['emit', ['quantumCacheUpdated', { name: 'fake', keys: ['foo'] }]]);
+		});
+
+		it('should respect optionalFetcherConcurrency', async () => {
+			await testConcurrency(
+				{
+					optionalFetcher: key => `value#${key}`,
+					optionalFetcherConcurrency: 2,
+				},
+				(cache, key) => cache.refreshMaybe(key),
+				['value#foo', 'value#bar', 'value#baz'],
+			);
+		});
+
+		it('should respect maxConcurrency', async () => {
+			await testConcurrency(
+				{
+					fetcher: key => `value#${key}`,
+					maxConcurrency: 2,
+				},
+				(cache, key) => cache.refreshMaybe(key),
+				['value#foo', 'value#bar', 'value#baz'],
+			);
+		});
+
+		it('should de-duplicate calls', async () => {
+			// Arrange
+			const testComplete = Promise.withResolvers<void>();
+			const mockFetcher = jest.fn(async (key: string) => {
+				await testComplete.promise;
+				return `value#${key}`;
+			});
+			const cache = makeCache<string>({ optionalFetcher: mockFetcher });
+
+			// Act
+			const fetch1 = cache.refreshMaybe('foo');
+			const fetch2 = cache.refreshMaybe('foo');
+
+			// Assert
+			testComplete.resolve();
+			await expect(fetch1).resolves.toBe('value#foo');
+			await expect(fetch2).resolves.toBe('value#foo');
+			expect(mockFetcher).toHaveBeenCalledTimes(1);
+		});
+	});
+
 	describe('refreshMany', () => {
 		it('should do nothing for empty input', async () => {
 			const fakeOnChanged = jest.fn(() => Promise.resolve());

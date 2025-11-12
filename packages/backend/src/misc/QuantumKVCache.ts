@@ -551,6 +551,26 @@ export class QuantumKVCache<TIn, T extends Value<TIn> = Value<TIn>> implements I
 	}
 
 	/**
+	 * Refreshes the value of a key from the fetcher, returning undefined if not found.
+	 * Whether a result is found or not, it then erases any stale caches across the cluster.
+	 * Fires an onChanged event after the cache has been updated in all processes.
+	 */
+	@bindThis
+	public async refreshMaybe(key: string): Promise<T | undefined> {
+		this.throwIfDisposed();
+
+		const value = await this.doFetchMaybe(key);
+
+		if (value != null) {
+			await this.set(key, value);
+		} else {
+			await this.delete(key);
+		}
+
+		return value;
+	}
+
+	/**
 	 * Refreshes multiple values from the cache, and erases any stale caches across the cluster.
 	 * Fires an onChanged event after the cache has been updated in all processes.
 	 * Missing / unmapped values are excluded from the response.
