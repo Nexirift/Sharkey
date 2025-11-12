@@ -261,7 +261,7 @@ export class CacheService implements OnApplicationShutdown {
 		});
 
 		this.userMutingsCache = this.cacheManagementService.createQuantumKVCache<Set<string>>('userMutings', {
-			lifetime: 1000 * 60 * 30, // 3m (workaround for mute expiration)
+			lifetime: 1000 * 60 * 3, // 3m (workaround for mute expiration)
 			fetcher: async muterId => {
 				const mutings = await this.mutingsRepository.find({ where: { muterId: muterId }, select: ['muteeId'] });
 				return new Set(mutings.map(muting => muting.muteeId));
@@ -283,7 +283,7 @@ export class CacheService implements OnApplicationShutdown {
 		});
 
 		this.userMutedCache = this.cacheManagementService.createQuantumKVCache<Set<string>>('userMuted', {
-			lifetime: 1000 * 60 * 30, // 3m (workaround for mute expiration)
+			lifetime: 1000 * 60 * 3, // 3m (workaround for mute expiration)
 			fetcher: async muteeId => {
 				const mutings = await this.mutingsRepository.find({ where: { muteeId }, select: ['muterId'] });
 				return new Set(mutings.map(muting => muting.muterId));
