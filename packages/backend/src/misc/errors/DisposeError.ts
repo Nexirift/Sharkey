@@ -13,7 +13,7 @@ export abstract class DisposeError extends Error {
 	public readonly source: string | undefined;
 
 	protected constructor(opts?: { source?: string, message?: string }) {
-		super();
+		super(opts?.message);
 		this.source = opts?.source;
 	}
 }
