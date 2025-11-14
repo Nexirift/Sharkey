@@ -8,11 +8,24 @@ import Redis from 'ioredis';
 import type { MiUser } from '@/models/_.js';
 import { TimeService } from '@/global/TimeService.js';
 import { EnvService } from '@/global/EnvService.js';
-import { BucketRateLimit, LegacyRateLimit, LimitInfo, RateLimit, hasMinLimit, isLegacyRateLimit, Keyed, hasMaxLimit, disabledLimitInfo, MaxLegacyLimit, MinLegacyLimit } from '@/misc/rate-limit-utils.js';
+import {
+	type BucketRateLimit,
+	type LegacyRateLimit,
+	type LimitInfo,
+	type RateLimit,
+	type Keyed,
+	type MaxLegacyLimit,
+	type MinLegacyLimit,
+	hasMinLimit,
+	isLegacyRateLimit,
+	hasMaxLimit,
+	disabledLimitInfo,
+} from '@/misc/rate-limit-utils.js';
 import { RoleService } from '@/core/RoleService.js';
 import { CacheManagementService, type ManagedMemoryKVCache } from '@/global/CacheManagementService.js';
 import { ConflictError } from '@/misc/errors/ConflictError.js';
 import { DI } from '@/di-symbols.js';
+import { bindThis } from '@/decorators.js';
 
 // Sentinel value used for caching the default role template.
 // Required because MemoryKVCache doesn't support null keys.
@@ -64,6 +77,7 @@ export class SkRateLimiterService {
 	 * @param limit The limit definition
 	 * @param actorOrUser authenticated client user or IP hash
 	 */
+	@bindThis
 	public async limit(limit: Keyed<RateLimit>, actorOrUser: string | MiUser): Promise<LimitInfo> {
 		if (this.disabled) {
 			return disabledLimitInfo;

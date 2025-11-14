@@ -295,28 +295,38 @@ export class ApPersonService implements OnModuleInit {
 	 * Misskeyに対象のPersonが登録されていればそれを返し、登録がなければnullを返します。
 	 */
 	@bindThis
-	public async fetchPerson(uri: string): Promise<MiLocalUser | MiRemoteUser | null> {
-		const cached = await this.uriPersonCache.fetchMaybe(uri);
-		if (cached) return await this.cacheService.findOptionalUserById(cached) as MiRemoteUser | MiLocalUser | undefined ?? null;
+	public async fetchPerson(uri: string, opts?: { withDeleted?: boolean, withSuspended?: boolean }): Promise<MiLocalUser | MiRemoteUser | null> {
+		const _opts = {
+			withDeleted: opts?.withDeleted ?? false,
+			withSuspended: opts?.withSuspended ?? true,
+		};
 
-		// URIがこのサーバーを指しているならデータベースからフェッチ
-		if (uri.startsWith(`${this.config.url}/`)) {
-			const id = uri.split('/').pop();
-			const u = await this.usersRepository.findOneBy({ id }) as MiLocalUser | null;
-			if (u) await this.uriPersonCache.set(uri, u.id);
-			return u;
+		let userId;
+
+		// Resolve URI -> User ID
+		const parsed = this.utilityService.parseUri(uri);
+		if (parsed.local) {
+			userId = parsed.type === 'users' ? parsed.id : null;
+		} else {
+			userId = await this.uriPersonCache.fetch(uri).catch(() => null);
 		}
 
-		//#region このサーバーに既に登録されていたらそれを返す
-		const exist = await this.usersRepository.findOneBy({ uri }) as MiLocalUser | MiRemoteUser | null;
-
-		if (exist) {
-			await this.uriPersonCache.set(uri, exist.id);
-			return exist;
+		// No match
+		if (!userId) {
+			return null;
 		}
-		//#endregion
 
-		return null;
+		const user = await this.cacheService.findUserById(userId)
+			.catch(() => null) as MiLocalUser | MiRemoteUser | null;
+
+		if (user?.isDeleted && !_opts.withDeleted) {
+			return null;
+		}
+		if (user?.isSuspended && !_opts.withSuspended) {
+			return null;
+		}
+
+		return user;
 	}
 
 	private async resolveAvatarAndBanner(user: MiRemoteUser, icon: any, image: any, bgimg: any): Promise<Partial<Pick<MiRemoteUser, 'avatarId' | 'bannerId' | 'backgroundId' | 'avatarUrl' | 'bannerUrl' | 'backgroundUrl' | 'avatarBlurhash' | 'bannerBlurhash' | 'backgroundBlurhash'>>> {
@@ -853,7 +863,7 @@ export class ApPersonService implements OnModuleInit {
 		}
 
 		//#region このサーバーに既に登録されていたらそれを返す
-		const exist = await this.fetchPerson(uri);
+		const exist = await this.fetchPerson(uri, { withDeleted: true });
 		if (exist) return exist;
 		//#endregion
 
