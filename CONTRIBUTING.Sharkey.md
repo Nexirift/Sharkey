@@ -501,3 +501,30 @@ following apply:
 
 - It's necessary to use `null` as a data value.
   `QuantumKVCache` does not allow null values, and thus another option should be chosen.
+
+### Inter-Process Communication
+
+Sharkey can utilize multiple processes for a single server.
+When running in this mode, a mechanism to synchronization changes between each process is necessary.
+This is accomplished through the use of **Redis IPC**.
+
+#### IPC Options
+
+There are three methods to access this IPC system, all of which are available through Dependency Injection:
+* Using the `pub` and `sub` Redis instances to directly establish channels.
+  This should only be done when necessary, like when implementing very low-level utilities.
+* The `publishInternalEvent` method of `GlobalEventService`.
+  This method will asynchronously publish an event to redis, which will forward it to all connected processes - **including the sending process**.
+  Due to this and other issues, `publishInternalEvent` should be considered obsolete and avoided in new code.
+  Instead, consider one of the other options.
+* `InternalEventService`, which is the newest and recommended way to handle IPC.
+  The `emit` method accepts arguments identical to `publishInternalEvent`, which eases migration, while also accepting a configuration object to control event propagation.
+  Additionally, `InternalEventService` ensures that local event listeners are called *before* notifying other processes, avoiding potential data races and other weirdness.
+
+#### When to use IPC
+
+IPC should be used whenever cacheable data is modified.
+By cacheable, we mean any data that could be stored in any of the supported memory caches.
+Changes to `MiUser`, `MiUserProfile`, or `MiInstance` entities should **always** be considered cacheable, but these are not the only options.
+A major exception is when the local data is cached in a Quantum cache (`QuantumKVCache`).
+Quantum caches automatically call `InternalEventService.emit` to synchronize changes, so you only need to `await set()` and the changes will be reflected in other processes' caches too.
