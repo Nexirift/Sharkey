@@ -7,6 +7,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import { In } from 'typeorm';
 import { ModuleRef } from '@nestjs/core';
+import Ajv from 'ajv';
 import type {
 	MiMeta,
 	MiRole,
@@ -35,11 +36,10 @@ import {
 	type ManagedMemorySingleCache,
 	type ManagedMemoryKVCache,
 } from '@/global/CacheManagementService.js';
-import type { OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
-import { getCallerId } from '@/misc/attach-caller-id.js';
-import Ajv from 'ajv';
-import type { JSONSchemaType, ValidateFunction } from 'ajv';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
+import { getCallerId } from '@/misc/attach-caller-id.js';
+import type { OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
+import type { JSONSchemaType, ValidateFunction } from 'ajv';
 
 export type RolePolicies = {
 	gtlAvailable: boolean;
@@ -185,8 +185,7 @@ const RoleSchema: JSONSchemaType<MiRole['policies']> = {
 				// I picked `canTrend` here, but any policy name is fine, the
 				// type of their bit of the schema is all the same
 				[policy, value]: [string, JSONSchemaType<RolePolicies>['properties']['canTrend']]
-			) => {
-			return [
+			) => [
 				policy,
 				{
 					type: 'object',
@@ -201,8 +200,8 @@ const RoleSchema: JSONSchemaType<MiRole['policies']> = {
 						value,
 					},
 				},
-			];
-		}),
+			],
+		),
 	),
 };
 
