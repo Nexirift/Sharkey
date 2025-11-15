@@ -28,7 +28,6 @@ export class NoteEdit {
 	@JoinColumn()
 	public note: MiNote | null;
 
-	// TODO data migration
 	@Column({
 		...id(),
 		comment: 'The ID of author.',
@@ -98,7 +97,6 @@ export class NoteEdit {
 	})
 	public updatedAt: Date;
 
-	// TODO rename migration
 	@Column('text', {
 		nullable: true,
 	})
