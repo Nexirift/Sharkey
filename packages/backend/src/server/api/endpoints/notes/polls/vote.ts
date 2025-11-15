@@ -16,6 +16,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { TimeService } from '@/global/TimeService.js';
+import { trackPromise } from '@/misc/promise-tracker.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -176,7 +177,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			}
 
 			// リモートフォロワーにUpdate配信
-			await this.pollService.deliverQuestionUpdate(note);
+			trackPromise(this.pollService.deliverQuestionUpdate(note));
 		});
 	}
 }

@@ -11,6 +11,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { jest } from '@jest/globals';
 import { MockApResolverService } from '../misc/MockApResolverService.js';
 import { MockConsole } from '../misc/MockConsole.js';
+import { ImmediateApPersonService, ImmediateFetchInstanceMetadataService } from '../misc/immediateBackgroundTasks.js';
 import type { Config } from '@/config.js';
 import type { MiLocalUser, MiRemoteUser } from '@/models/User.js';
 import { ApImageService } from '@/core/activitypub/models/ApImageService.js';
@@ -25,8 +26,9 @@ import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { CacheManagementService } from '@/global/CacheManagementService.js';
 import { ApResolverService } from '@/core/activitypub/ApResolverService.js';
+import { FetchInstanceMetadataService } from '@/core/FetchInstanceMetadataService.js';
 import type { IActor, IApDocument, ICollection, IObject, IPost } from '@/core/activitypub/type.js';
-import { MiMeta, MiNote, MiUser, MiUserKeypair, UserProfilesRepository, UserPublickeysRepository, UserKeypairsRepository, UsersRepository, NotesRepository } from '@/models/_.js';
+import { MiMeta, MiNote, MiUser, MiUserKeypair, UserProfilesRepository, UserPublickeysRepository, UserKeypairsRepository, UsersRepository, NotesRepository, UserNotePiningsRepository } from '@/models/_.js';
 import { DI } from '@/di-symbols.js';
 import { secureRndstr } from '@/misc/secure-rndstr.js';
 import { DownloadService } from '@/core/DownloadService.js';
@@ -75,7 +77,7 @@ function createRandomFeaturedCollection(actor: NonTransientIActor, length: numbe
 	return {
 		'@context': 'https://www.w3.org/ns/activitystreams',
 		type: 'Collection',
-		id: actor.outbox as string,
+		id: actor.featured as string | null ?? `${actor.id}/featured`,
 		totalItems: items.length,
 		items,
 	};
@@ -108,6 +110,7 @@ describe('ActivityPub', () => {
 	let cacheManagementService: CacheManagementService;
 	let mockConsole: MockConsole;
 	let notesRepository: NotesRepository;
+	let userNotePiningsRepository: UserNotePiningsRepository;
 
 	const metaInitial = {
 		id: 'x',
@@ -163,6 +166,8 @@ describe('ActivityPub', () => {
 			.overrideProvider(DI.meta).useValue(meta)
 			.overrideProvider(ApResolverService).useClass(MockApResolverService)
 			.overrideProvider(DI.console).useClass(MockConsole)
+			.overrideProvider(FetchInstanceMetadataService).useClass(ImmediateFetchInstanceMetadataService)
+			.overrideProvider(ApPersonService).useClass(ImmediateApPersonService)
 			.compile();
 
 		await app.init();
@@ -184,6 +189,7 @@ describe('ActivityPub', () => {
 		cacheManagementService = app.get(CacheManagementService);
 		mockConsole = app.get<MockConsole>(DI.console);
 		notesRepository = app.get<NotesRepository>(DI.notesRepository);
+		userNotePiningsRepository = app.get<UserNotePiningsRepository>(DI.userNotePiningsRepository);
 	});
 
 	afterAll(async () => {
@@ -380,7 +386,7 @@ describe('ActivityPub', () => {
 			resolver.register(actor2.id, actor2);
 			resolver.register(actor2Note.id, actor2Note);
 
-			await personService.createPerson(actor1.id, resolver);
+			const created = await personService.createPerson(actor1.id, resolver);
 
 			// actor2Note is from a different server and needs to be fetched again
 			assert.deepStrictEqual(
@@ -394,6 +400,10 @@ describe('ActivityPub', () => {
 			// Reflects the original content instead of the fraud
 			assert.strictEqual(note.text, 'test test foo');
 			assert.strictEqual(note.uri, actor2Note.id);
+
+			// Cross-user pin should be rejected
+			const pinExists = await userNotePiningsRepository.existsBy({ userId: created.id, noteId: note.id });
+			expect(pinExists).toBe(false);
 		});
 
 		test('Fetch a note that is a featured note of the attributed actor', async () => {

@@ -100,7 +100,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				roleIdsThatCanBeUsedThisEmojiAsReaction: emoji.roleIdsThatCanBeUsedThisEmojiAsReaction,
 			}, me);
 
-			return this.emojiEntityService.packDetailed(addedEmoji);
+			return await this.emojiEntityService.packDetailed(addedEmoji);
 		});
 	}
 }

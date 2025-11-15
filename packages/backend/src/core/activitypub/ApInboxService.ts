@@ -33,10 +33,6 @@ import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { fromTuple } from '@/misc/from-tuple.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
-import InstanceChart from '@/core/chart/charts/instance.js';
-import FederationChart from '@/core/chart/charts/federation.js';
-import { FetchInstanceMetadataService } from '@/core/FetchInstanceMetadataService.js';
-import { UpdateInstanceQueue } from '@/core/UpdateInstanceQueue.js';
 import { CacheService } from '@/core/CacheService.js';
 import { NoteVisibilityService } from '@/core/NoteVisibilityService.js';
 import { TimeService } from '@/global/TimeService.js';
@@ -97,10 +93,6 @@ export class ApInboxService {
 		private queueService: QueueService,
 		private globalEventService: GlobalEventService,
 		private readonly federatedInstanceService: FederatedInstanceService,
-		private readonly fetchInstanceMetadataService: FetchInstanceMetadataService,
-		private readonly instanceChart: InstanceChart,
-		private readonly federationChart: FederationChart,
-		private readonly updateInstanceQueue: UpdateInstanceQueue,
 		private readonly cacheService: CacheService,
 		private readonly noteVisibilityService: NoteVisibilityService,
 		private readonly timeService: TimeService,
@@ -115,7 +107,7 @@ export class ApInboxService {
 			const results = [] as [string, string | void][];
 			resolver ??= this.apResolverService.createResolver();
 
-			const items = await resolver.resolveCollectionItems(activity);
+			const items = await resolver.resolveCollectionItems(activity, true, getNullableApId(activity) ?? undefined);
 			for (let i = 0; i < items.length; i++) {
 				const act = items[i];
 				if (act.id != null) {
@@ -153,11 +145,10 @@ export class ApInboxService {
 		// ついでにリモートユーザーの情報が古かったら更新しておく
 		if (actor.uri) {
 			if (actor.lastFetchedAt == null || this.timeService.now - actor.lastFetchedAt.getTime() > 1000 * 60 * 60 * 24) {
-				setImmediate(() => {
+				{
 					// 同一ユーザーの情報を再度処理するので、使用済みのresolverを再利用してはいけない
-					this.apPersonService.updatePerson(actor.uri)
-						.catch(err => this.logger.error(`Failed to update person: ${renderInlineError(err)}`));
-				});
+					await this.apPersonService.updatePersonLazy(actor);
+				}
 			}
 		}
 		return result;
@@ -424,42 +415,14 @@ export class ApInboxService {
 		}
 
 		// Update stats (adapted from InboxProcessorService)
-		this.federationChart.inbox(actor.host).then();
-		process.nextTick(async () => {
-			const i = await (this.meta.enableStatsForFederatedInstances
-				? this.federatedInstanceService.fetchOrRegister(actor.host)
-				: this.federatedInstanceService.fetch(actor.host));
-
-			if (i == null) return;
-
-			this.updateInstanceQueue.enqueue(i.id, {
-				latestRequestReceivedAt: this.timeService.date,
-				shouldUnsuspend: i.suspensionState === 'autoSuspendedForNotResponding',
-			});
-
-			if (this.meta.enableChartsForFederatedInstances) {
-				this.instanceChart.requestReceived(i.host).then();
-			}
-
-			this.fetchInstanceMetadataService.fetchInstanceMetadata(i).then();
-		});
+		await this.queueService.createPostInboxJob(actor.host);
 
 		// Process it!
-		return await this.performOneActivity(actor, activity, resolver)
-			.finally(() => {
-				// Update user (adapted from performActivity)
-				if (actor.lastFetchedAt == null || this.timeService.now - actor.lastFetchedAt.getTime() > 1000 * 60 * 60 * 24) {
-					setImmediate(() => {
-						// Don't re-use the resolver, or it may throw recursion errors.
-						// Instead, create a new resolver with an appropriately-reduced recursion limit.
-						const subResolver = this.apResolverService.createResolver({
-							recursionLimit: resolver.getRecursionLimit() - resolver.getHistory().length,
-						});
-						this.apPersonService.updatePerson(actor.uri, subResolver)
-							.catch(err => this.logger.error(`Failed to update person: ${renderInlineError(err)}`));
-					});
-				}
-			});
+		try {
+			return await this.performOneActivity(actor, activity, resolver);
+		} finally {
+			await this.apPersonService.updatePersonLazy(actor);
+		}
 	}
 
 	@bindThis

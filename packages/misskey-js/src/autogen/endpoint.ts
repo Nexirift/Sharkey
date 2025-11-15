@@ -87,6 +87,7 @@ import type {
 	AdminQueueDeliverDelayedResponse,
 	AdminQueueInboxDelayedResponse,
 	AdminQueueJobsRequest,
+	AdminQueueJobsResponse,
 	AdminQueuePromoteJobsRequest,
 	AdminQueueQueueStatsRequest,
 	AdminQueueRemoveJobRequest,
@@ -739,7 +740,7 @@ export type Endpoints = {
 	'admin/queue/clear': { req: AdminQueueClearRequest; res: EmptyResponse };
 	'admin/queue/deliver-delayed': { req: EmptyRequest; res: AdminQueueDeliverDelayedResponse };
 	'admin/queue/inbox-delayed': { req: EmptyRequest; res: AdminQueueInboxDelayedResponse };
-	'admin/queue/jobs': { req: AdminQueueJobsRequest; res: EmptyResponse };
+	'admin/queue/jobs': { req: AdminQueueJobsRequest; res: AdminQueueJobsResponse };
 	'admin/queue/promote-jobs': { req: AdminQueuePromoteJobsRequest; res: EmptyResponse };
 	'admin/queue/queue-stats': { req: AdminQueueQueueStatsRequest; res: EmptyResponse };
 	'admin/queue/queues': { req: EmptyRequest; res: EmptyResponse };

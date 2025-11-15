@@ -16,6 +16,7 @@ import { FanoutTimelineService } from '@/core/FanoutTimelineService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { trackPromise } from '@/misc/promise-tracker.js';
 import ActiveUsersChart from '@/core/chart/charts/active-users.js';
+import { CollapsedQueueService } from '@/core/CollapsedQueueService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -79,6 +80,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private globalEventService: GlobalEventService,
 		private readonly activeUsersChart: ActiveUsersChart,
 		private readonly timeService: TimeService,
+		private readonly collapsedQueueService: CollapsedQueueService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const untilId = ps.untilId ?? (ps.untilDate ? this.idService.gen(ps.untilDate!) : null);
@@ -96,9 +98,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			// falseだった場合はアンテナの配信先が増えたことを通知したい
 			const needPublishEvent = !antenna.isActive;
 
-			antenna.isActive = true;
-			antenna.lastUsedAt = this.timeService.date;
-			trackPromise(this.antennasRepository.update(antenna.id, antenna));
+			await this.collapsedQueueService.updateAntennaQueue.enqueue(antenna.id, {
+				isActive: true,
+				lastUsedAt: this.timeService.date,
+			});
 
 			if (needPublishEvent) {
 				this.globalEventService.publishInternalEvent('antennaUpdated', antenna);

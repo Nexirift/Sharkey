@@ -24,7 +24,6 @@ import type { MiNote } from '@/models/Note.js';
 import { IdService } from '@/core/IdService.js';
 import type { MfmService } from '@/core/MfmService.js';
 import { toArray } from '@/misc/prelude/array.js';
-import type { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import type { FetchInstanceMetadataService } from '@/core/FetchInstanceMetadataService.js';
 import { MiUserProfile } from '@/models/UserProfile.js';
@@ -45,9 +44,12 @@ import { TimeService } from '@/global/TimeService.js';
 import { verifyFieldLinks } from '@/misc/verify-field-link.js';
 import { isRetryableError } from '@/misc/is-retryable-error.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
-import { IdentifiableError } from '@/misc/identifiable-error.js';
+import { errorCodes, IdentifiableError } from '@/misc/identifiable-error.js';
 import { QueueService } from '@/core/QueueService.js';
-import { getApId, getApType, isActor, isCollection, isCollectionOrOrderedCollection, isPropertyValue } from '../type.js';
+import { InternalEventService } from '@/global/InternalEventService.js';
+import { CollapsedQueueService } from '@/core/CollapsedQueueService.js';
+import { promiseMap } from '@/misc/promise-map.js';
+import { getApId, getApType, getNullableApId, isActor, isPost, isPropertyValue } from '../type.js';
 import { ApLoggerService } from '../ApLoggerService.js';
 import { extractApHashtags } from './tag.js';
 import type { OnModuleInit } from '@nestjs/common';
@@ -72,7 +74,6 @@ export class ApPersonService implements OnModuleInit {
 	private readonly publicKeyByUserIdCache: ManagedQuantumKVCache<MiUserPublickey>;
 
 	private driveFileEntityService: DriveFileEntityService;
-	private globalEventService: GlobalEventService;
 	private federatedInstanceService: FederatedInstanceService;
 	private fetchInstanceMetadataService: FetchInstanceMetadataService;
 	private cacheService: CacheService;
@@ -86,6 +87,7 @@ export class ApPersonService implements OnModuleInit {
 	private instanceChart: InstanceChart;
 	private accountMoveService: AccountMoveService;
 	private logger: Logger;
+	private idService: IdService;
 
 	constructor(
 		private moduleRef: ModuleRef,
@@ -120,9 +122,10 @@ export class ApPersonService implements OnModuleInit {
 		private readonly cacheManagementService: CacheManagementService,
 		private readonly utilityService: UtilityService,
 		private readonly apUtilityService: ApUtilityService,
-		private readonly idService: IdService,
 		private readonly timeService: TimeService,
 		private readonly queueService: QueueService,
+		private readonly collapsedQueueService: CollapsedQueueService,
+		private readonly internalEventService: InternalEventService,
 
 		apLoggerService: ApLoggerService,
 	) {
@@ -181,7 +184,6 @@ export class ApPersonService implements OnModuleInit {
 	@bindThis
 	onModuleInit(): void {
 		this.driveFileEntityService = this.moduleRef.get('DriveFileEntityService');
-		this.globalEventService = this.moduleRef.get('GlobalEventService');
 		this.federatedInstanceService = this.moduleRef.get('FederatedInstanceService');
 		this.fetchInstanceMetadataService = this.moduleRef.get('FetchInstanceMetadataService');
 		this.cacheService = this.moduleRef.get('CacheService');
@@ -194,6 +196,7 @@ export class ApPersonService implements OnModuleInit {
 		this.usersChart = this.moduleRef.get('UsersChart');
 		this.instanceChart = this.moduleRef.get('InstanceChart');
 		this.accountMoveService = this.moduleRef.get('AccountMoveService');
+		this.idService = this.moduleRef.get('IdService');
 	}
 
 	/**
@@ -301,14 +304,14 @@ export class ApPersonService implements OnModuleInit {
 			withSuspended: opts?.withSuspended ?? true,
 		};
 
-		let userId;
+		let userId: string | null | undefined;
 
 		// Resolve URI -> User ID
 		const parsed = this.utilityService.parseUri(uri);
 		if (parsed.local) {
 			userId = parsed.type === 'users' ? parsed.id : null;
 		} else {
-			userId = await this.uriPersonCache.fetch(uri).catch(() => null);
+			userId = await this.uriPersonCache.fetchMaybe(uri);
 		}
 
 		// No match
@@ -316,8 +319,7 @@ export class ApPersonService implements OnModuleInit {
 			return null;
 		}
 
-		const user = await this.cacheService.findUserById(userId)
-			.catch(() => null) as MiLocalUser | MiRemoteUser | null;
+		const user = await this.cacheService.findOptionalUserById(userId) as MiLocalUser | MiRemoteUser | null;
 
 		if (user?.isDeleted && !_opts.withDeleted) {
 			return null;
@@ -329,8 +331,9 @@ export class ApPersonService implements OnModuleInit {
 		return user;
 	}
 
+	// TODO fix these "any" types
 	private async resolveAvatarAndBanner(user: MiRemoteUser, icon: any, image: any, bgimg: any): Promise<Partial<Pick<MiRemoteUser, 'avatarId' | 'bannerId' | 'backgroundId' | 'avatarUrl' | 'bannerUrl' | 'backgroundUrl' | 'avatarBlurhash' | 'bannerBlurhash' | 'backgroundBlurhash'>>> {
-		const [avatar, banner, background] = await Promise.all([icon, image, bgimg].map(img => {
+		const [avatar, banner, background] = await Promise.all([icon, image, bgimg].map(async img => {
 			// icon and image may be arrays
 			// see https://www.w3.org/TR/activitystreams-vocabulary/#dfn-icon
 			if (Array.isArray(img)) {
@@ -343,7 +346,7 @@ export class ApPersonService implements OnModuleInit {
 				return { id: null, url: null, blurhash: null };
 			}
 
-			return this.apImageService.resolveImage(user, img).catch(() => null);
+			return await this.apImageService.resolveImage(user, img).catch(() => null);
 		}));
 
 		if (((avatar != null && avatar.id != null) || (banner != null && banner.id != null))
@@ -574,28 +577,23 @@ export class ApPersonService implements OnModuleInit {
 
 		// Register host
 		if (this.meta.enableStatsForFederatedInstances) {
-			this.federatedInstanceService.fetchOrRegister(host).then(i => {
-				this.instancesRepository.increment({ id: i.id }, 'usersCount', 1);
+			this.federatedInstanceService.fetchOrRegister(host).then(async i => {
+				await this.collapsedQueueService.updateInstanceQueue.enqueue(i.id, { usersCountDelta: 1 });
 				if (this.meta.enableChartsForFederatedInstances) {
 					this.instanceChart.newUser(i.host);
 				}
-				this.fetchInstanceMetadataService.fetchInstanceMetadata(i);
+				await this.fetchInstanceMetadataService.fetchInstanceMetadataLazy(i);
 			});
 		}
 
 		this.usersChart.update(user, true);
 
-		// ハッシュタグ更新
-		this.hashtagService.updateUsertags(user, tags);
-
 		//#region アバターとヘッダー画像をフェッチ
 		try {
 			const updates = await this.resolveAvatarAndBanner(user, person.icon, person.image, person.backgroundUrl);
 			await this.usersRepository.update(user.id, updates);
+			await this.internalEventService.emit('remoteUserUpdated', { id: user.id });
 			user = { ...user, ...updates };
-
-			// Register to the cache
-			await this.uriPersonCache.set(user.uri, user.id);
 		} catch (err) {
 			// Permanent error implies hidden or inaccessible, which is a normal thing.
 			if (isRetryableError(err)) {
@@ -604,14 +602,27 @@ export class ApPersonService implements OnModuleInit {
 		}
 		//#endregion
 
-		await this.updateFeatured(user.id, resolver).catch(err => {
-			// Permanent error implies hidden or inaccessible, which is a normal thing.
-			if (isRetryableError(err)) {
-				this.logger.error(`Error updating featured notes: ${renderInlineError(err)}`);
-			}
-		});
+		// ハッシュタグ更新
+		await this.queueService.createUpdateUserTagsJob(user.id);
+
+		await this.updateFeaturedLazy(user);
 
 		return user;
+	}
+
+	/**
+	 * Schedules a deferred update on the background task worker.
+	 * Duplicate updates are automatically skipped.
+	 */
+	@bindThis
+	public async updatePersonLazy(uriOrUser: string | MiUser): Promise<void> {
+		const user = typeof(uriOrUser) === 'string'
+			?	await this.fetchPerson(uriOrUser)
+			: uriOrUser;
+
+		if (user && user.host != null) {
+			await this.queueService.createUpdateUserJob(user.id);
+		}
 	}
 
 	/**
@@ -688,13 +699,16 @@ export class ApPersonService implements OnModuleInit {
 
 		const profileUrls = url ? [url, person.id] : [person.id];
 		const verifiedLinks = await verifyFieldLinks(fields, profileUrls, this.httpRequestService);
+		const featuredUri = person.featured ? getApId(person.featured) : undefined;
 
 		const updates = {
 			lastFetchedAt: this.timeService.date,
 			inbox: person.inbox,
 			sharedInbox: person.sharedInbox ?? person.endpoints?.sharedInbox ?? null,
 			followersUri: person.followers ? getApId(person.followers) : undefined,
-			featured: person.featured ? getApId(person.featured) : undefined,
+			// If the featured collection changes, then reset the fetch timeout.
+			lastFetchedFeaturedAt: featuredUri !== exist.featured ? null : undefined,
+			featured: featuredUri,
 			emojis: emojiNames,
 			name: truncate(person.name, nameLength),
 			tags,
@@ -751,9 +765,15 @@ export class ApPersonService implements OnModuleInit {
 			return `skip: user ${exist.id} is deleted`;
 		}
 
+		// Notify event ASAP
+		await this.internalEventService.emit('remoteUserUpdated', { id: exist.id });
+
+		// Do not use "exist" after this point!!
+		const updated = { ...exist, ...updates };
+
 		if (person.publicKey) {
 			const publicKey = new MiUserPublickey({
-				userId: exist.id,
+				userId: updated.id,
 				keyId: person.publicKey.id,
 				keyPem: person.publicKey.publicKeyPem,
 			});
@@ -767,7 +787,7 @@ export class ApPersonService implements OnModuleInit {
 				this.publicKeyByUserIdCache.set(publicKey.userId, publicKey),
 			]);
 		} else {
-			const existingPublicKey = await this.userPublickeysRepository.findOneBy({ userId: exist.id });
+			const existingPublicKey = await this.userPublickeysRepository.findOneBy({ userId: updated.id });
 			if (existingPublicKey) {
 				// Delete key
 				await Promise.all([
@@ -786,7 +806,7 @@ export class ApPersonService implements OnModuleInit {
 			_description = this.apMfmService.htmlToMfm(truncate(person.summary, this.config.maxRemoteBioLength), person.tag);
 		}
 
-		await this.userProfilesRepository.update({ userId: exist.id }, {
+		await this.userProfilesRepository.update({ userId: updated.id }, {
 			url,
 			fields,
 			verifiedLinks,
@@ -798,33 +818,25 @@ export class ApPersonService implements OnModuleInit {
 			location: person['vcard:Address'] ?? null,
 			listenbrainz: person.listenbrainz ?? null,
 		});
-
-		this.globalEventService.publishInternalEvent('remoteUserUpdated', { id: exist.id });
-
-		// ハッシュタグ更新
-		this.hashtagService.updateUsertags(exist, tags);
+		await this.cacheService.userProfileCache.delete(updated.id);
 
 		// 該当ユーザーが既にフォロワーになっていた場合はFollowingもアップデートする
-		if (exist.inbox !== person.inbox || exist.sharedInbox !== (person.sharedInbox ?? person.endpoints?.sharedInbox)) {
+		if (updated.inbox !== person.inbox || updated.sharedInbox !== (person.sharedInbox ?? person.endpoints?.sharedInbox)) {
 			await this.followingsRepository.update(
-				{ followerId: exist.id },
+				{ followerId: updated.id },
 				{
 					followerInbox: person.inbox,
 					followerSharedInbox: person.sharedInbox ?? person.endpoints?.sharedInbox ?? null,
 				},
 			);
 
-			await this.cacheService.refreshFollowRelationsFor(exist.id);
+			await this.cacheService.refreshFollowRelationsFor(updated.id);
 		}
 
-		await this.updateFeatured(exist.id, resolver).catch(err => {
-			// Permanent error implies hidden or inaccessible, which is a normal thing.
-			if (isRetryableError(err)) {
-				this.logger.error(`Error updating featured notes: ${renderInlineError(err)}`);
-			}
-		});
+		// ハッシュタグ更新
+		await this.queueService.createUpdateUserTagsJob(updated.id);
 
-		const updated = { ...exist, ...updates };
+		await this.updateFeaturedLazy(updated);
 
 		// 移行処理を行う
 		if (updated.movedAt && (
@@ -902,43 +914,71 @@ export class ApPersonService implements OnModuleInit {
 		return fields;
 	}
 
+	/**
+	 * Schedules a deferred update on the background task worker.
+	 * Duplicate updates are automatically skipped.
+	 */
 	@bindThis
-	public async updateFeatured(userId: MiUser['id'], resolver?: Resolver): Promise<void> {
-		const user = await this.usersRepository.findOneByOrFail({ id: userId, isDeleted: false });
-		if (!isRemoteUser(user)) return;
-		if (!user.featured) return;
+	public async updateFeaturedLazy(userOrId: MiRemoteUser | MiUser['id']): Promise<void> {
+		const userId = typeof(userOrId) === 'object' ? userOrId.id : userOrId;
+		const user = typeof(userOrId) === 'object' ? userOrId : await this.cacheService.findRemoteUserById(userId);
 
-		this.logger.info(`Updating the featured: ${user.uri}`);
+		if (user.isDeleted || user.isSuspended) {
+			this.logger.debug(`Not updating featured for ${userId}: user is deleted`);
+			return;
+		}
 
-		const _resolver = resolver ?? this.apResolverService.createResolver();
+		if (!user.featured) {
+			this.logger.debug(`Not updating featured for ${userId}: no featured collection`);
+			return;
+		}
 
-		// Resolve to (Ordered)Collection Object
-		const collection = user.featured ? await _resolver.resolveCollection(user.featured, true, user.uri).catch(err => {
-			// Permanent error implies hidden or inaccessible, which is a normal thing.
-			if (isRetryableError(err)) {
-				this.logger.warn(`Failed to update featured notes: ${renderInlineError(err)}`);
-			}
+		await this.queueService.createUpdateFeaturedJob(userId);
+	}
 
-			return null;
-		}) : null;
-		if (!collection) return;
+	@bindThis
+	public async updateFeatured(userOrId: MiRemoteUser | MiUser['id'], resolver?: Resolver): Promise<void> {
+		const userId = typeof(userOrId) === 'object' ? userOrId.id : userOrId;
+		const user = typeof(userOrId) === 'object' ? userOrId : await this.cacheService.findRemoteUserById(userId);
 
-		if (!isCollectionOrOrderedCollection(collection)) throw new UnrecoverableError(`failed to update user ${user.uri}: featured ${user.featured} is not Collection or OrderedCollection`);
+		if (user.isDeleted) throw new IdentifiableError(errorCodes.userIsDeleted, `Can't update featured for ${userId}: user is deleted`);
+		if (user.isSuspended) throw new IdentifiableError(errorCodes.userIsSuspended, `Can't update featured for ${userId}: user is suspended`);
+		if (!user.featured) throw new IdentifiableError(errorCodes.noFeaturedCollection, `Can't update featured for ${userId}: no featured collection`);
 
-		// Resolve to Object(may be Note) arrays
-		const unresolvedItems = isCollection(collection) ? collection.items : collection.orderedItems;
-		const items = await Promise.all(toArray(unresolvedItems).map(x => _resolver.resolve(x)));
+		this.logger.info(`Updating featured notes for: ${user.uri}`);
+
+		resolver ??= this.apResolverService.createResolver();
+
+		// Mark as updated
+		await this.usersRepository.update({ id: userId }, { lastFetchedFeaturedAt: this.timeService.date });
+		await this.internalEventService.emit('remoteUserUpdated', { id: userId });
 
 		// Resolve and regist Notes
-		const limit = promiseLimit<MiNote | null>(2);
 		const maxPinned = (await this.roleService.getUserPolicies(user.id)).pinLimit;
-		const featuredNotes = await Promise.all(items
-			.filter(item => getApType(item) === 'Note')	// TODO: Noteでなくてもいいかも
-			.slice(0, maxPinned)
-			.map(item => limit(() => this.apNoteService.resolveNote(item, {
-				resolver: _resolver,
-				sentFrom: user.uri,
-			}))));
+		const items = await resolver.resolveCollectionItems(user.featured, true, user.uri, maxPinned, 2);
+		const featuredNotes = await promiseMap(items, async item => {
+			const itemId = getNullableApId(item);
+			if (itemId && isPost(item)) {
+				try {
+					const note = await this.apNoteService.resolveNote(item, {
+						resolver: resolver,
+						sentFrom: itemId, // resolveCollectionItems has already verified this, so we can re-use it to avoid double fetch
+					});
+
+					if (note && note.userId !== user.id) {
+						this.logger.warn(`Ignoring cross-note pin: user ${user.id} tried to pin note ${note.id} belonging to other user ${note.userId}`);
+						return null;
+					}
+
+					return note;
+				} catch (err) {
+					this.logger.warn(`Couldn't fetch pinned note ${itemId} for user ${user.id} (@${user.username}@${user.host}): ${renderInlineError(err)}`);
+				}
+			}
+			return null;
+		}, {
+			limit: 2,
+		});
 
 		await this.db.transaction(async transactionalEntityManager => {
 			await transactionalEntityManager.delete(MiUserNotePining, { userId: user.id });
@@ -947,7 +987,7 @@ export class ApPersonService implements OnModuleInit {
 			let td = 0;
 			for (const note of featuredNotes.filter(x => x != null)) {
 				td -= 1000;
-				transactionalEntityManager.insert(MiUserNotePining, {
+				await transactionalEntityManager.insert(MiUserNotePining, {
 					id: this.idService.gen(this.timeService.now + td),
 					userId: user.id,
 					noteId: note.id,
@@ -971,6 +1011,7 @@ export class ApPersonService implements OnModuleInit {
 		let dst = await this.fetchPerson(src.movedToUri);
 
 		if (dst && isLocalUser(dst)) {
+			// TODO this branch should not be possible
 			// targetがローカルユーザーだった場合データベースから引っ張ってくる
 			dst = await this.usersRepository.findOneByOrFail({ uri: src.movedToUri }) as MiLocalUser;
 		} else if (dst) {

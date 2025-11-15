@@ -16592,7 +16592,7 @@ export interface operations {
             content: {
                 'application/json': {
                     /** @enum {string} */
-                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost';
+                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost' | 'backgroundTask';
                     /** @enum {string} */
                     state: '*' | 'completed' | 'wait' | 'active' | 'paused' | 'prioritized' | 'delayed' | 'failed';
                 };
@@ -16800,19 +16800,41 @@ export interface operations {
             content: {
                 'application/json': {
                     /** @enum {string} */
-                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost';
+                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost' | 'backgroundTask';
                     state: ('active' | 'paused' | 'wait' | 'delayed' | 'completed' | 'failed')[];
                     search?: string;
                 };
             };
         };
         responses: {
-            /** @description OK (without any results) */
-            204: {
+            /** @description OK (with results) */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    'application/json': {
+                        id?: string;
+                        name: string;
+                        data?: {
+                            [key: string]: unknown;
+                        } | null;
+                        opts: {
+                            [key: string]: unknown;
+                        };
+                        timestamp: number;
+                        processedOn?: number;
+                        processedBy?: string;
+                        finishedOn?: number;
+                        progress: unknown;
+                        attempts: number;
+                        delay: number;
+                        failedReason?: string;
+                        stackTrace?: string[];
+                        returnValue: unknown;
+                        isFailed?: boolean;
+                    }[];
+                };
             };
             /** @description Client error */
             400: {
@@ -16872,7 +16894,7 @@ export interface operations {
             content: {
                 'application/json': {
                     /** @enum {string} */
-                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost';
+                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost' | 'backgroundTask';
                 };
             };
         };
@@ -16942,7 +16964,7 @@ export interface operations {
             content: {
                 'application/json': {
                     /** @enum {string} */
-                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost';
+                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost' | 'backgroundTask';
                 };
             };
         };
@@ -17075,7 +17097,7 @@ export interface operations {
             content: {
                 'application/json': {
                     /** @enum {string} */
-                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost';
+                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost' | 'backgroundTask';
                     jobId: string;
                 };
             };
@@ -17146,7 +17168,7 @@ export interface operations {
             content: {
                 'application/json': {
                     /** @enum {string} */
-                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost';
+                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost' | 'backgroundTask';
                     jobId: string;
                 };
             };
@@ -17217,7 +17239,7 @@ export interface operations {
             content: {
                 'application/json': {
                     /** @enum {string} */
-                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost';
+                    queue: 'system' | 'endedPollNotification' | 'deliver' | 'inbox' | 'db' | 'relationship' | 'objectStorage' | 'userWebhookDeliver' | 'systemWebhookDeliver' | 'scheduleNotePost' | 'backgroundTask';
                     jobId: string;
                 };
             };
@@ -32672,6 +32694,7 @@ export interface operations {
                 content: {
                     'application/json': {
                         count: number;
+                        countAcrossNetwork: number;
                     };
                 };
             };

@@ -58,9 +58,9 @@ export default class PerUserDriveChart extends Chart<typeof schema> { // eslint-
 	}
 
 	@bindThis
-	public async update(file: MiDriveFile, isAdditional: boolean): Promise<void> {
+	public update(file: MiDriveFile, isAdditional: boolean): void {
 		const fileSizeKb = file.size / 1000;
-		await this.commit({
+		this.commit({
 			'totalCount': isAdditional ? 1 : -1,
 			'totalSize': isAdditional ? fileSizeKb : -fileSizeKb,
 			'incCount': isAdditional ? 1 : 0,

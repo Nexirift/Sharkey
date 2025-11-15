@@ -138,7 +138,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				if (ps.username) {
 					user = await this.remoteUserResolveService.resolveUser(ps.username, ps.host ?? null).catch(() => null);
 				} else if (ps.userId != null) {
-					user = await this.cacheService.findUserById(ps.userId).catch(() => null);
+					user = await this.cacheService.findOptionalUserById(ps.userId);
 				}
 
 				if (user == null && ps.host != null) {

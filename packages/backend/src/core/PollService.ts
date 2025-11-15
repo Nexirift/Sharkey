@@ -92,7 +92,7 @@ export class PollService {
 	public async deliverQuestionUpdate(note: MiNote) {
 		if (note.localOnly) return;
 
-		const user = await this.usersRepository.findOneBy({ id: note.userId });
+		const user = note.user ?? await this.usersRepository.findOneBy({ id: note.userId });
 		if (user == null) throw new Error('note not found');
 
 		if (isLocalUser(user)) {

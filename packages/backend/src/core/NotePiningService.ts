@@ -18,6 +18,7 @@ import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerServ
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
+import { trackPromise } from '@/misc/promise-tracker.js';
 import type { DataSource } from 'typeorm';
 
 @Injectable()
@@ -84,7 +85,7 @@ export class NotePiningService {
 
 		// Deliver to remote followers
 		if (this.userEntityService.isLocalUser(user) && !note.localOnly && ['public', 'home'].includes(note.visibility)) {
-			await this.deliverPinnedChange(user, note.id, true);
+			trackPromise(this.deliverPinnedChange(user, note.id, true));
 		}
 	}
 
@@ -112,7 +113,7 @@ export class NotePiningService {
 
 		// Deliver to remote followers
 		if (this.userEntityService.isLocalUser(user) && !note.localOnly && ['public', 'home'].includes(note.visibility)) {
-			await this.deliverPinnedChange(user, noteId, false);
+			trackPromise(this.deliverPinnedChange(user, noteId, false));
 		}
 	}
 

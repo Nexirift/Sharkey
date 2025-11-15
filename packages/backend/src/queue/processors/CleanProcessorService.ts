@@ -13,6 +13,7 @@ import { IdService } from '@/core/IdService.js';
 import type { Config } from '@/config.js';
 import { ReversiService } from '@/core/ReversiService.js';
 import { TimeService } from '@/global/TimeService.js';
+import { CollapsedQueueService } from '@/core/CollapsedQueueService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 
@@ -37,6 +38,7 @@ export class CleanProcessorService {
 		private reversiService: ReversiService,
 		private idService: IdService,
 		private readonly timeService: TimeService,
+		private readonly collapsedQueueService: CollapsedQueueService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('clean');
 	}
@@ -51,6 +53,7 @@ export class CleanProcessorService {
 
 		// 使われてないアンテナを停止
 		if (this.config.deactivateAntennaThreshold > 0) {
+			await this.collapsedQueueService.updateAntennaQueue.performAllNow();
 			await this.antennasRepository.update({
 				lastUsedAt: LessThan(new Date(this.timeService.now - this.config.deactivateAntennaThreshold)),
 			}, {

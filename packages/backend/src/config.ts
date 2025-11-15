@@ -111,11 +111,14 @@ type Source = {
 	deliverJobConcurrency?: number;
 	inboxJobConcurrency?: number;
 	relationshipJobConcurrency?: number;
+	backgroundJobConcurrency?: number;
 	deliverJobPerSec?: number;
 	inboxJobPerSec?: number;
 	relationshipJobPerSec?: number;
+	backgroundJobPerSec?: number;
 	deliverJobMaxAttempts?: number;
 	inboxJobMaxAttempts?: number;
+	backgroundJobMaxAttempts?: number;
 
 	mediaDirectory?: string;
 	mediaProxy?: string;
@@ -272,11 +275,14 @@ export type Config = {
 	deliverJobConcurrency: number | undefined;
 	inboxJobConcurrency: number | undefined;
 	relationshipJobConcurrency: number | undefined;
+	backgroundJobConcurrency: number | undefined;
 	deliverJobPerSec: number | undefined;
 	inboxJobPerSec: number | undefined;
 	relationshipJobPerSec: number | undefined;
+	backgroundJobPerSec: number | undefined;
 	deliverJobMaxAttempts: number | undefined;
 	inboxJobMaxAttempts: number | undefined;
+	backgroundJobMaxAttempts: number | undefined;
 	proxyRemoteFiles: boolean | undefined;
 	customMOTD: string[] | undefined;
 	signToActivityPubGet: boolean;
@@ -475,11 +481,14 @@ export function loadConfig(loggerService: LoggerService): Config {
 		deliverJobConcurrency: config.deliverJobConcurrency,
 		inboxJobConcurrency: config.inboxJobConcurrency,
 		relationshipJobConcurrency: config.relationshipJobConcurrency,
+		backgroundJobConcurrency: config.backgroundJobConcurrency,
 		deliverJobPerSec: config.deliverJobPerSec,
 		inboxJobPerSec: config.inboxJobPerSec,
 		relationshipJobPerSec: config.relationshipJobPerSec,
+		backgroundJobPerSec: config.backgroundJobPerSec,
 		deliverJobMaxAttempts: config.deliverJobMaxAttempts,
 		inboxJobMaxAttempts: config.inboxJobMaxAttempts,
+		backgroundJobMaxAttempts: config.backgroundJobMaxAttempts,
 		proxyRemoteFiles: config.proxyRemoteFiles,
 		customMOTD: config.customMOTD,
 		signToActivityPubGet: config.signToActivityPubGet ?? true,

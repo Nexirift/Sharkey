@@ -88,6 +88,6 @@ export class NoteReactionEntityService implements OnModuleInit {
 		const _users = reactions.map(({ user, userId }) => user ?? userId);
 		const _userMap = await this.userEntityService.packMany(_users, me)
 			.then(users => new Map(users.map(u => [u.id, u])));
-		return Promise.all(reactions.map(reaction => this.pack(reaction, me, opts, { packedUser: _userMap.get(reaction.userId) })));
+		return await Promise.all(reactions.map(reaction => this.pack(reaction, me, opts, { packedUser: _userMap.get(reaction.userId) })));
 	}
 }

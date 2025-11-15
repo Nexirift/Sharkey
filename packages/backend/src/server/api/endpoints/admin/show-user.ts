@@ -300,13 +300,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const [user, profile] = await Promise.all([
-				this.usersRepository.findOneBy({ id: ps.userId }),
-				this.userProfilesRepository.findOneBy({ userId: ps.userId }),
+				this.cacheService.findUserById(ps.userId),
+				this.cacheService.userProfileCache.fetch(ps.userId),
 			]);
-
-			if (user == null || profile == null) {
-				throw new Error('user not found');
-			}
 
 			const isModerator = await this.roleService.isModerator(user);
 			const isAdministrator = await this.roleService.isAdministrator(user);

@@ -92,10 +92,9 @@ export class ApDbResolverService implements OnApplicationShutdown {
 		key: MiUserPublickey;
 	} | null> {
 		const key = await this.apPersonService.findPublicKeyByKeyId(keyId);
-
 		if (key == null) return null;
 
-		const user = await this.cacheService.findUserById(key.userId).catch(() => null) as MiRemoteUser | null;
+		const user = await this.cacheService.findOptionalRemoteUserById(key.userId);
 		if (user == null) return null;
 		if (user.isDeleted) return null;
 

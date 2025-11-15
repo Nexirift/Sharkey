@@ -844,7 +844,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 			this.globalEventService.publishRoleTimelineStream(role.id, 'note', note);
 		}
 
-		redisPipeline.exec();
+		await redisPipeline.exec();
 	}
 
 	@bindThis

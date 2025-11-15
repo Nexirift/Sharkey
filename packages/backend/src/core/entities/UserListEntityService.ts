@@ -67,7 +67,7 @@ export class UserListEntityService {
 		const _users = memberships.map(({ user, userId }) => user ?? userId);
 		const _userMap = await this.userEntityService.packMany(_users)
 			.then(users => new Map(users.map(u => [u.id, u])));
-		return Promise.all(memberships.map(async x => ({
+		return await Promise.all(memberships.map(async x => ({
 			id: x.id,
 			createdAt: this.idService.parse(x.id).date.toISOString(),
 			userId: x.userId,

@@ -8,7 +8,7 @@ import chalk from 'chalk';
 import { IsNull } from 'typeorm';
 import { DI } from '@/di-symbols.js';
 import type { UsersRepository } from '@/models/_.js';
-import type { MiLocalUser, MiRemoteUser } from '@/models/User.js';
+import type { MiUser, MiLocalUser, MiRemoteUser } from '@/models/User.js';
 import type { Config } from '@/config.js';
 import type Logger from '@/logger.js';
 import { UtilityService } from '@/core/UtilityService.js';
@@ -59,7 +59,7 @@ export class RemoteUserResolveService {
 		const acct = Acct.toString({ username, host }); // username+host -> acct (handle)
 
 		// Try fetch from DB
-		let user = await this.cacheService.findUserByAcct(acct).catch(() => null); // Error is expected if the user doesn't exist yet
+		let user: MiUser | null | undefined = await this.cacheService.findOptionalUserByAcct(acct);
 
 		// Opportunistically update remote users
 		if (user != null && isRemoteUser(user)) {

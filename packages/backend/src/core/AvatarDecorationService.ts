@@ -109,7 +109,7 @@ export class AvatarDecorationService implements OnApplicationShutdown {
 		if (noCache) {
 			this.cache.delete();
 		}
-		return this.cache.fetch(() => this.avatarDecorationsRepository.find());
+		return await this.cache.fetch(() => this.avatarDecorationsRepository.find());
 	}
 
 	@bindThis

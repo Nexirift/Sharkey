@@ -20,6 +20,7 @@ import {
 	UserWebhookDeliverJobData,
 	SystemWebhookDeliverJobData,
 	ScheduleNotePostJobData,
+	BackgroundTaskJobData,
 } from '../queue/types.js';
 import type { Provider } from '@nestjs/common';
 
@@ -33,6 +34,7 @@ export type ObjectStorageQueue = Bull.Queue;
 export type UserWebhookDeliverQueue = Bull.Queue<UserWebhookDeliverJobData>;
 export type SystemWebhookDeliverQueue = Bull.Queue<SystemWebhookDeliverJobData>;
 export type ScheduleNotePostQueue = Bull.Queue<ScheduleNotePostJobData>;
+export type BackgroundTaskQueue = Bull.Queue<BackgroundTaskJobData>;
 
 const $system: Provider = {
 	provide: 'queue:system',
@@ -94,6 +96,12 @@ const $scheduleNotePost: Provider = {
 	inject: [DI.config],
 };
 
+const $backgroundTask: Provider = {
+	provide: 'queue:backgroundTask',
+	useFactory: (config: Config) => new Bull.Queue(QUEUE.BACKGROUND_TASK, baseQueueOptions(config, QUEUE.BACKGROUND_TASK)),
+	inject: [DI.config],
+};
+
 @Module({
 	imports: [
 	],
@@ -108,6 +116,7 @@ const $scheduleNotePost: Provider = {
 		$userWebhookDeliver,
 		$systemWebhookDeliver,
 		$scheduleNotePost,
+		$backgroundTask,
 	],
 	exports: [
 		$system,
@@ -120,6 +129,7 @@ const $scheduleNotePost: Provider = {
 		$userWebhookDeliver,
 		$systemWebhookDeliver,
 		$scheduleNotePost,
+		$backgroundTask,
 	],
 })
 export class QueueModule implements OnApplicationShutdown {
@@ -136,6 +146,7 @@ export class QueueModule implements OnApplicationShutdown {
 		@Inject('queue:userWebhookDeliver') public userWebhookDeliverQueue: UserWebhookDeliverQueue,
 		@Inject('queue:systemWebhookDeliver') public systemWebhookDeliverQueue: SystemWebhookDeliverQueue,
 		@Inject('queue:scheduleNotePost') public scheduleNotePostQueue: ScheduleNotePostQueue,
+		@Inject('queue:backgroundTask') public readonly backgroundTaskQueue: BackgroundTaskQueue,
 	) {}
 
 	public async dispose(): Promise<void> {
@@ -155,6 +166,7 @@ export class QueueModule implements OnApplicationShutdown {
 			this.userWebhookDeliverQueue.close(),
 			this.systemWebhookDeliverQueue.close(),
 			this.scheduleNotePostQueue.close(),
+			this.backgroundTaskQueue.close(),
 		]).then(res => {
 			for (const result of res) {
 				if (result.status === 'rejected') {

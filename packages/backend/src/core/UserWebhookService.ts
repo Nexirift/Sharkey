@@ -94,7 +94,7 @@ export class UserWebhookService implements OnApplicationShutdown {
 	) {
 		const webhooks = await this.getActiveWebhooks()
 			.then(webhooks => webhooks.filter(webhook => webhook.userId === userId && webhook.on.includes(type)));
-		return Promise.all(
+		return await Promise.all(
 			webhooks.map(webhook => {
 				return this.queueService.userWebhookDeliver(webhook, type, content);
 			}),

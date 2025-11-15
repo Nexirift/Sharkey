@@ -731,3 +731,5 @@ accountMigrationUri: "Migration URI"
 restartMigration: "Restart account migration"
 restartMigrationDescription: "Account migration was last attempted {date}. If the migration failed or was incomplete, then you may click this button to restart the process."
 restartMigrationConfirm: "Are you sure you want to restart this account migration?"
+
+backgroundQueue: "Background queue"

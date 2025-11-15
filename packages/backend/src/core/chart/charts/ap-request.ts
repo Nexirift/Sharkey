@@ -43,22 +43,22 @@ export default class ApRequestChart extends Chart<typeof schema> { // eslint-dis
 	}
 
 	@bindThis
-	public async deliverSucc(): Promise<void> {
-		await this.commit({
+	public deliverSucc(): void {
+		this.commit({
 			'deliverSucceeded': 1,
 		});
 	}
 
 	@bindThis
-	public async deliverFail(): Promise<void> {
-		await this.commit({
+	public deliverFail(): void {
+		this.commit({
 			'deliverFailed': 1,
 		});
 	}
 
 	@bindThis
-	public async inbox(): Promise<void> {
-		await this.commit({
+	public inbox(): void {
+		this.commit({
 			'inboxReceived': 1,
 		});
 	}

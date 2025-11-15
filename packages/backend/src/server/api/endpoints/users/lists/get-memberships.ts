@@ -108,7 +108,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				.limit(ps.limit)
 				.getMany();
 
-			return this.userListEntityService.packMembershipsMany(memberships);
+			return await this.userListEntityService.packMembershipsMany(memberships);
 		});
 	}
 }

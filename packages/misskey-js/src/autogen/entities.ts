@@ -90,6 +90,7 @@ export type AdminQueueClearRequest = operations['admin___queue___clear']['reques
 export type AdminQueueDeliverDelayedResponse = operations['admin___queue___deliver-delayed']['responses']['200']['content']['application/json'];
 export type AdminQueueInboxDelayedResponse = operations['admin___queue___inbox-delayed']['responses']['200']['content']['application/json'];
 export type AdminQueueJobsRequest = operations['admin___queue___jobs']['requestBody']['content']['application/json'];
+export type AdminQueueJobsResponse = operations['admin___queue___jobs']['responses']['200']['content']['application/json'];
 export type AdminQueuePromoteJobsRequest = operations['admin___queue___promote-jobs']['requestBody']['content']['application/json'];
 export type AdminQueueQueueStatsRequest = operations['admin___queue___queue-stats']['requestBody']['content']['application/json'];
 export type AdminQueueRemoveJobRequest = operations['admin___queue___remove-job']['requestBody']['content']['application/json'];

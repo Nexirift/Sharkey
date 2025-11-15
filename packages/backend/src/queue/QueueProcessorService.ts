@@ -14,6 +14,7 @@ import { CheckModeratorsActivityProcessorService } from '@/queue/processors/Chec
 import { TimeService } from '@/global/TimeService.js';
 import { renderFullError } from '@/misc/render-full-error.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
+import { isRetryableError } from '@/misc/is-retryable-error.js';
 import { UserWebhookDeliverProcessorService } from './processors/UserWebhookDeliverProcessorService.js';
 import { SystemWebhookDeliverProcessorService } from './processors/SystemWebhookDeliverProcessorService.js';
 import { EndedPollNotificationProcessorService } from './processors/EndedPollNotificationProcessorService.js';
@@ -53,9 +54,16 @@ import { QUEUE, baseWorkerOptions } from './const.js';
 import { ImportNotesProcessorService } from './processors/ImportNotesProcessorService.js';
 import { CleanupApLogsProcessorService } from './processors/CleanupApLogsProcessorService.js';
 import { HibernateUsersProcessorService } from './processors/HibernateUsersProcessorService.js';
+import { BackgroundTaskProcessorService } from './processors/BackgroundTaskProcessorService.js';
 
 // ref. https://github.com/misskey-dev/misskey/pull/7635#issue-971097019
-function httpRelatedBackoff(attemptsMade: number) {
+function httpRelatedBackoff(attemptsMade: number, type?: string, error?: Error) {
+	// Don't retry permanent errors
+	// https://docs.bullmq.io/guide/retrying-failing-jobs#custom-back-off-strategies
+	if (error && !isRetryableError(error)) {
+		return -1;
+	}
+
 	const baseDelay = 60 * 1000;	// 1min
 	const maxBackoff = 8 * 60 * 60 * 1000;	// 8hours
 	let backoff = (Math.pow(2, attemptsMade) - 1) * baseDelay;
@@ -95,6 +103,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 	private objectStorageQueueWorker: Bull.Worker;
 	private endedPollNotificationQueueWorker: Bull.Worker;
 	private schedulerNotePostQueueWorker: Bull.Worker;
+	private readonly backgroundTaskWorker: Bull.Worker;
 
 	constructor(
 		@Inject(DI.config)
@@ -140,6 +149,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		private readonly timeService: TimeService,
 		private readonly cleanupApLogsProcessorService: CleanupApLogsProcessorService,
 		private readonly hibernateUsersProcessorService: HibernateUsersProcessorService,
+		private readonly backgroundTaskProcessorService: BackgroundTaskProcessorService,
 	) {
 		this.logger = this.queueLoggerService.logger;
 
@@ -565,6 +575,49 @@ export class QueueProcessorService implements OnApplicationShutdown {
 				.on('stalled', (jobId) => logger.warn(`stalled id=${jobId}`));
 		}
 		//#endregion
+
+		//#region background tasks
+		{
+			const logger = this.logger.createSubLogger('backgroundTask');
+
+			this.backgroundTaskWorker = new Bull.Worker(QUEUE.BACKGROUND_TASK, (job) => this.backgroundTaskProcessorService.process(job), {
+				...baseWorkerOptions(this.config, QUEUE.BACKGROUND_TASK),
+				autorun: false,
+				concurrency: this.config.backgroundJobConcurrency ?? 32,
+				limiter: {
+					max: this.config.backgroundJobPerSec ?? 256,
+					duration: 1000,
+				},
+				settings: {
+					backoffStrategy: httpRelatedBackoff,
+				},
+				// Keep a lot of jobs, because this queue moves *fast*!
+				// https://docs.bullmq.io/guide/workers/auto-removal-of-jobs
+				removeOnComplete: {
+					age: 3600 * 24 * 7, // keep up to 7 days
+					count: 1000,
+				},
+				removeOnFail: {
+					age: 3600 * 24 * 7, // keep up to 7 days
+					count: 1000,
+				},
+			});
+			this.backgroundTaskWorker
+				.on('active', (job) => logger.debug(`active id=${job.id}`))
+				.on('completed', (job, result) => logger.debug(`completed(${result}) id=${job.id}`))
+				.on('failed', (job, err) => {
+					this.logError(logger, err, job);
+					if (config.sentryForBackend) {
+						Sentry.captureMessage(`Queue: ${QUEUE.BACKGROUND_TASK}: ${job?.name ?? '?'}: ${err.name}: ${err.message}`, {
+							level: 'error',
+							extra: { job, err },
+						});
+					}
+				})
+				.on('error', (err: Error) => this.logError(logger, err))
+				.on('stalled', (jobId) => logger.warn(`stalled id=${jobId}`));
+		}
+		//#endregion
 	}
 
 	private logError(logger: Logger, err: unknown, job?: Bull.Job | null): void {
@@ -606,6 +659,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 			this.objectStorageQueueWorker.run(),
 			this.endedPollNotificationQueueWorker.run(),
 			this.schedulerNotePostQueueWorker.run(),
+			this.backgroundTaskWorker.run(),
 		]);
 	}
 
@@ -622,6 +676,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 			this.objectStorageQueueWorker.close(),
 			this.endedPollNotificationQueueWorker.close(),
 			this.schedulerNotePostQueueWorker.close(),
+			this.backgroundTaskWorker.close(),
 		]).then(res => {
 			for (const result of res) {
 				if (result.status === 'rejected') {

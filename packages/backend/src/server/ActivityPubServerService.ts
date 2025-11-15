@@ -14,7 +14,7 @@ import accepts from 'accepts';
 import vary from 'vary';
 import secureJson from 'secure-json-parse';
 import { DI } from '@/di-symbols.js';
-import type { FollowingsRepository, NotesRepository, EmojisRepository, NoteReactionsRepository, UserProfilesRepository, UserNotePiningsRepository, UsersRepository, FollowRequestsRepository, MiMeta } from '@/models/_.js';
+import type { FollowingsRepository, NotesRepository, EmojisRepository, NoteReactionsRepository, UserProfilesRepository, UserNotePiningsRepository, UsersRepository, FollowRequestsRepository, MiMeta, MiUserNotePining } from '@/models/_.js';
 import * as url from '@/misc/prelude/url.js';
 import type { Config } from '@/config.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
@@ -40,6 +40,7 @@ import { CustomEmojiService, encodeEmojiKey } from '@/core/CustomEmojiService.js
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions, FastifyBodyParser } from 'fastify';
 import type { FindOptionsWhere } from 'typeorm';
 import { FanoutTimelineEndpointService } from '@/core/FanoutTimelineEndpointService.js';
+import { promiseMap } from '@/misc/promise-map.js';
 
 const ACTIVITY_JSON = 'application/activity+json; charset=utf-8';
 const LD_JSON = 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"; charset=utf-8';
@@ -418,7 +419,7 @@ export class ActivityPubServerService {
 			const inStock = followings.length === limit + 1;
 			if (inStock) followings.pop();
 
-			const renderedFollowers = await Promise.all(followings.map(following => this.apRendererService.renderFollowUser(following.followerId)));
+			const renderedFollowers = await promiseMap(followings, async following => this.apRendererService.renderFollowUser(following.followerId), { limit: 4 });
 			const rendered = this.apRendererService.renderOrderedCollectionPage(
 				`${partOf}?${url.query({
 					page: 'true',
@@ -515,7 +516,7 @@ export class ActivityPubServerService {
 			const inStock = followings.length === limit + 1;
 			if (inStock) followings.pop();
 
-			const renderedFollowees = await Promise.all(followings.map(following => this.apRendererService.renderFollowUser(following.followeeId)));
+			const renderedFollowees = await promiseMap(followings, async following => this.apRendererService.renderFollowUser(following.followeeId), { limit: 4 });
 			const rendered = this.apRendererService.renderOrderedCollectionPage(
 				`${partOf}?${url.query({
 					page: 'true',
@@ -555,10 +556,7 @@ export class ActivityPubServerService {
 
 		const userId = request.params.user;
 
-		const user = await this.usersRepository.findOneBy({
-			id: userId,
-			host: IsNull(),
-		});
+		const user = await this.cacheService.findLocalUserById(userId);
 
 		if (user == null) {
 			reply.code(404);
@@ -568,13 +566,14 @@ export class ActivityPubServerService {
 		const pinings = await this.userNotePiningsRepository.find({
 			where: { userId: user.id },
 			order: { id: 'DESC' },
-		});
+			relations: { note: true },
+		}) as (MiUserNotePining & { note: MiNote })[];
 
-		const pinnedNotes = (await Promise.all(pinings.map(pining =>
-			this.notesRepository.findOneByOrFail({ id: pining.noteId }))))
+		const pinnedNotes = pinings
+			.map(pin => pin.note)
 			.filter(note => !note.localOnly && ['public', 'home'].includes(note.visibility) && !isPureRenote(note));
 
-		const renderedNotes = await Promise.all(pinnedNotes.map(note => this.apRendererService.renderNote(note, user)));
+		const renderedNotes = await promiseMap(pinnedNotes, async note => await this.apRendererService.renderNote(note, user), { limit: 4 });
 
 		const rendered = this.apRendererService.renderOrderedCollection(
 			`${this.config.url}/users/${userId}/collections/featured`,
@@ -664,7 +663,7 @@ export class ActivityPubServerService {
 
 			if (sinceId) notes.reverse();
 
-			const activities = await Promise.all(notes.map(note => this.packActivity(note, user)));
+			const activities = await promiseMap(notes, async note => await this.packActivity(note, user));
 			const rendered = this.apRendererService.renderOrderedCollectionPage(
 				`${partOf}?${url.query({
 					page: 'true',
@@ -1092,14 +1091,8 @@ export class ActivityPubServerService {
 			// check if the following exists.
 
 			const [follower, followee] = await Promise.all([
-				this.usersRepository.findOneBy({
-					id: request.params.follower,
-					host: IsNull(),
-				}),
-				this.usersRepository.findOneBy({
-					id: request.params.followee,
-					host: Not(IsNull()),
-				}),
+				this.cacheService.findLocalUserById(request.params.follower),
+				this.cacheService.findRemoteUserById(request.params.followee),
 			]) as [MiLocalUser | MiRemoteUser | null, MiLocalUser | MiRemoteUser | null];
 
 			if (follower == null || followee == null) {
@@ -1134,14 +1127,8 @@ export class ActivityPubServerService {
 			}
 
 			const [follower, followee] = await Promise.all([
-				this.usersRepository.findOneBy({
-					id: followRequest.followerId,
-					host: IsNull(),
-				}),
-				this.usersRepository.findOneBy({
-					id: followRequest.followeeId,
-					host: Not(IsNull()),
-				}),
+				this.cacheService.findLocalUserById(followRequest.followerId),
+				this.cacheService.findRemoteUserById(followRequest.followeeId),
 			]) as [MiLocalUser | MiRemoteUser | null, MiLocalUser | MiRemoteUser | null];
 
 			if (follower == null || followee == null) {

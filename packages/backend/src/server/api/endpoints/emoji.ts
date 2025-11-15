@@ -53,7 +53,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		super(meta, paramDef, async (ps, me) => {
 			const emoji = await this.customEmojiService.emojisByKeyCache.fetch(ps.name);
 
-			return this.emojiEntityService.packDetailed(emoji);
+			return await this.emojiEntityService.packDetailed(emoji);
 		});
 	}
 }

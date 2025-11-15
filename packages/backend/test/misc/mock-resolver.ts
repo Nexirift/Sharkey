@@ -22,6 +22,7 @@ import type {
 	UsersRepository,
 } from '@/models/_.js';
 import type { CacheService } from '@/core/CacheService.js';
+import type { MiLocalUser } from '@/models/User.js';
 import { ApLogService } from '@/core/ApLogService.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { ApUtilityService } from '@/core/activitypub/ApUtilityService.js';
@@ -115,8 +116,9 @@ export class MockResolver extends Resolver {
 		return this.#remoteGetTrials;
 	}
 
-	public async resolve(value: string | [string]): Promise<IObjectWithId>;
-	public async resolve(value: string | IObject | [string | IObject]): Promise<IObject>;
+	public async resolve(value: string | [string], allowAnonymous?: boolean, fetchUser?: MiLocalUser): Promise<IObjectWithId>;
+	public async resolve(value: string | IObjectWithId | [string | IObjectWithId], allowAnonymous?: boolean, fetchUser?: MiLocalUser): Promise<IObjectWithId>;
+	public async resolve(value: string | IObject | [string | IObject], allowAnonymous?: boolean, fetchUser?: MiLocalUser): Promise<IObject>;
 	@bindThis
 	public async resolve(value: string | IObject | [string | IObject]): Promise<IObject> {
 		value = fromTuple(value);

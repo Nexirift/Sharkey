@@ -13669,6 +13669,10 @@ export interface Locale extends ILocale {
      * Are you sure you want to restart this account migration?
      */
     "restartMigrationConfirm": string;
+    /**
+     * Background queue
+     */
+    "backgroundQueue": string;
 }
 declare const locales: {
     [lang: string]: Locale;

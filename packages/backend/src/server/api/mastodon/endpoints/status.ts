@@ -11,6 +11,7 @@ import { MastodonClientService } from '@/server/api/mastodon/MastodonClientServi
 import { MastodonDataService } from '@/server/api/mastodon/MastodonDataService.js';
 import { getNoteSummary } from '@/misc/get-note-summary.js';
 import { isPureRenote } from '@/misc/is-renote.js';
+import { promiseMap } from '@/misc/promise-map.js';
 import { convertAttachment, convertPoll, MastodonConverters } from '../MastodonConverters.js';
 import type { Entity } from 'megalodon';
 import type { FastifyInstance } from 'fastify';
@@ -97,8 +98,8 @@ export class ApiStatusMastodon {
 
 			const { client, me } = await this.clientService.getAuthClient(_request);
 			const { data } = await client.getStatusContext(_request.params.id, parseTimelineArgs(_request.query));
-			const ancestors = await Promise.all(data.ancestors.map(async (status: Entity.Status) => await this.mastoConverters.convertStatus(status, me)));
-			const descendants = await Promise.all(data.descendants.map(async (status: Entity.Status) => await this.mastoConverters.convertStatus(status, me)));
+			const ancestors = await promiseMap(data.ancestors, async (status: Entity.Status) => await this.mastoConverters.convertStatus(status, me), { limit: 4 });
+			const descendants = await promiseMap(data.descendants, async (status: Entity.Status) => await this.mastoConverters.convertStatus(status, me), { limit: 4 });
 			const response = { ancestors, descendants };
 
 			return reply.send(response);
@@ -118,7 +119,7 @@ export class ApiStatusMastodon {
 
 			const client = this.clientService.getClient(_request);
 			const data = await client.getStatusRebloggedBy(_request.params.id);
-			const response = await Promise.all(data.data.map((account: Entity.Account) => this.mastoConverters.convertAccount(account)));
+			const response = await promiseMap(data.data, async (account: Entity.Account) => await this.mastoConverters.convertAccount(account), { limit: 4 });
 
 			return reply.send(response);
 		});
@@ -128,7 +129,7 @@ export class ApiStatusMastodon {
 
 			const client = this.clientService.getClient(_request);
 			const data = await client.getStatusFavouritedBy(_request.params.id);
-			const response = await Promise.all(data.data.map((account: Entity.Account) => this.mastoConverters.convertAccount(account)));
+			const response = await promiseMap(data.data, async (account: Entity.Account) => await this.mastoConverters.convertAccount(account), { limit: 4 });
 
 			return reply.send(response);
 		});

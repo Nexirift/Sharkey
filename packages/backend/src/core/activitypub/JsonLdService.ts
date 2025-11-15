@@ -134,7 +134,7 @@ export class JsonLdService {
 		const customLoader = this.getLoader();
 		// XXX: Importing jsonld dynamically since Jest frequently fails to import it statically
 		// https://github.com/misskey-dev/misskey/pull/9894#discussion_r1103753595
-		return (await import('jsonld')).default.compact(data, context, {
+		return await (await import('jsonld')).default.compact(data, context, {
 			documentLoader: customLoader,
 		});
 	}
@@ -142,7 +142,7 @@ export class JsonLdService {
 	@bindThis
 	public async normalize(data: Document): Promise<string> {
 		const customLoader = this.getLoader();
-		return (await import('jsonld')).default.normalize(data, {
+		return await (await import('jsonld')).default.normalize(data, {
 			documentLoader: customLoader,
 		});
 	}

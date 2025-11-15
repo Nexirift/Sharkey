@@ -21,6 +21,7 @@ import { StatusError } from '@/misc/status-error.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { TimeService } from '@/global/TimeService.js';
 import { bindThis } from '@/decorators.js';
+import { QueueService } from '@/core/QueueService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type { DeliverJobData } from '../types.js';
 
@@ -44,13 +45,14 @@ export class DeliverProcessorService {
 		private federationChart: FederationChart,
 		private queueLoggerService: QueueLoggerService,
 		private readonly timeService: TimeService,
+		private readonly queueService: QueueService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('deliver');
 	}
 
 	@bindThis
 	public async process(job: Bull.Job<DeliverJobData>): Promise<string> {
-		const { host } = new URL(job.data.to);
+		const host = this.utilityService.extractDbHost(job.data.to);
 
 		if (!this.utilityService.isFederationAllowedUri(job.data.to)) {
 			return 'skip (blocked)';
@@ -72,66 +74,19 @@ export class DeliverProcessorService {
 		try {
 			await this.apRequestService.signedPost(job.data.user, job.data.to, job.data.content, job.data.digest);
 
-			this.apRequestChart.deliverSucc();
-			this.federationChart.deliverd(host, true);
-
 			// Update instance stats
-			process.nextTick(async () => {
-				if (i == null) return;
-
-				if (i.isNotResponding) {
-					this.federatedInstanceService.update(i.id, {
-						isNotResponding: false,
-						notRespondingSince: null,
-					});
-				}
-
-				if (this.meta.enableChartsForFederatedInstances) {
-					this.instanceChart.requestSent(i.host, true);
-				}
-			});
+			await this.queueService.createPostDeliverJob(host, 'success');
 
 			return 'Success';
 		} catch (res) {
-			this.apRequestChart.deliverFail();
-			this.federationChart.deliverd(host, false);
-
 			// Update instance stats
-			this.federatedInstanceService.fetchOrRegister(host).then(i => {
-				if (!i.isNotResponding) {
-					this.federatedInstanceService.update(i.id, {
-						isNotResponding: true,
-						notRespondingSince: this.timeService.date,
-					});
-				} else if (i.notRespondingSince) {
-					// 1週間以上不通ならサスペンド
-					if (i.suspensionState === 'none' && i.notRespondingSince.getTime() <= this.timeService.now - 1000 * 60 * 60 * 24 * 7) {
-						this.federatedInstanceService.update(i.id, {
-							suspensionState: 'autoSuspendedForNotResponding',
-						});
-					}
-				} else {
-					// isNotRespondingがtrueでnotRespondingSinceがnullの場合はnotRespondingSinceをセット
-					// notRespondingSinceは新たな機能なので、それ以前のデータにはnotRespondingSinceがない場合がある
-					this.federatedInstanceService.update(i.id, {
-						notRespondingSince: this.timeService.date,
-					});
-				}
-
-				if (this.meta.enableChartsForFederatedInstances) {
-					this.instanceChart.requestSent(i.host, false);
-				}
-			});
+			const isPerm = job.data.isSharedInbox && res instanceof StatusError && res.statusCode === 410;
+			await this.queueService.createPostDeliverJob(host, isPerm ? 'perm-fail' : 'temp-fail');
 
 			if (res instanceof StatusError && !res.isRetryable) {
 				// 4xx
 				// 相手が閉鎖していることを明示しているため、配送停止する
 				if (job.data.isSharedInbox && res.statusCode === 410) {
-					this.federatedInstanceService.fetchOrRegister(host).then(i => {
-						this.federatedInstanceService.update(i.id, {
-							suspensionState: 'goneSuspended',
-						});
-					});
 					throw new Bull.UnrecoverableError(`${host} is gone`);
 				}
 				throw new Bull.UnrecoverableError(`${res.statusCode} ${res.statusMessage}`);

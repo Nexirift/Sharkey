@@ -299,6 +299,9 @@ type AdminQueueInboxDelayedResponse = operations['admin___queue___inbox-delayed'
 type AdminQueueJobsRequest = operations['admin___queue___jobs']['requestBody']['content']['application/json'];
 
 // @public (undocumented)
+type AdminQueueJobsResponse = operations['admin___queue___jobs']['responses']['200']['content']['application/json'];
+
+// @public (undocumented)
 type AdminQueuePromoteJobsRequest = operations['admin___queue___promote-jobs']['requestBody']['content']['application/json'];
 
 // @public (undocumented)
@@ -1617,6 +1620,7 @@ declare namespace entities {
         AdminQueueDeliverDelayedResponse,
         AdminQueueInboxDelayedResponse,
         AdminQueueJobsRequest,
+        AdminQueueJobsResponse,
         AdminQueuePromoteJobsRequest,
         AdminQueueQueueStatsRequest,
         AdminQueueRemoveJobRequest,
@@ -3490,6 +3494,12 @@ type QueueStats = {
         delayed: number;
     };
     inbox: {
+        activeSincePrevTick: number;
+        active: number;
+        waiting: number;
+        delayed: number;
+    };
+    background: {
         activeSincePrevTick: number;
         active: number;
         waiting: number;

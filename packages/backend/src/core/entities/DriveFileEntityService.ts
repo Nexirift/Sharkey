@@ -201,6 +201,7 @@ export class DriveFileEntityService implements OnModuleInit {
 
 		const file = typeof src === 'object' ? src : await this.driveFilesRepository.findOneByOrFail({ id: src });
 
+		// noinspection ES6MissingAwait
 		return await awaitAll<Packed<'DriveFile'>>({
 			id: file.id,
 			createdAt: this.idService.parse(file.id).date.toISOString(),
@@ -239,6 +240,7 @@ export class DriveFileEntityService implements OnModuleInit {
 		const file = typeof src === 'object' ? src : await this.driveFilesRepository.findOneBy({ id: src });
 		if (file == null) return null;
 
+		// noinspection ES6MissingAwait
 		return await awaitAll<Packed<'DriveFile'>>({
 			id: file.id,
 			createdAt: this.idService.parse(file.id).date.toISOString(),

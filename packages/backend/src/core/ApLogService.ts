@@ -14,7 +14,9 @@ import { JsonValue } from '@/misc/json-value.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { TimeService } from '@/global/TimeService.js';
 import { IdService } from '@/core/IdService.js';
-import { IActivity, IObject } from './activitypub/type.js';
+import { IActivity, IObject } from '@/core/activitypub/type.js';
+import { bindThis } from '@/decorators.js';
+import { QueueService } from '@/core/QueueService.js';
 
 @Injectable()
 export class ApLogService {
@@ -23,7 +25,7 @@ export class ApLogService {
 		private readonly config: Config,
 
 		@Inject(DI.apContextsRepository)
-		private apContextsRepository: ApContextsRepository,
+		private readonly apContextsRepository: ApContextsRepository,
 
 		@Inject(DI.apInboxLogsRepository)
 		private readonly apInboxLogsRepository: ApInboxLogsRepository,
@@ -34,6 +36,7 @@ export class ApLogService {
 		private readonly utilityService: UtilityService,
 		private readonly idService: IdService,
 		private readonly timeService: TimeService,
+		private readonly queueService: QueueService,
 	) {}
 
 	/**
@@ -121,6 +124,16 @@ export class ApLogService {
 			.values(context)
 			.orIgnore('md5')
 			.execute();
+	}
+
+	@bindThis
+	public async deleteObjectLogsDeferred(objectUris: string | string[]): Promise<void> {
+		await this.queueService.createDeleteApLogsJob('object', objectUris);
+	}
+
+	@bindThis
+	public async deleteInboxLogsDeferred(userIds: string | string[]): Promise<void> {
+		await this.queueService.createDeleteApLogsJob('inbox', userIds);
 	}
 
 	/**

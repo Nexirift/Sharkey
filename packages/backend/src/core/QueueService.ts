@@ -19,8 +19,10 @@ import { ApRequestCreator } from '@/core/activitypub/ApRequestService.js';
 import { TimeService } from '@/global/TimeService.js';
 import type { SystemWebhookPayload } from '@/core/SystemWebhookService.js';
 import type { MiNote } from '@/models/Note.js';
+import type { MinimalNote } from '@/misc/is-renote.js';
 import { type UserWebhookPayload } from './UserWebhookService.js';
 import type {
+	BackgroundTaskJobData,
 	DbJobData,
 	DeliverJobData,
 	RelationshipJobData,
@@ -39,6 +41,7 @@ import type {
 	SystemWebhookDeliverQueue,
 	UserWebhookDeliverQueue,
 	ScheduleNotePostQueue,
+	BackgroundTaskQueue,
 } from './QueueModule.js';
 import type httpSignature from '@peertube/http-signature';
 import type * as Bull from 'bullmq';
@@ -54,6 +57,7 @@ export const QUEUE_TYPES = [
 	'userWebhookDeliver',
 	'systemWebhookDeliver',
 	'scheduleNotePost',
+	'backgroundTask',
 ] as const;
 
 @Injectable()
@@ -72,6 +76,7 @@ export class QueueService implements OnModuleInit {
 		@Inject('queue:userWebhookDeliver') public userWebhookDeliverQueue: UserWebhookDeliverQueue,
 		@Inject('queue:systemWebhookDeliver') public systemWebhookDeliverQueue: SystemWebhookDeliverQueue,
 		@Inject('queue:scheduleNotePost') public ScheduleNotePostQueue: ScheduleNotePostQueue,
+		@Inject('queue:backgroundTask') public readonly backgroundTaskQueue: BackgroundTaskQueue,
 
 		private readonly timeService: TimeService,
 	) {}
@@ -839,6 +844,107 @@ export class QueueService implements OnModuleInit {
 		});
 	}
 
+	@bindThis
+	public async createUpdateUserJob(userId: string) {
+		return await this.createBackgroundTask({ type: 'update-user', userId }, userId);
+	}
+
+	@bindThis
+	public async createUpdateFeaturedJob(userId: string) {
+		return await this.createBackgroundTask({ type: 'update-featured', userId }, userId);
+	}
+
+	@bindThis
+	public async createUpdateInstanceJob(host: string) {
+		return await this.createBackgroundTask({ type: 'update-instance', host }, host);
+	}
+
+	@bindThis
+	public async createPostDeliverJob(host: string, result: 'success' | 'temp-fail' | 'perm-fail') {
+		return await this.createBackgroundTask({ type: 'post-deliver', host, result });
+	}
+
+	@bindThis
+	public async createPostInboxJob(host: string) {
+		return await this.createBackgroundTask({ type: 'post-inbox', host });
+	}
+
+	@bindThis
+	public async createPostNoteJob(noteId: string, silent: boolean, type: 'create' | 'edit') {
+		const edit = type === 'edit';
+		const duplication = `${noteId}_${type}`;
+
+		return await this.createBackgroundTask({ type: 'post-note', noteId, silent, edit }, duplication);
+	}
+
+	@bindThis
+	public async createUpdateUserTagsJob(userId: string) {
+		return await this.createBackgroundTask({ type: 'update-user-tags', userId }, userId);
+	}
+
+	@bindThis
+	public async createUpdateNoteTagsJob(noteId: string) {
+		return await this.createBackgroundTask({ type: 'update-note-tags', noteId }, noteId);
+	}
+
+	@bindThis
+	public async createDeleteFileJob(fileId: string, isExpired?: boolean, deleterId?: string) {
+		return await this.createBackgroundTask({ type: 'delete-file', fileId, isExpired, deleterId }, fileId);
+	}
+
+	@bindThis
+	public async createUpdateLatestNoteJob(note: MinimalNote) {
+		// Compact the note to avoid storing the entire thing in Redis, when all we need is minimal data for categorization
+		const minimizedNote: MinimalNote = {
+			id: note.id,
+			visibility: note.visibility,
+			userId: note.userId,
+			replyId: note.replyId,
+			renoteId: note.renoteId,
+			hasPoll: note.hasPoll,
+			text: note.text ? '1' : null,
+			cw: note.text ? '1' : null,
+			fileIds: note.fileIds.length > 0 ? ['1'] : [],
+		};
+
+		return await this.createBackgroundTask({ type: 'update-latest-note', note: minimizedNote }, note.id);
+	}
+
+	@bindThis
+	public async createPostSuspendJob(userId: string) {
+		return await this.createBackgroundTask({ type: 'post-suspend', userId }, userId);
+	}
+
+	@bindThis
+	public async createPostUnsuspendJob(userId: string) {
+		return await this.createBackgroundTask({ type: 'post-unsuspend', userId }, userId);
+	}
+
+	@bindThis
+	public async createDeleteApLogsJob(dataType: 'inbox' | 'object', data: string | string[]) {
+		return await this.createBackgroundTask({ type: 'delete-ap-logs', dataType, data });
+	}
+
+	private async createBackgroundTask<T extends BackgroundTaskJobData>(data: T, duplication?: string | { id: string, ttl?: number }) {
+		return await this.backgroundTaskQueue.add(
+			data.type,
+			data,
+			{
+				// https://docs.bullmq.io/guide/retrying-failing-jobs#custom-back-off-strategies
+				attempts: this.config.backgroundJobMaxAttempts ?? 8,
+				backoff: {
+					// Resolves to QueueProcessorService::HttpRelatedBackoff()
+					type: 'custom',
+				},
+
+				// https://docs.bullmq.io/guide/jobs/deduplication
+				deduplication: typeof(duplication) === 'string'
+					? { id: `${data.type}_${duplication}` }
+					: duplication,
+			},
+		);
+	};
+
 	/**
 	 * @see UserWebhookDeliverJobData
 	 * @see UserWebhookDeliverProcessorService
@@ -927,6 +1033,7 @@ export class QueueService implements OnModuleInit {
 			case 'userWebhookDeliver': return this.userWebhookDeliverQueue;
 			case 'systemWebhookDeliver': return this.systemWebhookDeliverQueue;
 			case 'scheduleNotePost': return this.ScheduleNotePostQueue;
+			case 'backgroundTask': return this.backgroundTaskQueue;
 			default: throw new Error(`Unrecognized queue type: ${type}`);
 		}
 	}

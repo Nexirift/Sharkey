@@ -15,6 +15,7 @@ import { dateUTC, isTimeSame, isTimeBefore, subtractTime, addTime } from '@/misc
 import type Logger from '@/logger.js';
 import { bindThis } from '@/decorators.js';
 import { MiRepository, miRepository } from '@/models/_.js';
+import { promiseMap } from '@/misc/promise-map.js';
 import type { DataSource, Repository } from 'typeorm';
 import type { Lock } from 'redis-lock';
 
@@ -526,13 +527,13 @@ export default abstract class Chart<T extends Schema> {
 
 		const groups = removeDuplicates(this.buffer.map(log => log.group));
 
-		await Promise.all(
-			groups.map(group =>
-				Promise.all([
-					this.claimCurrentLog(group, 'hour'),
-					this.claimCurrentLog(group, 'day'),
-				]).then(([logHour, logDay]) =>
-					update(logHour, logDay))));
+		await promiseMap(groups, async group => {
+			const logHour = await this.claimCurrentLog(group, 'hour');
+			const logDay = await this.claimCurrentLog(group, 'day');
+			await update(logHour, logDay);
+		}, {
+			limit: 2,
+		});
 	}
 
 	@bindThis
@@ -564,7 +565,7 @@ export default abstract class Chart<T extends Schema> {
 			]);
 		};
 
-		return Promise.all([
+		return await Promise.all([
 			this.claimCurrentLog(group, 'hour'),
 			this.claimCurrentLog(group, 'day'),
 		]).then(([logHour, logDay]) =>

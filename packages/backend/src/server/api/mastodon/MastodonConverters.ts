@@ -13,7 +13,7 @@ import { MfmService } from '@/core/MfmService.js';
 import type { Config } from '@/config.js';
 import { IMentionedRemoteUsers, MiNote } from '@/models/Note.js';
 import type { MiLocalUser, MiUser } from '@/models/User.js';
-import type { NoteEditRepository, UserProfilesRepository } from '@/models/_.js';
+import type { NoteEditsRepository, UserProfilesRepository } from '@/models/_.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
@@ -24,6 +24,7 @@ import { GetterService } from '@/server/api/GetterService.js';
 import { appendContentWarning } from '@/misc/append-content-warning.js';
 import { isRenote } from '@/misc/is-renote.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
+import { promiseMap } from '@/misc/promise-map.js';
 
 // Missing from Megalodon apparently
 // https://docs.joinmastodon.org/entities/StatusEdit/
@@ -60,8 +61,8 @@ export class MastodonConverters {
 		@Inject(DI.userProfilesRepository)
 		private readonly userProfilesRepository: UserProfilesRepository,
 
-		@Inject(DI.noteEditRepository)
-		private readonly noteEditRepository: NoteEditRepository,
+		@Inject(DI.noteEditsRepository)
+		private readonly noteEditsRepository: NoteEditsRepository,
 
 		private readonly mfmService: MfmService,
 		private readonly getterService: GetterService,
@@ -175,7 +176,7 @@ export class MastodonConverters {
 
 		const bioText = profile?.description && this.mfmService.toMastoApiHtml(mfm.parse(profile.description));
 
-		return awaitAll({
+		return await awaitAll({
 			id: account.id,
 			username: user.username,
 			acct: acct,
@@ -214,7 +215,7 @@ export class MastodonConverters {
 		const noteUser = await this.getUser(note.userId);
 		const noteInstance = noteUser.instance ?? (noteUser.host ? await this.federatedInstanceService.fetch(noteUser.host) : null);
 		const account = await this.convertAccount(noteUser);
-		const edits = await this.noteEditRepository.find({ where: { noteId: note.id }, order: { id: 'ASC' } });
+		const edits = await this.noteEditsRepository.find({ where: { noteId: note.id }, order: { id: 'ASC' } });
 		const history: StatusEdit[] = [];
 
 		const mentionedRemoteUsers = JSON.parse(note.mentionedRemoteUsers);
@@ -283,11 +284,15 @@ export class MastodonConverters {
 			});
 		});
 
-		const mentions = Promise.all(note.mentions.map(p =>
-			this.getUser(p)
-				.then(u => this.encode(u, mentionedRemoteUsers))
-				.catch(() => null)))
-			.then((p: (Entity.Mention | null)[]) => p.filter(m => m != null));
+		const mentions = promiseMap(note.mentions, async p => {
+			try {
+				const u = await this.getUser(p);
+				return this.encode(u, mentionedRemoteUsers);
+			} catch {
+				return null;
+			}
+		}, { limit: 4 })
+			.then((p: Entity.Mention[]) => p.filter(m => m));
 
 		const tags = note.tags.map(tag => {
 			return {
@@ -363,7 +368,7 @@ export class MastodonConverters {
 	public async convertConversation(conversation: Entity.Conversation, me: MiLocalUser | null): Promise<MastodonEntity.Conversation> {
 		return {
 			id: conversation.id,
-			accounts: await Promise.all(conversation.accounts.map((a: Entity.Account) => this.convertAccount(a))),
+			accounts: await promiseMap(conversation.accounts, async (a: Entity.Account) => await this.convertAccount(a), { limit: 4 }),
 			last_status: conversation.last_status ? await this.convertStatus(conversation.last_status, me) : null,
 			unread: conversation.unread,
 		};

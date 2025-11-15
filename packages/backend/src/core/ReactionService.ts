@@ -33,6 +33,7 @@ import { PER_NOTE_REACTION_USER_PAIR_CACHE_MAX } from '@/const.js';
 import { CacheService } from '@/core/CacheService.js';
 import { NoteVisibilityService } from '@/core/NoteVisibilityService.js';
 import { TimeService } from '@/global/TimeService.js';
+import { CollapsedQueueService } from '@/core/CollapsedQueueService.js';
 import type { DataSource } from 'typeorm';
 
 const FALLBACK = '\u2764';
@@ -110,6 +111,7 @@ export class ReactionService implements OnModuleInit {
 		private readonly cacheService: CacheService,
 		private readonly noteVisibilityService: NoteVisibilityService,
 		private readonly timeService: TimeService,
+		private readonly collapsedQueueService: CollapsedQueueService,
 	) {
 	}
 
@@ -119,7 +121,7 @@ export class ReactionService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async create(user: { id: MiUser['id']; host: MiUser['host']; isBot: MiUser['isBot'] }, note: MiNote, _reaction?: string | null) {
+	public async create(user: MiUser, note: MiNote, _reaction?: string | null) {
 		// Check blocking
 		if (note.userId !== user.id) {
 			const blocked = await this.userBlockingService.checkBlocked(note.userId, user.id);
@@ -224,7 +226,7 @@ export class ReactionService implements OnModuleInit {
 				.execute();
 		}
 
-		this.usersRepository.update({ id: user.id }, { updatedAt: this.timeService.date });
+		await this.collapsedQueueService.updateUserQueue.enqueue(user.id, { updatedAt: this.timeService.date });
 
 		// 30%の確率、セルフではない、3日以内に投稿されたノートの場合ハイライト用ランキング更新
 		if (
@@ -289,16 +291,18 @@ export class ReactionService implements OnModuleInit {
 			const content = this.apRendererService.addContext(await this.apRendererService.renderLike(record, note));
 			const dm = this.apDeliverManagerService.createDeliverManager(user, content);
 			if (note.userHost !== null) {
-				const reactee = await this.usersRepository.findOneBy({ id: note.userId });
+				const reactee = await this.cacheService.findRemoteUserById(note.userId);
 				dm.addDirectRecipe(reactee as MiRemoteUser);
 			}
 
 			if (['public', 'home', 'followers'].includes(note.visibility)) {
 				dm.addFollowersRecipe();
 			} else if (note.visibility === 'specified') {
-				const visibleUsers = await Promise.all(note.visibleUserIds.map(id => this.usersRepository.findOneBy({ id })));
-				for (const u of visibleUsers.filter(u => u && isRemoteUser(u))) {
-					dm.addDirectRecipe(u as MiRemoteUser);
+				const visibleUsers = await this.cacheService.findUsersById(note.visibleUserIds);
+				for (const u of visibleUsers.values()) {
+					if (isRemoteUser(u)) {
+						dm.addDirectRecipe(u as MiRemoteUser);
+					}
 				}
 			}
 
@@ -308,7 +312,7 @@ export class ReactionService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async delete(user: { id: MiUser['id']; host: MiUser['host']; isBot: MiUser['isBot']; }, note: MiNote, exist?: MiNoteReaction | null) {
+	public async delete(user: MiUser, note: MiNote, exist?: MiNoteReaction | null) {
 		// if already unreacted
 		exist ??= await this.noteReactionsRepository.findOneBy({
 			noteId: note.id,
@@ -340,7 +344,7 @@ export class ReactionService implements OnModuleInit {
 				.execute();
 		}
 
-		this.usersRepository.update({ id: user.id }, { updatedAt: this.timeService.date });
+		await this.collapsedQueueService.updateUserQueue.enqueue(user.id, { updatedAt: this.timeService.date });
 
 		this.globalEventService.publishNoteStream(note.id, 'unreacted', {
 			reaction: this.decodeReaction(exist.reaction).reaction,
@@ -352,7 +356,7 @@ export class ReactionService implements OnModuleInit {
 			const content = this.apRendererService.addContext(this.apRendererService.renderUndo(await this.apRendererService.renderLike(exist, note), user));
 			const dm = this.apDeliverManagerService.createDeliverManager(user, content);
 			if (note.userHost !== null) {
-				const reactee = await this.usersRepository.findOneBy({ id: note.userId });
+				const reactee = await this.cacheService.findRemoteUserById(note.userId);
 				dm.addDirectRecipe(reactee as MiRemoteUser);
 			}
 			dm.addFollowersRecipe();

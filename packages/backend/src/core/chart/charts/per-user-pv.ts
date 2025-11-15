@@ -44,16 +44,16 @@ export default class PerUserPvChart extends Chart<typeof schema> { // eslint-dis
 	}
 
 	@bindThis
-	public async commitByUser(user: { id: MiUser['id'] }, key: string): Promise<void> {
-		await this.commit({
+	public commitByUser(user: { id: MiUser['id'] }, key: string): void {
+		this.commit({
 			'upv.user': [key],
 			'pv.user': 1,
 		}, user.id);
 	}
 
 	@bindThis
-	public async commitByVisitor(user: { id: MiUser['id'] }, key: string): Promise<void> {
-		await this.commit({
+	public commitByVisitor(user: { id: MiUser['id'] }, key: string): void {
+		this.commit({
 			'upv.visitor': [key],
 			'pv.visitor': 1,
 		}, user.id);

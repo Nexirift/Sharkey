@@ -46,7 +46,7 @@ import { RelationshipProcessorService } from './processors/RelationshipProcessor
 import { ScheduleNotePostProcessorService } from './processors/ScheduleNotePostProcessorService.js';
 import { CleanupApLogsProcessorService } from './processors/CleanupApLogsProcessorService.js';
 import { HibernateUsersProcessorService } from './processors/HibernateUsersProcessorService.js';
-
+import { BackgroundTaskProcessorService } from './processors/BackgroundTaskProcessorService.js';
 @Module({
 	imports: [
 		CoreModule,
@@ -93,6 +93,7 @@ import { HibernateUsersProcessorService } from './processors/HibernateUsersProce
 		ScheduleNotePostProcessorService,
 		CleanupApLogsProcessorService,
 		HibernateUsersProcessorService,
+		BackgroundTaskProcessorService,
 	],
 	exports: [
 		QueueProcessorService,

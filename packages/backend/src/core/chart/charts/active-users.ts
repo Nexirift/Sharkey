@@ -50,9 +50,9 @@ export default class ActiveUsersChart extends Chart<typeof schema> { // eslint-d
 	}
 
 	@bindThis
-	public async read(user: { id: MiUser['id'], host: null }): Promise<void> {
+	public read(user: { id: MiUser['id'], host: null }): void {
 		const createdAt = this.idService.parse(user.id).date;
-		await this.commit({
+		this.commit({
 			'read': [user.id],
 			'registeredWithinWeek': (this.timeService.now - createdAt.getTime() < week) ? [user.id] : [],
 			'registeredWithinMonth': (this.timeService.now - createdAt.getTime() < month) ? [user.id] : [],
@@ -64,8 +64,8 @@ export default class ActiveUsersChart extends Chart<typeof schema> { // eslint-d
 	}
 
 	@bindThis
-	public async write(user: { id: MiUser['id'], host: null }): Promise<void> {
-		await this.commit({
+	public write(user: { id: MiUser['id'], host: null }): void {
+		this.commit({
 			'write': [user.id],
 		});
 	}

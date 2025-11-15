@@ -16,6 +16,7 @@ import { bindThis } from '@/decorators.js';
 import { attachCallerId } from '@/misc/attach-caller-id.js';
 import { CacheManagementService, type ManagedMemoryKVCache } from '@/global/CacheManagementService.js';
 import { TimeService } from '@/global/TimeService.js';
+import { CollapsedQueueService } from '@/core/CollapsedQueueService.js';
 
 export class AuthenticationError extends Error {
 	// Fix the error name in stack traces - https://stackoverflow.com/a/71573071
@@ -43,6 +44,7 @@ export class AuthenticateService {
 
 		private cacheService: CacheService,
 		private readonly timeService: TimeService,
+		private readonly collapsedQueueService: CollapsedQueueService,
 
 		cacheManagementService: CacheManagementService,
 	) {
@@ -79,7 +81,7 @@ export class AuthenticateService {
 				throw new AuthenticationError('invalid signature');
 			}
 
-			this.accessTokensRepository.update(accessToken.id, {
+			await this.collapsedQueueService.updateAccessTokenQueue.enqueue(accessToken.id, {
 				lastUsedAt: this.timeService.date,
 			});
 

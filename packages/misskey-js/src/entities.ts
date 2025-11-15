@@ -313,6 +313,12 @@ export type QueueStats = {
 		waiting: number;
 		delayed: number;
 	};
+	background: {
+		activeSincePrevTick: number;
+		active: number;
+		waiting: number;
+		delayed: number;
+	};
 };
 
 export type QueueStatsLog = QueueStats[];

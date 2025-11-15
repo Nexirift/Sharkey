@@ -28,6 +28,11 @@ export class MiUser {
 	})
 	public lastFetchedAt: Date | null;
 
+	@Column('timestamp with time zone', {
+		nullable: true,
+	})
+	public lastFetchedFeaturedAt?: Date | null;
+
 	@Index()
 	@Column('timestamp with time zone', {
 		nullable: true,

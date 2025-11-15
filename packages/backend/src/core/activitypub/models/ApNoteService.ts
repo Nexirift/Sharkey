@@ -6,7 +6,6 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { In } from 'typeorm';
 import { UnrecoverableError } from 'bullmq';
-import promiseLimit from 'promise-limit';
 import { ModuleRef } from '@nestjs/core';
 import { DI } from '@/di-symbols.js';
 import type { UsersRepository, PollsRepository, EmojisRepository, NotesRepository, MiMeta } from '@/models/_.js';
@@ -32,6 +31,7 @@ import { renderInlineError } from '@/misc/render-inline-error.js';
 import { extractMediaFromHtml } from '@/core/activitypub/misc/extract-media-from-html.js';
 import { extractMediaFromMfm } from '@/core/activitypub/misc/extract-media-from-mfm.js';
 import { getContentByType } from '@/core/activitypub/misc/get-content-by-type.js';
+import { promiseMap } from '@/misc/promise-map.js';
 import { trackPromise } from '@/misc/promise-tracker.js';
 import { CustomEmojiService, encodeEmojiKey, isValidEmojiName } from '@/core/CustomEmojiService.js';
 import { TimeService } from '@/global/TimeService.js';
@@ -277,7 +277,7 @@ export class ApNoteService implements OnModuleInit {
 
 					return x;
 				})
-				.catch(async err => {
+				.catch(err => {
 					this.logger.warn(`error ${renderInlineError(err)} fetching inReplyTo ${note.inReplyTo} for note ${entryUri}`);
 					throw new IdentifiableError('1ebf0a96-2769-4973-a6c2-3dcbad409dff', `failed to create note ${entryUri}: could not fetch inReplyTo ${note.inReplyTo}`, true, err);
 				})
@@ -456,7 +456,7 @@ export class ApNoteService implements OnModuleInit {
 
 					return x;
 				})
-				.catch(async err => {
+				.catch(err => {
 					this.logger.warn(`error ${renderInlineError(err)} fetching inReplyTo ${note.inReplyTo} for note ${entryUri}`);
 					throw new IdentifiableError('1ebf0a96-2769-4973-a6c2-3dcbad409dff', `failed to update note ${entryUri}: could not fetch inReplyTo ${note.inReplyTo}`, true, err);
 				})
@@ -583,8 +583,8 @@ export class ApNoteService implements OnModuleInit {
 		const emojiKeys = eomjiTags.map(tag => encodeEmojiKey({ name: tag.name, host }));
 		const existingEmojis = await this.customEmojiService.emojisByKeyCache.fetchMany(emojiKeys);
 
-		return await Promise.all(eomjiTags.map(async tag => {
-			const name = tag.name;
+		return await promiseMap(eomjiTags, async tag => {
+			const name = tag.name.replaceAll(':', '');
 			tag.icon = toSingle(tag.icon);
 
 			const exists = existingEmojis.values.find(x => x.name === name);
@@ -627,7 +627,9 @@ export class ApNoteService implements OnModuleInit {
 				// _misskey_license が存在しなければ `null`
 				license: (tag._misskey_license?.freeText ?? null),
 			});
-		}));
+		}, {
+			limit: 4,
+		});
 	}
 
 	/**
@@ -691,7 +693,7 @@ export class ApNoteService implements OnModuleInit {
 			}
 		};
 
-		const results = await Promise.all(Array.from(quoteUris).map(u => resolveQuote(u)));
+		const results = await promiseMap(quoteUris, async u => resolveQuote(u), { limit: 2 });
 
 		// Success - return the quote
 		const quote = results.find(r => typeof(r) === 'object');
@@ -753,14 +755,10 @@ export class ApNoteService implements OnModuleInit {
 
 		// Resolve all files w/ concurrency 2.
 		// This prevents one big file from blocking the others.
-		const limiter = promiseLimit<MiDriveFile | null>(2);
-		const results = await Promise
-			.all(Array
-				.from(attachments.values())
-				.map(attach => limiter(async () => {
-					attach.sensitive ??= note.sensitive;
-					return await this.resolveImage(actor, attach);
-				})));
+		const results = await promiseMap(attachments.values(), async attach => {
+			attach.sensitive ??= note.sensitive;
+			return await this.resolveImage(actor, attach);
+		}, { limit: 2 });
 
 		// Process results
 		let hasFileError = false;

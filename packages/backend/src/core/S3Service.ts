@@ -91,7 +91,7 @@ export class S3Service implements OnApplicationShutdown {
 	@bindThis
 	public async upload(input: PutObjectCommandInput) {
 		const client = this.getS3Client();
-		return new Upload({
+		return await new Upload({
 			client,
 			params: input,
 			partSize: (client.config.endpoint && (await client.config.endpoint()).hostname === 'storage.googleapis.com')

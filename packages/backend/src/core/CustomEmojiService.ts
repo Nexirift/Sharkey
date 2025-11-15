@@ -23,6 +23,7 @@ import { DriveService } from '@/core/DriveService.js';
 import { CacheManagementService, type ManagedQuantumKVCache } from '@/global/CacheManagementService.js';
 import { TimeService } from '@/global/TimeService.js';
 import { LoggerService } from '@/core/LoggerService.js';
+import { promiseMap } from '@/misc/promise-map.js';
 import { isRetryableSymbol } from '@/misc/is-retryable-error.js';
 import type Logger from '@/logger.js';
 import { KeyNotFoundError } from '@/misc/errors/KeyNotFoundError.js';
@@ -577,7 +578,7 @@ export class CustomEmojiService {
 	 */
 	@bindThis
 	public async populateEmojis(emojiNames: string[], noteUserHost: string | null): Promise<Record<string, string>> {
-		const emojis = await Promise.all(emojiNames.map(x => this.populateEmoji(x, noteUserHost)));
+		const emojis = await promiseMap(emojiNames, async x => await this.populateEmoji(x, noteUserHost), { limit: 4 });
 		const res = {} as Record<string, string>;
 		for (let i = 0; i < emojiNames.length; i++) {
 			const resolvedEmoji = emojis[i];

@@ -17,6 +17,7 @@ import { bindThis } from '@/decorators.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { TimeService } from '@/global/TimeService.js';
 import { renderInlineError } from '@/misc/render-inline-error.js';
+import { QueueService } from '@/core/QueueService.js';
 import type { CheerioAPI } from 'cheerio/slim';
 
 type NodeInfo = {
@@ -50,6 +51,7 @@ export class FetchInstanceMetadataService {
 		private redisClient: Redis.Redis,
 
 		private readonly timeService: TimeService,
+		private readonly queueService: QueueService,
 	) {
 		this.logger = this.loggerService.getLogger('metadata', 'cyan');
 	}
@@ -73,8 +75,21 @@ export class FetchInstanceMetadataService {
 		return this.redisClient.del(`fetchInstanceMetadata:mutex:v2:${host}`);
 	}
 
+	/**
+	 * Schedules a deferred update on the background task worker.
+	 * Duplicate updates are automatically skipped.
+	 */
+	@bindThis
+	public async fetchInstanceMetadataLazy(instance: MiInstance): Promise<void> {
+		if (!instance.isBlocked) {
+			await this.queueService.createUpdateInstanceJob(instance.host);
+		}
+	}
+
 	@bindThis
 	public async fetchInstanceMetadata(instance: MiInstance, force = false): Promise<void> {
+		if (instance.isBlocked) return;
+
 		const host = instance.host;
 
 		// finallyでunlockされてしまうのでtry内でロックチェックをしない
@@ -110,25 +125,30 @@ export class FetchInstanceMetadataService {
 				this.getDescription(info, dom, manifest).catch(() => null),
 			]);
 
-			this.logger.debug(`Successfuly fetched metadata of ${instance.host}`);
+			this.logger.debug(`Successfully fetched metadata of ${instance.host}`);
 
 			const updates = {
 				infoUpdatedAt: this.timeService.date,
 			} as Record<string, any>;
 
 			if (info) {
-				updates.softwareName = typeof info.software?.name === 'string' ? info.software.name.toLowerCase() : '?';
-				updates.softwareVersion = info.software?.version;
-				updates.openRegistrations = info.openRegistrations;
-				updates.maintainerName = info.metadata ? info.metadata.maintainer ? (info.metadata.maintainer.name ?? null) : null : null;
-				updates.maintainerEmail = info.metadata ? info.metadata.maintainer ? (info.metadata.maintainer.email ?? null) : null : null;
+				const softwareName = typeof info.software?.name === 'string' ? info.software.name.toLowerCase() : '?';
+				if (softwareName !== instance.softwareName) updates.softwareName = softwareName;
+				const softwareVersion = typeof info.software?.version === 'string' ? info.software.version.toLowerCase() : '?';
+				if (softwareVersion !== instance.softwareVersion) updates.softwareVersion = softwareVersion;
+				if (info.openRegistrations !== instance.openRegistrations) updates.openRegistrations = info.openRegistrations;
+				const maintainerName = info.metadata ? info.metadata.maintainer ? (info.metadata.maintainer.name ?? null) : null : null;
+				if (maintainerName !== instance.maintainerName) updates.maintainerName = maintainerName;
+				const maintainerEmail = info.metadata ? info.metadata.maintainer ? (info.metadata.maintainer.email ?? null) : null : null;
+				if (maintainerEmail !== instance.maintainerEmail) updates.maintainerEmail = maintainerEmail;
 			}
 
-			if (name) updates.name = name;
-			if (description) updates.description = description;
-			if (icon ?? favicon) updates.iconUrl = (icon && !icon.includes('data:image/png;base64')) ? icon : favicon;
-			if (favicon) updates.faviconUrl = favicon;
-			if (themeColor) updates.themeColor = themeColor;
+			if (name !== instance.name) updates.name = name;
+			if (description !== instance.description) updates.description = description;
+			const iconUrl = (icon && !icon.includes('data:image/png;base64')) ? icon : favicon;
+			if (iconUrl !== instance.iconUrl) updates.iconUrl = iconUrl;
+			if (favicon !== instance.faviconUrl) updates.faviconUrl = favicon;
+			if (themeColor !== instance.themeColor) updates.themeColor = themeColor;
 
 			await this.federatedInstanceService.update(instance.id, updates);
 
@@ -169,10 +189,7 @@ export class FetchInstanceMetadataService {
 				throw new Error('No nodeinfo link provided');
 			}
 
-			const info = await this.httpRequestService.getJson(link.href)
-				.catch(err => {
-					throw err.statusCode ?? err.message;
-				});
+			const info = await this.httpRequestService.getJson(link.href);
 
 			this.logger.debug(`Successfuly fetched nodeinfo of ${instance.host}`);
 
