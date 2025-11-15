@@ -895,7 +895,7 @@ export class QueueService implements OnModuleInit {
 	@bindThis
 	public async createUpdateLatestNoteJob(note: MinimalNote) {
 		// Compact the note to avoid storing the entire thing in Redis, when all we need is minimal data for categorization
-		const packedNote: MinimalNote = {
+		const minimizedNote: MinimalNote = {
 			id: note.id,
 			visibility: note.visibility,
 			userId: note.userId,
@@ -907,7 +907,7 @@ export class QueueService implements OnModuleInit {
 			fileIds: note.fileIds.length > 0 ? ['1'] : [],
 		};
 
-		return await this.createBackgroundTask({ type: 'update-latest-note', note: packedNote }, note.id);
+		return await this.createBackgroundTask({ type: 'update-latest-note', note: minimizedNote }, note.id);
 	}
 
 	@bindThis
