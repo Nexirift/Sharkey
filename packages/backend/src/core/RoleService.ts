@@ -7,6 +7,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import { In } from 'typeorm';
 import { ModuleRef } from '@nestjs/core';
+import Ajv from 'ajv';
 import type {
 	MiMeta,
 	MiRole,
@@ -35,8 +36,10 @@ import {
 	type ManagedMemorySingleCache,
 	type ManagedMemoryKVCache,
 } from '@/global/CacheManagementService.js';
-import type { OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
+import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { getCallerId } from '@/misc/attach-caller-id.js';
+import type { OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
+import type { JSONSchemaType, ValidateFunction } from 'ajv';
 
 export type RolePolicies = {
 	gtlAvailable: boolean;
@@ -122,6 +125,86 @@ export const DEFAULT_POLICIES: RolePolicies = {
 
 // TODO cache sync fixes (and maybe events too?)
 
+const DefaultPoliciesSchema: JSONSchemaType<RolePolicies> = {
+	type: 'object',
+	additionalProperties: false,
+	required: [],
+	properties: {
+		gtlAvailable: { type: 'boolean' },
+		ltlAvailable: { type: 'boolean' },
+		btlAvailable: { type: 'boolean' },
+		canPublicNote: { type: 'boolean' },
+		scheduleNoteMax: { type: 'integer', minimum: 0 },
+		mentionLimit: { type: 'integer', minimum: 0 },
+		canInvite: { type: 'boolean' },
+		inviteLimit: { type: 'integer', minimum: 0 },
+		inviteLimitCycle: { type: 'integer', minimum: 0 },
+		inviteExpirationTime: { type: 'integer', minimum: 0 },
+		canManageCustomEmojis: { type: 'boolean' },
+		canManageAvatarDecorations: { type: 'boolean' },
+		canSearchNotes: { type: 'boolean' },
+		canUseTranslator: { type: 'boolean' },
+		canHideAds: { type: 'boolean' },
+
+		// these can be less than 1 MB
+		// (test/unit/server/api/drive/files/create.ts depends on this)
+		driveCapacityMb: { type: 'number', minimum: 0 },
+		maxFileSizeMb: { type: 'number', minimum: 0 },
+
+		alwaysMarkNsfw: { type: 'boolean' },
+		canUpdateBioMedia: { type: 'boolean' },
+		pinLimit: { type: 'integer', minimum: 0 },
+		antennaLimit: { type: 'integer', minimum: 0 },
+		wordMuteLimit: { type: 'integer', minimum: 0 },
+		webhookLimit: { type: 'integer', minimum: 0 },
+		clipLimit: { type: 'integer', minimum: 0 },
+		noteEachClipsLimit: { type: 'integer', minimum: 0 },
+		userListLimit: { type: 'integer', minimum: 0 },
+		userEachUserListsLimit: { type: 'integer', minimum: 0 },
+		rateLimitFactor: { type: 'number', minimum: 0.01 },
+		canImportNotes: { type: 'boolean' },
+		avatarDecorationLimit: { type: 'integer', minimum: 0 },
+		canImportAntennas: { type: 'boolean' },
+		canImportBlocking: { type: 'boolean' },
+		canImportFollowing: { type: 'boolean' },
+		canImportMuting: { type: 'boolean' },
+		canImportUserLists: { type: 'boolean' },
+		chatAvailability: { type: 'string', enum: ['available', 'readonly', 'unavailable'] },
+		canTrend: { type: 'boolean' },
+		canViewFederation: { type: 'boolean' },
+	},
+};
+
+const RoleSchema: JSONSchemaType<MiRole['policies']> = {
+	type: 'object',
+	additionalProperties: false,
+	required: [],
+	properties: Object.fromEntries(
+		Object.entries(DefaultPoliciesSchema.properties!).map(
+			(
+				// I picked `canTrend` here, but any policy name is fine, the
+				// type of their bit of the schema is all the same
+				[policy, value]: [string, JSONSchemaType<RolePolicies>['properties']['canTrend']]
+			) => [
+				policy,
+				{
+					type: 'object',
+					additionalProperties: false,
+					// we can't require `value` because the MiRole says `value:
+					// any` which includes undefined, so technically `value` is
+					// not really required
+					required: ['priority', 'useDefault'],
+					properties: {
+						priority: { type: 'integer', minimum: 0, maximum: 2 },
+						useDefault: { type: 'boolean' },
+						value,
+					},
+				},
+			],
+		),
+	),
+};
+
 @Injectable()
 export class RoleService implements OnApplicationShutdown, OnModuleInit {
 	private readonly rolesCache: ManagedMemorySingleCache<MiRole[]>;
@@ -129,6 +212,8 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 
 	private cacheService: CacheService;
 	private notificationService: NotificationService;
+	private defaultPoliciesValidator: ValidateFunction<RolePolicies>;
+	private roleValidator: ValidateFunction<MiRole['policies']>;
 
 	public static AlreadyAssignedError = class extends Error {};
 	public static NotAssignedError = class extends Error {};
@@ -167,6 +252,14 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 		// TODO additional cache for final calculation?
 
 		this.redisForSub.on('message', this.onMessage);
+
+		// this is copied from server/api/endpoint-base.ts
+		const ajv = new Ajv.default({
+			useDefaults: true,
+			allErrors: true,
+		});
+		this.defaultPoliciesValidator = ajv.compile(DefaultPoliciesSchema);
+		this.roleValidator = ajv.compile(RoleSchema);
 	}
 
 	@bindThis
@@ -756,6 +849,8 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 
 	@bindThis
 	public async create(values: Partial<MiRole>, moderator?: MiUser): Promise<MiRole> {
+		this.assertValidRole(values);
+
 		const date = this.timeService.date;
 		const created = await this.rolesRepository.insertOne({
 			id: this.idService.gen(date.getTime()),
@@ -792,6 +887,8 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 
 	@bindThis
 	public async update(role: MiRole, params: Partial<MiRole>, moderator?: MiUser): Promise<void> {
+		this.assertValidRole(params);
+
 		const date = this.timeService.date;
 		await this.rolesRepository.update(role.id, {
 			updatedAt: date,
@@ -842,5 +939,31 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 	@bindThis
 	public onApplicationShutdown(signal?: string | undefined): void {
 		this.dispose();
+	}
+
+	@bindThis
+	public assertValidRole(role: Partial<MiRole>): void {
+		if (!role.policies) return;
+
+		if (this.roleValidator(role.policies)) return;
+
+		throw new IdentifiableError(
+			'39d78ad7-0f00-4bff-b2e2-2e7db889e05d',
+			'invalid policy values',
+			false,
+			this.roleValidator.errors,
+		);
+	}
+
+	@bindThis
+	public assertValidDefaultPolicies(policies: object): void {
+		if (this.defaultPoliciesValidator(policies)) return;
+
+		throw new IdentifiableError(
+			'39d78ad7-0f00-4bff-b2e2-2e7db889e05d',
+			'invalid policy values',
+			false,
+			this.defaultPoliciesValidator.errors,
+		);
 	}
 }
