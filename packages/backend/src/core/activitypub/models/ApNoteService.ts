@@ -758,7 +758,7 @@ export class ApNoteService implements OnModuleInit {
 		const results = await promiseMap(attachments.values(), async attach => {
 			attach.sensitive ??= note.sensitive;
 			return await this.resolveImage(actor, attach);
-		});
+		}, { limit: 2 });
 
 		// Process results
 		let hasFileError = false;
