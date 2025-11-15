@@ -304,14 +304,14 @@ export class ApPersonService implements OnModuleInit {
 			withSuspended: opts?.withSuspended ?? true,
 		};
 
-		let userId;
+		let userId: string | null | undefined;
 
 		// Resolve URI -> User ID
 		const parsed = this.utilityService.parseUri(uri);
 		if (parsed.local) {
 			userId = parsed.type === 'users' ? parsed.id : null;
 		} else {
-			userId = await this.uriPersonCache.fetch(uri).catch(() => null);
+			userId = await this.uriPersonCache.fetchMaybe(uri);
 		}
 
 		// No match
@@ -319,8 +319,7 @@ export class ApPersonService implements OnModuleInit {
 			return null;
 		}
 
-		const user = await this.cacheService.findUserById(userId)
-			.catch(() => null) as MiLocalUser | MiRemoteUser | null;
+		const user = await this.cacheService.findOptionalUserById(userId) as MiLocalUser | MiRemoteUser | null;
 
 		if (user?.isDeleted && !_opts.withDeleted) {
 			return null;
