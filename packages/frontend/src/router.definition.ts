@@ -129,6 +129,10 @@ export const ROUTE_DEF = [{
 		name: 'theme',
 		component: page(() => import('@/pages/settings/theme.vue')),
 	}, {
+		path: '/mobile-footer-menu',
+		name: 'mobile-footer-menu',
+		component: page(() => import('@/pages/settings/mobile-footer-menu.vue')),
+	}, {
 		path: '/navbar',
 		name: 'navbar',
 		component: page(() => import('@/pages/settings/navbar.vue')),

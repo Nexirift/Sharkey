@@ -1,56 +1,28 @@
-<!--
-SPDX-FileCopyrightText: syuilo and misskey-project
-SPDX-License-Identifier: AGPL-3.0-only
--->
-
-<template>
-<div ref="rootEl" :class="$style.root">
-	<button :class="$style.item" class="_button" @click="drawerMenuShowing = true">
-		<div :class="$style.itemInner">
-			<i :class="$style.itemIcon" class="ti ti-menu-2"></i><span v-if="menuIndicated" :class="$style.itemIndicator" class="_blink"><i class="_indicatorCircle"></i></span>
-		</div>
-	</button>
-
-	<button :class="$style.item" class="_button" @click="mainRouter.push('/')">
-		<div :class="$style.itemInner">
-			<i :class="$style.itemIcon" class="ti ti-home"></i>
-		</div>
-	</button>
-
-	<button :class="$style.item" class="_button" @click="mainRouter.push('/my/notifications')">
-		<div :class="$style.itemInner">
-			<i :class="$style.itemIcon" class="ti ti-bell"></i>
-			<span v-if="$i?.hasUnreadNotification" :class="$style.itemIndicator" class="_blink">
-				<span class="_indicateCounter" :class="$style.itemIndicateValueIcon">{{ $i.unreadNotificationsCount > 99 ? '99+' : $i.unreadNotificationsCount }}</span>
-			</span>
-		</div>
-	</button>
-
-	<button :class="$style.item" class="_button" @click="widgetsShowing = true">
-		<div :class="$style.itemInner">
-			<i :class="$style.itemIcon" class="ti ti-apps"></i>
-		</div>
-	</button>
-
-	<button :class="[$style.item, $style.post]" class="_button" @click="os.post()">
-		<div :class="$style.itemInner">
-			<i :class="$style.itemIcon" class="ti ti-pencil"></i>
-		</div>
-	</button>
-</div>
-</template>
-
 <script lang="ts" setup>
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { $i } from '@/i.js';
 import * as os from '@/os.js';
 import { mainRouter } from '@/router.js';
 import { navbarItemDef } from '@/navbar.js';
+import { prefer } from '@/preferences.js';
 
 const drawerMenuShowing = defineModel<boolean>('drawerMenuShowing');
 const widgetsShowing = defineModel<boolean>('widgetsShowing');
 
 const rootEl = useTemplateRef('rootEl');
+
+const displayedItems = computed(() => {
+	// Get all items from the menu preference (same as desktop navbar)
+	// Use prefer.r for reactivity instead of prefer.s
+	return prefer.r.mobileFooterMenu.value.filter(item => {
+		// Filter out dividers and items that shouldn't be shown
+		if (item === '-') return false;
+		const def = navbarItemDef[item];
+		return def && def.show !== false;
+	});
+});
+
+const itemCount = computed(() => displayedItems.value.length);
 
 const menuIndicated = computed(() => {
 	for (const def in navbarItemDef) {
@@ -61,6 +33,20 @@ const menuIndicated = computed(() => {
 });
 
 const rootElHeight = ref(0);
+
+function handleItemClick(item: string) {
+	const def = navbarItemDef[item];
+	// Special handling for widgets
+	if (item === 'widgets') {
+		widgetsShowing.value = true;
+		return;
+	}
+	if (def.to) {
+		mainRouter.push(def.to);
+	} else if (def.action) {
+		def.action();
+	}
+}
 
 watch(rootEl, () => {
 	if (rootEl.value) {
@@ -75,44 +61,58 @@ watch(rootEl, () => {
 });
 </script>
 
+<template>
+<div>
+	<div ref="rootEl" :class="$style.root" :style="{ '--item-count': itemCount }">
+		<button v-for="item in displayedItems" :key="item" :class="$style.item" class="_button" @click="handleItemClick(item)">
+			<div :class="$style.itemInner">
+				<i :class="[$style.itemIcon, navbarItemDef[item].icon]"></i>
+				<span v-if="navbarItemDef[item].indicated" :class="$style.itemIndicator" class="_blink">
+					<span v-if="navbarItemDef[item].indicateValue" class="_indicateCounter" :class="$style.itemIndicateValueIcon">{{ navbarItemDef[item].indicateValue }}</span>
+					<i v-else class="_indicatorCircle"></i>
+				</span>
+			</div>
+		</button>
+	</div>
+
+	<button :class="$style.floatingPost" class="_button" @click="os.post()">
+		<i class="ti ti-pencil"></i>
+	</button>
+</div>
+</template>
+
 <style lang="scss" module>
 .root {
 	position: relative;
 	z-index: 1;
 	padding-bottom: env(safe-area-inset-bottom, 0px);
-	display: grid;
-	grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+	display: flex;
+	overflow-x: auto;
+	overflow-y: hidden;
 	width: 100%;
 	box-sizing: border-box;
 	background: var(--MI_THEME-navBg);
 	color: var(--MI_THEME-navFg);
 	box-shadow: 0px 0px 6px 6px #0000000f;
+	scrollbar-width: none;
+	
+	&::-webkit-scrollbar {
+		display: none;
+	}
 }
 
 .item {
-	padding: 12px 0;
+	padding: 12px;
+	flex: 1;
+	min-width: max(60px, calc(100% / var(--item-count)));
+	max-width: 120px;
 
 	&:first-child {
-		padding-left: 12px;
+		padding-left: 16px;
 	}
 
 	&:last-child {
-		padding-right: 12px;
-	}
-
-	&.post {
-		.itemInner {
-			background: linear-gradient(90deg, var(--MI_THEME-buttonGradateA), var(--MI_THEME-buttonGradateB));
-			color: var(--MI_THEME-fgOnAccent);
-
-			&:hover {
-				background: linear-gradient(90deg, hsl(from var(--MI_THEME-accent) h s calc(l + 5)), hsl(from var(--MI_THEME-accent) h s calc(l + 5)));
-			}
-
-			&:active {
-				background: linear-gradient(90deg, hsl(from var(--MI_THEME-accent) h s calc(l + 5)), hsl(from var(--MI_THEME-accent) h s calc(l + 5)));
-			}
-		}
+		padding-right: 16px;
 	}
 }
 
@@ -151,6 +151,28 @@ watch(rootEl, () => {
 	&:has(.itemIndicateValueIcon) {
 		animation: none;
 		font-size: 8px;
+	}
+}
+
+.floatingPost {
+	position: fixed;
+	bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+	right: 16px;
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	background: linear-gradient(90deg, var(--MI_THEME-buttonGradateA), var(--MI_THEME-buttonGradateB));
+	color: var(--MI_THEME-fgOnAccent);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	z-index: 1000;
+	font-size: 20px;
+
+	&:hover {
+		background: linear-gradient(90deg, hsl(from var(--MI_THEME-accent) h s calc(l + 5)), hsl(from var(--MI_THEME-accent) h s calc(l + 5)));
+	}
+
+	&:active {
+		background: linear-gradient(90deg, hsl(from var(--MI_THEME-accent) h s calc(l + 5)), hsl(from var(--MI_THEME-accent) h s calc(l + 5)));
 	}
 }
 </style>

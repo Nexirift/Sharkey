@@ -4,10 +4,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<SearchMarker path="/settings/navbar" :label="i18n.ts.navbar" icon="ti ti-list" :keywords="['navbar', 'menu', 'sidebar']">
+<SearchMarker path="/settings/mobile-footer-menu" :label="i18n.ts.mobileFooterMenu" icon="ti ti-list" :keywords="['bottom navbar', 'mobile', 'menu', 'footer']">
 	<div class="_gaps_m">
 		<FormSlot>
-			<template #label>{{ i18n.ts.navbar }}</template>
+			<template #label>{{ i18n.ts.mobileFooterMenu }}</template>
 			<MkContainer :showHeader="false">
 				<Sortable
 					v-model="items"
@@ -36,44 +36,19 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<MkButton primary class="save" @click="save"><i class="ti ti-device-floppy"></i> {{ i18n.ts.save }}</MkButton>
 		</div>
 
-		<MkRadios v-model="menuDisplay">
-			<template #label>{{ i18n.ts.display }}</template>
-			<option value="sideFull">{{ i18n.ts._menuDisplay.sideFull }}</option>
-			<option value="sideIcon">{{ i18n.ts._menuDisplay.sideIcon }}</option>
-		</MkRadios>
-
-		<SearchMarker :keywords="['navbar', 'sidebar', 'toggle', 'button', 'sub']">
-			<MkPreferenceContainer k="showNavbarSubButtons">
-				<MkSwitch v-model="showNavbarSubButtons">
-					<template #label><SearchLabel>{{ i18n.ts._settings.showNavbarSubButtons }}</SearchLabel></template>
-				</MkSwitch>
-			</MkPreferenceContainer>
-		</SearchMarker>
-
-		<SearchMarker :keywords="['avatar', 'account', 'menu', 'mobile', 'header']">
-			<MkPreferenceContainer k="showAccountMenuOnAvatarClick">
-				<MkSwitch v-model="showAccountMenuOnAvatarClick">
-					<template #label><SearchLabel>{{ i18n.ts._settings.showAccountMenuOnAvatarClick }}</SearchLabel></template>
-					<template #caption><SearchKeyword>{{ i18n.ts._settings.showAccountMenuOnAvatarClickDescription }}</SearchKeyword></template>
-				</MkSwitch>
-			</MkPreferenceContainer>
-		</SearchMarker>
+	<MkInfo>{{ i18n.ts._settings.mobileFooterMenuInfo }}</MkInfo>
 	</div>
 </SearchMarker>
 </template>
 
 <script lang="ts" setup>
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
-import MkRadios from '@/components/MkRadios.vue';
 import MkButton from '@/components/MkButton.vue';
 import FormSlot from '@/components/form/slot.vue';
 import MkContainer from '@/components/MkContainer.vue';
-import MkSwitch from '@/components/MkSwitch.vue';
-import MkPreferenceContainer from '@/components/MkPreferenceContainer.vue';
+import MkInfo from '@/components/MkInfo.vue';
 import * as os from '@/os.js';
 import { navbarItemDef } from '@/navbar.js';
-import { store } from '@/store.js';
-import { reloadAsk } from '@/utility/reload-ask.js';
 import { i18n } from '@/i18n.js';
 import { definePage } from '@/page.js';
 import { prefer } from '@/preferences.js';
@@ -81,17 +56,13 @@ import { PREF_DEF } from '@/preferences/def.js';
 
 const Sortable = defineAsyncComponent(() => import('vuedraggable').then(x => x.default));
 
-const items = ref(prefer.s.menu.map(x => ({
+const items = ref((prefer.s.mobileFooterMenu ?? PREF_DEF.mobileFooterMenu.default).map(x => ({
 	id: Math.random().toString(),
 	type: x,
 })));
 
-const menuDisplay = computed(store.makeGetterSetter('menuDisplay'));
-const showNavbarSubButtons = prefer.model('showNavbarSubButtons');
-const showAccountMenuOnAvatarClick = prefer.model('showAccountMenuOnAvatarClick');
-
 async function addItem() {
-	const menu = Object.keys(navbarItemDef).filter(k => !prefer.s.menu.includes(k));
+	const menu = Object.keys(navbarItemDef).filter(k => !(prefer.s.mobileFooterMenu ?? []).includes(k));
 	const { canceled, result: item } = await os.select({
 		title: i18n.ts.addItem,
 		items: [...menu.map(k => ({
@@ -112,22 +83,18 @@ function removeItem(index: number) {
 }
 
 async function save() {
-	prefer.commit('menu', items.value.map(x => x.type));
+	prefer.commit('mobileFooterMenu', items.value.map(x => x.type));
 }
 
 function reset() {
-	items.value = PREF_DEF.menu.default.map(x => ({
+	items.value = PREF_DEF.mobileFooterMenu.default.map(x => ({
 		id: Math.random().toString(),
 		type: x,
 	}));
 }
 
-const headerActions = computed(() => []);
-
-const headerTabs = computed(() => []);
-
 definePage(() => ({
-	title: i18n.ts.navbar,
+	title: i18n.ts.mobileFooterMenu,
 	icon: 'ti ti-list',
 }));
 </script>

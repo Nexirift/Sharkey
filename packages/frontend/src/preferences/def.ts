@@ -146,6 +146,14 @@ export const PREF_DEF = {
 			'achievements',
 		],
 	},
+	mobileFooterMenu: {
+		default: [
+			'home',
+			'search',
+			'notifications',
+			'chat'
+		],
+	},
 	statusbars: {
 		default: [] as {
 			name: string;
@@ -208,6 +216,9 @@ export const PREF_DEF = {
 		default: false,
 	},
 	showFixedPostFormInChannel: {
+		default: false,
+	},
+	showAccountMenuOnAvatarClick: {
 		default: false,
 	},
 	enableInfiniteScroll: {

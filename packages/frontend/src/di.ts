@@ -17,4 +17,5 @@ export const DI = {
 	mfmEmojiReactCallback: Symbol() as InjectionKey<(emoji: string) => void>,
 	inModal: Symbol() as InjectionKey<boolean>,
 	inAppSearchMarkerId: Symbol() as InjectionKey<Ref<string | null>>,
+	drawerMenuShowing: Symbol() as InjectionKey<Ref<boolean>>,
 };

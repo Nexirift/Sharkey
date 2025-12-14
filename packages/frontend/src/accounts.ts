@@ -4,6 +4,7 @@
  */
 
 import { defineAsyncComponent, ref } from 'vue';
+import type { Ref } from 'vue';
 import * as Misskey from 'misskey-js';
 import { apiUrl, host } from '@@/js/config.js';
 import type { MenuItem } from '@/types/menu.js';
@@ -233,6 +234,7 @@ export async function openAccountMenu(opts: {
 	withExtraOperation: boolean;
 	active?: Misskey.entities.User['id'];
 	onChoose?: (account: Misskey.entities.User) => void;
+	drawerMenuShowing?: Ref<boolean>;
 }, ev: MouseEvent) {
 	if (!$i) return;
 
@@ -322,6 +324,23 @@ export async function openAccountMenu(opts: {
 				},
 			}],
 		}, {
+			type: 'divider',
+		});
+		if (opts.drawerMenuShowing) {
+			menuItems.push({
+				type: 'button' as const,
+				icon: 'ti ti-menu-2',
+				text: i18n.ts.menu,
+				action: () => {
+					if (opts.drawerMenuShowing) {
+						opts.drawerMenuShowing.value = true;
+					}
+				},
+			}, {
+				type: 'divider',
+			});
+		}
+		menuItems.push({
 			type: 'link',
 			icon: 'ti ti-users',
 			text: i18n.ts.manageAccounts,

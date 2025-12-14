@@ -85,6 +85,7 @@ provideMetadataReceiver((metadataGetter) => {
 provideReactiveMetadata(pageMetadata);
 
 const drawerMenuShowing = ref(false);
+provide(DI.drawerMenuShowing, drawerMenuShowing);
 
 mainRouter.on('change', () => {
 	drawerMenuShowing.value = false;

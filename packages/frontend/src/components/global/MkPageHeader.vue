@@ -74,6 +74,7 @@ import { globalEvents } from '@/events.js';
 import { openAccountMenu as openAccountMenu_ } from '@/accounts.js';
 import { $i } from '@/i.js';
 import { DI } from '@/di.js';
+import { prefer } from '@/preferences.js';
 
 const props = withDefaults(defineProps<PageHeaderProps>(), {
 	tabs: () => ([] as Tab[]),
@@ -110,10 +111,17 @@ const top = () => {
 	}
 };
 
+const injectedDrawerMenuShowing = inject(DI.drawerMenuShowing, ref(false));
+
 function openAccountMenu(ev: MouseEvent) {
-	openAccountMenu_({
-		withExtraOperation: true,
-	}, ev);
+	if (prefer.r.showAccountMenuOnAvatarClick.value) {
+		openAccountMenu_({
+			withExtraOperation: true,
+			drawerMenuShowing: injectedDrawerMenuShowing,
+		}, ev);
+	} else {
+		injectedDrawerMenuShowing.value = true;
+	}
 }
 
 function onTabClick(): void {

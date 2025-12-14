@@ -16,6 +16,11 @@ import { i18n } from '@/i18n.js';
 import { unisonReload } from '@/utility/unison-reload.js';
 
 export const navbarItemDef = reactive({
+	home: {
+		title: i18n.ts.timeline,
+		icon: 'ti ti-home',
+		to: '/',
+	},
 	notifications: {
 		title: i18n.ts.notifications,
 		icon: 'ti ti-bell',
@@ -195,5 +200,9 @@ export const navbarItemDef = reactive({
 		action: (ev) => {
 			clearCache();
 		},
+	},
+	widgets: {
+		title: i18n.ts._deck._columns.widgets,
+		icon: 'ph-stack ph-bold ph-lg',
 	},
 });
