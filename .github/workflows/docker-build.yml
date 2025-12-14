@@ -72,13 +72,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Prepare image name
+        id: image-name
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "name=${REPO_LOWER}" >> $GITHUB_OUTPUT
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/${{ matrix.arch }}
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.get-image-tag.outputs.version }}-${{ matrix.arch }}
+          tags: ${{ env.REGISTRY }}/${{ steps.image-name.outputs.name }}:${{ needs.get-image-tag.outputs.version }}-${{ matrix.arch }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -99,7 +105,8 @@ jobs:
 
       - name: Create and push manifest
         run: |
-          docker buildx imagetools create -t ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.get-image-tag.outputs.tag }} \
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.get-image-tag.outputs.version }}-amd64 \
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.get-image-tag.outputs.version }}-arm64
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          docker buildx imagetools create -t ${{ env.REGISTRY }}/${REPO_LOWER}:${{ needs.get-image-tag.outputs.tag }} \
+            ${{ env.REGISTRY }}/${REPO_LOWER}:${{ needs.get-image-tag.outputs.version }}-amd64 \
+            ${{ env.REGISTRY }}/${REPO_LOWER}:${{ needs.get-image-tag.outputs.version }}-arm64
 
