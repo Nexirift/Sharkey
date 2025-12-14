@@ -40,10 +40,10 @@ export class ApiInstanceMastodon {
 			const instance = data.data;
 			const response: MastodonEntity.Instance = {
 				uri: this.config.host,
-				title: this.meta.name || 'Sharkey',
-				description: this.meta.description || this.meta.about || 'This is a vanilla Sharkey Instance.',
+				title: this.meta.name || 'Pulsar',
+				description: this.meta.description || this.meta.about || 'This is a vanilla Pulsar Instance.',
 				email: instance.email || '',
-				version: `3.0.0 (compatible; Sharkey ${this.config.version}; like Akkoma)`,
+				version: `3.0.0 (compatible; Pulsar ${this.config.version}; like Akkoma)`,
 				urls: instance.urls,
 				stats: {
 					user_count: instance.stats.user_count,

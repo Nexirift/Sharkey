@@ -21,7 +21,7 @@ export const langsVersion = _LANGS_VERSION_;
 const preParseLocale = localStorage.getItem('locale');
 export let locale: Locale = preParseLocale ? JSON.parse(preParseLocale) : null;
 export const version = _VERSION_;
-export const instanceName = (siteName === 'Sharkey' || siteName == null) ? host : siteName;
+export const instanceName = (siteName === 'Pulsar' || siteName == null) ? host : siteName;
 export const ui = localStorage.getItem('ui');
 export const debug = localStorage.getItem('debug') === 'true';
 

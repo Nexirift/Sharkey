@@ -29,7 +29,7 @@ import { prefer } from '@/preferences.js';
 import { $i } from '@/i.js';
 
 export async function common(createVue: () => Promise<App<Element>>) {
-	console.info(`Sharkey v${version}`);
+	console.info(`Pulsar v${version}`);
 
 	if (_DEV_) {
 		console.warn('Development mode!!!');

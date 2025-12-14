@@ -40,7 +40,7 @@ export async function workerMain(loggerService: LoggerService, envService: EnvSe
 			maxBreadcrumbs: 0,
 
 			// Set release version
-			release: 'Sharkey@' + (meta.gitVersion ?? meta.version),
+			release: 'Pulsar@' + (meta.gitVersion ?? meta.version),
 
 			...config.sentryForBackend.options,
 		});

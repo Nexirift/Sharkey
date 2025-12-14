@@ -47,7 +47,7 @@ function generateModeratorInactivityMail(remainingTime: ModeratorInactivityRemai
 		'To Moderators,',
 		'',
 		`No moderator has been active for a period of time. After further ${timeVariant} of inactivity, the instance will switch to invitation only.`,
-		'If you do not wish that to happen, please log into Sharkey to update your last active date and time.',
+		'If you do not wish that to happen, please log into Pulsar to update your last active date and time.',
 	];
 
 	const html = message.join('<br>');

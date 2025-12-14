@@ -64,7 +64,7 @@ export class FeedService {
 			id: author.link,
 			title: `${author.name} (@${user.username}@${this.config.host})`,
 			updated: notes.length !== 0 ? this.idService.parse(notes[0].id).date : undefined,
-			generator: 'Sharkey',
+			generator: 'Pulsar',
 			description: `${user.notesCount} Notes, ${profile.followingVisibility === 'public' ? user.followingCount : '?'} Following, ${profile.followersVisibility === 'public' ? user.followersCount : '?'} Followers${profile.description ? ` · ${profile.description}` : ''}`,
 			link: author.link,
 			image: (user.avatarId == null ? null : user.avatarUrl) ?? this.userEntityService.getIdenticonUrl(user),

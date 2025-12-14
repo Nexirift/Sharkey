@@ -60,7 +60,7 @@ export class NodeinfoServerService {
 			const basePolicies = { ...DEFAULT_POLICIES, ...meta.policies };
 
 			const software = {
-				name: 'sharkey',
+				name: 'pulsar',
 				version: this.config.version,
 			};
 

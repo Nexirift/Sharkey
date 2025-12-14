@@ -1,0 +1,381 @@
+name: Build and Test
+
+on:
+  pull_request:
+    branches: ['**']
+  push:
+    branches:
+      - develop
+      - stable
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Corepack
+        run: corepack install
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git wget curl build-essential python3 ffmpeg libcairo2-dev libpango1.0-dev libpangocairo-1.0-0
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .pnpm-store/
+            node_modules/
+            packages/*/node_modules/
+            packages/misskey-js/generator/node_modules/
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/pnpm-workspace.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Configure pnpm store
+        run: pnpm config set store-dir .pnpm-store
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup CI config
+        run: |
+          echo "clusterLimit: $(nproc)" >> .config/ci.yml
+          cp .config/ci.yml .config/default.yml
+          cp .config/ci.yml .config/test.yml
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            built/
+            packages/*/built/
+            packages/megalodon/lib/
+          retention-days: 1
+
+  lint:
+    name: Lint
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Corepack
+        run: corepack install
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .pnpm-store/
+            node_modules/
+            packages/*/node_modules/
+            packages/misskey-js/generator/node_modules/
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/pnpm-workspace.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Configure pnpm store
+        run: pnpm config set store-dir .pnpm-store
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Build assets
+        run: pnpm run build-assets
+
+      - name: Run ESLint
+        run: pnpm run eslint
+
+  backend-tests:
+    name: Backend Tests
+    needs: build
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && (
+        contains(github.event.pull_request.changed_files.*.filename, 'packages/backend/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'packages/megalodon/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'packages/misskey-js/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'scripts/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'eslint/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'chart/') ||
+        contains(github.event.pull_request.changed_files.*.filename, '.config/')
+      ))
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: ci
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:latest
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Corepack
+        run: corepack install
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git wget curl build-essential python3 ffmpeg libcairo2-dev libpango1.0-dev libpangocairo-1.0-0
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .pnpm-store/
+            node_modules/
+            packages/*/node_modules/
+            packages/misskey-js/generator/node_modules/
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/pnpm-workspace.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Configure pnpm store
+        run: pnpm config set store-dir .pnpm-store
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup CI config
+        run: |
+          echo "clusterLimit: $(nproc)" >> .config/ci.yml
+          cp .config/ci.yml .config/default.yml
+          cp .config/ci.yml .config/test.yml
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Build backend pre
+        run: pnpm run --filter backend build:pre
+
+      - name: Build backend
+        run: pnpm run --filter backend build
+
+      - name: Run migrations
+        run: pnpm run --filter backend migrate
+
+      - name: Run backend tests
+        run: pnpm run --filter backend test
+
+  frontend-tests:
+    name: Frontend Tests
+    needs: build
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && (
+        contains(github.event.pull_request.changed_files.*.filename, 'packages/frontend/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'packages/frontend-embed/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'packages/frontend-shared/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'packages/misskey-js/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'packages/misskey-bubble-game/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'packages/misskey-reversi/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'packages/sw/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'scripts/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'eslint/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'locales/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'sharkey-locales/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'cypress/') ||
+        contains(github.event.pull_request.changed_files.*.filename, 'assets/')
+      ))
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Corepack
+        run: corepack install
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .pnpm-store/
+            node_modules/
+            packages/*/node_modules/
+            packages/misskey-js/generator/node_modules/
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/pnpm-workspace.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Configure pnpm store
+        run: pnpm config set store-dir .pnpm-store
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Build frontend pre
+        run: pnpm run --filter frontend build:pre
+
+      - name: Build frontend
+        run: pnpm run --filter frontend build
+
+      - name: Run frontend tests
+        run: pnpm run --filter frontend test
+
+  misskey-js-tests:
+    name: Misskey-JS Tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Corepack
+        run: corepack install
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .pnpm-store/
+            node_modules/
+            packages/*/node_modules/
+            packages/misskey-js/generator/node_modules/
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/pnpm-workspace.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Configure pnpm store
+        run: pnpm config set store-dir .pnpm-store
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build misskey-js
+        run: pnpm run --filter misskey-js build
+
+      - name: Run misskey-js tests
+        run: pnpm run --filter misskey-js test
+
+  megalodon-tests:
+    name: Megalodon Tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Corepack
+        run: corepack install
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .pnpm-store/
+            node_modules/
+            packages/*/node_modules/
+            packages/misskey-js/generator/node_modules/
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/pnpm-workspace.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Configure pnpm store
+        run: pnpm config set store-dir .pnpm-store
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build megalodon
+        run: pnpm run --filter megalodon build
+
+      - name: Run megalodon tests
+        run: pnpm run --filter megalodon test
