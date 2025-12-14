@@ -1,6 +1,6 @@
 ---
-introMisskey: "Willkommen! Sharkey ist eine dezentralisierte Open-Source Microblogging-Platform.\nVerfasse „Notizen“ um mitzuteilen, was gerade passiert oder um Ereignisse mit anderen zu teilen. 📡\nMit „Reaktionen“ kannst du außerdem schnell deine Gefühle über Notizen anderer Benutzer zum Ausdruck bringen. 👍\nEine neue Welt wartet auf dich! 🚀"
-poweredByMisskeyDescription: "{name} wird durch die Open-Source-Plattform <b>Sharkey</b> betrieben, die auf Misskey basiert (meist als \"Misskey-Instanz\" bezeichnet)."
+introMisskey: "Willkommen! Pulsar ist eine dezentralisierte Open-Source Microblogging-Platform.\nVerfasse „Notizen“ um mitzuteilen, was gerade passiert oder um Ereignisse mit anderen zu teilen. 📡\nMit „Reaktionen“ kannst du außerdem schnell deine Gefühle über Notizen anderer Benutzer zum Ausdruck bringen. 👍\nEine neue Welt wartet auf dich! 🚀"
+poweredByMisskeyDescription: "{name} wird durch die Open-Source-Plattform <b>Pulsar</b> betrieben, die auf Misskey basiert (meist als \"Misskey-Instanz\" bezeichnet)."
 renotedBy: "Geboostet von {user}"
 approvals: "Genehmigungen"
 copyLinkRenote: "Boost-Link kopieren"
@@ -24,23 +24,23 @@ markInstanceAsNSFW: "Als NSFW kennzeichnen"
 nsfwConfirm: "Bist du sicher, dass du alle Medien dieses Kontos als NSFW markieren möchtest?"
 unNsfwConfirm: "Bist du sicher, dass du die Markierung aller Medien dieses Kontos als NSFW aufheben möchtest?"
 approveConfirm: "Bist du sicher, dass du dieses Konto genehmigen willst?"
-flagAsBotDescription: "Aktiviere diese Option, falls dieses Benutzerkonto durch ein Programm gesteuert wird. Falls aktiviert, agiert es als Flag für andere Entwickler zur Verhinderung von endlosen Kettenreaktionen mit anderen Bots und lässt Sharkeys interne Systeme dieses Benutzerkonto als Bot behandeln."
+flagAsBotDescription: "Aktiviere diese Option, falls dieses Benutzerkonto durch ein Programm gesteuert wird. Falls aktiviert, agiert es als Flag für andere Entwickler zur Verhinderung von endlosen Kettenreaktionen mit anderen Bots und lässt Pulsars interne Systeme dieses Benutzerkonto als Bot behandeln."
 rejectReports: "Meldungen dieser Instanz ablehnen"
 rejectQuotesInstance: "Zitate in Beiträgen dieser Instanz entfernen"
 rejectQuotesRemoteUser: "Zitate in Beiträgen dieses Benutzers entfernen"
 rejectQuotesLocalUser: "Zitieren von Beiträgen für diesen Benutzer sperren"
 rejectQuotesConfirm: "Bist du sicher, dass du Zitate ablehnen möchtest?"
 allowQuotesConfirm: "Bist du sicher, dass du Zitate erlauben möchtest?"
-intro: "Sharkey ist installiert! Lass uns nun ein Administratorkonto einrichten."
+intro: "Pulsar ist installiert! Lass uns nun ein Administratorkonto einrichten."
 driveSearchbarPlaceholder: "Drive durchsuchen"
 background: "Hintergrund"
-aboutMisskey: "Über Sharkey"
+aboutMisskey: "Über Pulsar"
 disableDrawer: "Keine ausfahrbaren Menüs verwenden"
 warnForMissingAltText: "Warnung anzeigen, wenn keine Bildbeschreibung gesetzt wurde"
 deeplFreeMode: "DeepLX-JS verwenden (kein Auth Key)"
 deeplFreeModeDescription: "Brauchst du Hilfe? Lese unsere Dokumentation, um zu erfahren, wie du DeepLX-JS einrichtest."
-useSoundOnlyWhenActive: "Gebe nur Ton aus, wenn Sharkey aktiv ist"
-scratchpadDescription: "Die Testumgebung bietet einen Bereich für AiScript-Experimente. Dort kannst du AiScript schreiben, ausführen sowie dessen Auswirkungen auf Sharkey überprüfen."
+useSoundOnlyWhenActive: "Gebe nur Ton aus, wenn Pulsar aktiv ist"
+scratchpadDescription: "Die Testumgebung bietet einen Bereich für AiScript-Experimente. Dort kannst du AiScript schreiben, ausführen sowie dessen Auswirkungen auf Pulsar überprüfen."
 deleteAllFilesQueued: "Löschung aller Dateien in der Warteschlange"
 postFiltered: "Beitrag wird durch einen Filter ausgeblendet"
 enableFaviconNotificationDot: "Favicon-Benachrichtigungspunkt aktivieren"
@@ -62,8 +62,8 @@ makeIndexable: "Öffentliche Notizen nicht indexierbar machen"
 makeIndexableDescription: "Verhindert, dass die Notizensuche deine öffentlichen Notizen indiziert."
 enableRss: "RSS-Feed aktivieren"
 enableRssDescription: "Erzeuge einen RSS-Feed mit deinen grundlegenden Profildaten und öffentlichen Notizen. Die Nutzer können den Feed abonnieren, ohne eine Anfrage zum Folgen oder eine Genehmigung zu benötigen."
-sendErrorReportsDescription: "Ist diese Option aktiviert, so werden beim Auftreten von Fehlern detaillierte Fehlerinformationen an Sharkey weitergegeben, was zur Verbesserung der Qualität von Sharkey beiträgt.\nEnthalten in diesen Informationen sind u.a. die Version deines Betriebssystems, welchen Browser du verwendest und ein Verlauf deiner Aktivitäten innerhalb Sharkey."
-misskeyUpdated: "Sharkey wurde aktualisiert!"
+sendErrorReportsDescription: "Ist diese Option aktiviert, so werden beim Auftreten von Fehlern detaillierte Fehlerinformationen an Pulsar weitergegeben, was zur Verbesserung der Qualität von Pulsar beiträgt.\nEnthalten in diesen Informationen sind u.a. die Version deines Betriebssystems, welchen Browser du verwendest und ein Verlauf deiner Aktivitäten innerhalb Pulsar."
+misskeyUpdated: "Pulsar wurde aktualisiert!"
 approvalRequiredForSignup: "Genehmigung für neue Benutzer erforderlich machen"
 voteConfirmMulti: "Abstimmung für \"{choice}\" bestätigen?\n　Du kannst nach der Bestätigung weitere Optionen wählen."
 pendingUserApprovals: "Es gibt Benutzer, die auf eine Genehmigung warten."
@@ -79,8 +79,8 @@ showVisibilitySelectorOnBoost: "Sichtbarkeitswähler anzeigen"
 showVisibilitySelectorOnBoostDescription: "Zeigt den Sichtbarkeitsselektor an, wenn er beim Anklicken von Boosts aktiviert ist. Wenn er deaktiviert ist, wird die unten definierte Standardsichtbarkeit verwendet und der Selektor wird nicht angezeigt."
 visibilityOnBoost: "Standardmäßige Boost-Sichtbarkeit"
 defaultLike: "Standardmäßiges Like-Emoji"
-didYouLikeMisskey: "Gefällt dir Sharkey?"
-pleaseDonate: "Sharkey ist die kostenlose Software, die von {host} verwendet wird. Wir würden uns über Spenden freuen, damit dessen Entwicklung weitergeführt werden kann!"
+didYouLikeMisskey: "Gefällt dir Pulsar?"
+pleaseDonate: "Pulsar ist die kostenlose Software, die von {host} verwendet wird. Wir würden uns über Spenden freuen, damit dessen Entwicklung weitergeführt werden kann!"
 pleaseDonateInstance: "Du kannst {host} auch direkt unterstützen, indem du an deine Instanz-Administration spendest."
 thisPostIsMissingAltTextCancel: "Abbrechen"
 thisPostIsMissingAltTextIgnore: "Trotzdem veröffentlichen"
@@ -95,7 +95,7 @@ autoloadConversation: "Konversation bei Antworten laden"
 approvalRequiredToRegister: "Diese Instanz akzeptiert nur Benutzer, die einen Grund für die Registrierung angeben."
 limitWidthOfReaction: "Begrenzt die maximale Breite von Reaktionen und zeigt sie in verkleinerter Form an."
 oneko: "Katzenfreund :3"
-goToMisskey: "Zu Sharkey"
+goToMisskey: "Zu Pulsar"
 enableAchievements: "Errungenschaften aktivieren"
 turnOffAchievements: "Das Deaktivieren dieser Option schaltet alle Errungenschaften ab"
 enableBotTrending: "Hashtags durch Bots anreichern"
@@ -131,19 +131,19 @@ _flash:
   loadingFlashFile: "Flash-Datei laden"
   cspError: "raw.esm.sh konnte nicht aufgerufen werden, was bedeutet, dass die Content Security Policy dieser Instanz wahrscheinlich veraltet ist. Bitte kontaktiere deine Instanzadministratoren."
 _initialAccountSetting:
-  youCanContinueTutorial: "Du kannst mit dem Tutorial von {name} (Sharkey) fortfahren, oder auch abbrechen und gleich anfangen Sharkey zu verwenden."
+  youCanContinueTutorial: "Du kannst mit dem Tutorial von {name} (Pulsar) fortfahren, oder auch abbrechen und gleich anfangen Pulsar zu verwenden."
 _initialTutorial:
   _landing:
-    description: "Hier kannst du die Grundlagen und Funktionen von Sharkey lernen."
+    description: "Hier kannst du die Grundlagen und Funktionen von Pulsar lernen."
   _note:
-    description: "Beiträge auf Sharkey heißen \"Notizen\". Notizen werden chronologisch in der Chronik angeordnet und in Echtzeit aktualisiert."
+    description: "Beiträge auf Pulsar heißen \"Notizen\". Notizen werden chronologisch in der Chronik angeordnet und in Echtzeit aktualisiert."
   _timeline:
-    description1: "Sharkey verfügt über mehrere Chroniken (einige können je nach den Richtlinien des Servers nicht verfügbar sein)."
+    description1: "Pulsar verfügt über mehrere Chroniken (einige können je nach den Richtlinien des Servers nicht verfügbar sein)."
     bubble: "Du kannst Notizen von verbundenen Servern ansehen, die von den Administratoren ausgewählt wurden."
   _postNote:
-    description1: "Wenn du eine Notiz auf Sharkey veröffentlichst, stehen dir verschiedene Optionen zur Verfügung. Die Oberfläche sieht folgendermaßen aus."
+    description1: "Wenn du eine Notiz auf Pulsar veröffentlichst, stehen dir verschiedene Optionen zur Verfügung. Die Oberfläche sieht folgendermaßen aus."
   _done:
-    description: "Die hier beschriebenen Funktionen sind nur ein kleiner Teil dessen, was Sharkey zu bieten hat; um mehr darüber zu erfahren, wie du Sharkey verwenden kannst, besuche bitte {link}."
+    description: "Die hier beschriebenen Funktionen sind nur ein kleiner Teil dessen, was Pulsar zu bieten hat; um mehr darüber zu erfahren, wie du Pulsar verwenden kannst, besuche bitte {link}."
 _timelineDescription:
   bubble: "In der Bubble Chronik kannst du Notizen von verbundenen Servern ansehen, die von deinen Administratoren ausgewählt wurden."
 _serverSettings:
@@ -151,27 +151,27 @@ _serverSettings:
   sidebarLogoDescription: "Gibt das Logo an, das in Szenarien mit hoher Auflösung und dynamischer Breite anstelle des normalen Symbols verwendet werden soll."
   sidebarLogoUsageExample: "Zum Beispiel in der Seitenleiste, für Besucher und auf der \"Über\"-Seite."
 _accountMigration:
-  moveAccountDescription: "Hierdurch wird dein Konto zu einem anderen migriert.\n ・Follower von diesem Konto werden automatisch auf das neue Konto migriert\n ・Dieses Konto wird allen Nutzern, denen es derzeit folgt, nicht mehr folgen\n ・Mit diesem Konto können keine neuen Notizen usw. erstellt werden\n\nWährend die Migration der Follower automatisch erfolgt, muss die Migration der Konten, denen du folgst, manuell vorbereitet werden. Exportiere hierzu die Liste der gefolgten Nutzer über das Einstellungsmenu, und importiere diese Liste im neuen Konto. Das gleiche Verfahren gilt für erstellte Listen und stummgeschaltete oder blockierte Nutzer.\n\n(Diese Erklärung gilt für Sharkey v13.12.0 oder später. Die Funktionsweise andere ActivityPub-Software, beispielsweise Mastodon,  kann hiervon abweichen.)"
+  moveAccountDescription: "Hierdurch wird dein Konto zu einem anderen migriert.\n ・Follower von diesem Konto werden automatisch auf das neue Konto migriert\n ・Dieses Konto wird allen Nutzern, denen es derzeit folgt, nicht mehr folgen\n ・Mit diesem Konto können keine neuen Notizen usw. erstellt werden\n\nWährend die Migration der Follower automatisch erfolgt, muss die Migration der Konten, denen du folgst, manuell vorbereitet werden. Exportiere hierzu die Liste der gefolgten Nutzer über das Einstellungsmenu, und importiere diese Liste im neuen Konto. Das gleiche Verfahren gilt für erstellte Listen und stummgeschaltete oder blockierte Nutzer.\n\n(Diese Erklärung gilt für Pulsar v13.12.0 oder später. Die Funktionsweise andere ActivityPub-Software, beispielsweise Mastodon,  kann hiervon abweichen.)"
 _achievements:
   _types:
     _notes1:
-      title: "Hallo Sharkey!"
-      flavor: "Hab eine schöne Zeit mit Sharkey!"
+      title: "Hallo Pulsar!"
+      flavor: "Hab eine schöne Zeit mit Pulsar!"
     _login1000:
-      flavor: "Danke, dass du Sharkey nutzt!"
+      flavor: "Danke, dass du Pulsar nutzt!"
     _iLoveMisskey:
-      title: "I Love Sharkey"
-      description: "Sende \"I ❤ #Sharkey\""
-      flavor: "Danke, dass du Sharkey verwendest! - vom Entwicklerteam"
+      title: "I Love Pulsar"
+      description: "Sende \"I ❤ #Pulsar\""
+      flavor: "Danke, dass du Pulsar verwendest! - vom Entwicklerteam"
     _client30min:
-      description: "Habe Sharkey für mindestens 30 Minuten geöffnet"
+      description: "Habe Pulsar für mindestens 30 Minuten geöffnet"
     _client60min:
-      title: "Munter mit Sharkey"
-      description: "Habe Sharkey für mindestens 60 Minuten geöffnet"
+      title: "Munter mit Pulsar"
+      description: "Habe Pulsar für mindestens 60 Minuten geöffnet"
     _brainDiver:
-      flavor: "Sharkey-Sharkey La-Tu-Ma"
+      flavor: "Pulsar-Pulsar La-Tu-Ma"
     _tutorialCompleted:
-      title: "Sharkey Grundkurs-Diplom"
+      title: "Pulsar Grundkurs-Diplom"
 _role:
   _options:
     btlAvailable: "Kann auf die Bubble-Chronik zugreifen"
@@ -182,10 +182,10 @@ _signup:
   approvalPending: "Dein Konto wurde erstellt und wartet auf die Genehmigung."
   reasonInfo: "Bitte gib einen Grund an, warum du der Instanz beitreten möchtest."
 _aboutMisskey:
-  about: "Sharkey ist Open-Source-Software basiert auf Misskey welche von syuilo seit 2014 entwickelt wird."
-  thisIsModifiedVersion: "{name} benutzt eine modifizierte Version des originalen Sharkey."
-  translation: "Sharkey übersetzen"
-  donate_sharkey: "An Sharkey spenden"
+  about: "Pulsar ist Open-Source-Software basiert auf Misskey welche von syuilo seit 2014 entwickelt wird."
+  thisIsModifiedVersion: "{name} benutzt eine modifizierte Version des originalen Pulsar."
+  translation: "Pulsar übersetzen"
+  donate_Pulsar: "An Pulsar spenden"
   testers: "Tester"
   misskeyContributors: "Misskey Mitwirkende"
   ourLovelySponsors: "Unsere lieben Sponsoren"
@@ -199,7 +199,7 @@ _theme:
   keys:
     renote: "Boost"
 _soundSettings:
-  driveFileDurationWarnDescription: "Lange Töne können die Verwendung von Sharkey stören. Trotzdem fortfahren?"
+  driveFileDurationWarnDescription: "Lange Töne können die Verwendung von Pulsar stören. Trotzdem fortfahren?"
 _widgets:
   search: "Suche"
 _profile:
@@ -242,8 +242,8 @@ _moderationLogTypes:
 
 _mfm:
   uncommonFeature: "Dies ist keine weit verbreitete Funktion. Sie wird möglicherweise auf den meisten anderen Fediverse-Softwares, einschließlich anderer Misskey-Forks, nicht richtig angezeigt."
-  intro: "MFM ist eine Auszeichnungssprache, die bei Misskey, Sharkey, Firefish, Akkoma und anderen verwendet wird und an vielen Stellen eingesetzt werden kann. Hier kannst du eine Liste aller verfügbaren MFM-Syntaxen einsehen."
-  dummy: "Sharkey erweitert die Welt des Fediverse"
+  intro: "MFM ist eine Auszeichnungssprache, die bei Misskey, Pulsar, Firefish, Akkoma und anderen verwendet wird und an vielen Stellen eingesetzt werden kann. Hier kannst du eine Liste aller verfügbaren MFM-Syntaxen einsehen."
+  dummy: "Pulsar erweitert die Welt des Fediverse"
   mention: "Erwähnung"
   mentionDescription: "Du kannst einen Benutzer mit Hilfe des At-Symbols und des Benutzernamens erwähnen."
   hashtag: "Hashtag"
@@ -332,7 +332,7 @@ _dataRequest:
   text: "Sobald die Daten zum Herunterladen bereit sind, wird eine E-Mail an die für dieses Konto registrierte E-Mail-Adresse gesendet."
   button: "Anfordern"
 _urlPreviewSetting:
-  summaryProxyDescription: "Generierung von Vorschaubildern mit Summaly Proxy anstelle von Sharkey selbst."
+  summaryProxyDescription: "Generierung von Vorschaubildern mit Summaly Proxy anstelle von Pulsar selbst."
 _externalNavigationWarning:
   title: "Zu einer externen Website navigieren"
   description: "Verlasse {host} und gehe zu einer externen Website"
@@ -365,7 +365,7 @@ _permissions:
   "write:notes-schedule": "Geplante Notizen verfassen oder löschen"
 
 robotsTxt: "Benutzerdefinierte robots.txt"
-robotsTxtDescription: "Wenn hier Einträge hinzugefügt werden, wird die mit Sharkey mitgelieferte Standard-Robots.txt überschrieben."
+robotsTxtDescription: "Wenn hier Einträge hinzugefügt werden, wird die mit Pulsar mitgelieferte Standard-Robots.txt überschrieben."
 
 defaultCW: "Standard-Inhaltswarnung für neue Beiträge"
 defaultCWDescription: "Der hier angegebene Wert wird automatisch als Inhaltswarnung für alle neuen Beiträge und Antworten ausgefüllt."

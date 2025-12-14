@@ -51,8 +51,8 @@ jobs:
         include:
           - arch: amd64
             runner: ubuntu-latest
-          - arch: arm64
-            runner: ubuntu-latest-arm
+          # - arch: arm64
+          #   runner: ubuntu-latest-arm
     permissions:
       contents: read
       packages: write
@@ -107,6 +107,6 @@ jobs:
         run: |
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           docker buildx imagetools create -t ${{ env.REGISTRY }}/${REPO_LOWER}:${{ needs.get-image-tag.outputs.tag }} \
-            ${{ env.REGISTRY }}/${REPO_LOWER}:${{ needs.get-image-tag.outputs.version }}-amd64 \
-            ${{ env.REGISTRY }}/${REPO_LOWER}:${{ needs.get-image-tag.outputs.version }}-arm64
+            ${{ env.REGISTRY }}/${REPO_LOWER}:${{ needs.get-image-tag.outputs.version }}-amd64
+#           \ ${{ env.REGISTRY }}/${REPO_LOWER}:${{ needs.get-image-tag.outputs.version }}-arm64
 
