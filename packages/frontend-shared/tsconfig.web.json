@@ -14,7 +14,9 @@
 		"strictFunctionTypes": true,
 		"paths": {
 			"@/*": ["./*"],
-			"@@/*": ["./*"]
+			"@@/*": ["./*"],
+			"misskey-js": ["../misskey-js/src"],
+			"misskey-js/*": ["../misskey-js/src/*"]
 		},
 		"typeRoots": [
 			"./@types",
