@@ -34,6 +34,10 @@ const menuIndicated = computed(() => {
 
 const rootElHeight = ref(0);
 
+const isInChat = computed(() => {
+	return mainRouter.currentRoute.value.path.startsWith('/chat');
+});
+
 function handleItemClick(item: string) {
 	const def = navbarItemDef[item];
 	// Special handling for widgets
@@ -75,7 +79,7 @@ watch(rootEl, () => {
 		</button>
 	</div>
 
-	<button :class="$style.floatingPost" class="_button" @click="os.post()">
+	<button v-if="!isInChat" :class="$style.floatingPost" class="_button" @click="os.post()">
 		<i class="ti ti-pencil"></i>
 	</button>
 </div>
