@@ -16,6 +16,8 @@ Nexirift Pulsar is a fork of Sharkey. Our main goal is to implement features tha
 	- Show or hide labels for all tabs
 - Post form textarea resizes automatically
 - Added a toggle for the widgets sidebar
+- Fix revoked shared tokens causing an error
+- Fix users not showing up in some searches
 
 # Sharkey README
 
