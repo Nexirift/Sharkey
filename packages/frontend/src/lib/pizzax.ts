@@ -174,7 +174,13 @@ export class Pizzax<T extends StateDef> {
 
 							return set(this.registryCacheKeyName, cache);
 						})
-						.then(() => resolve());
+						.then(() => resolve())
+						.catch(err => {
+							// On error, just use defaults and resolve anyway
+							// The global error handler will show the auth dialog if needed
+							console.error('Failed to load registry:', err);
+							resolve();
+						});
 				}, 1);
 			} else {
 				resolve();
