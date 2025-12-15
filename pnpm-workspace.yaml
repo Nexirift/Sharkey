@@ -1,12 +1,12 @@
 packages:
+  - packages/misskey-js
+  - packages/misskey-js/generator
   - packages/backend
   - packages/frontend-shared
   - packages/frontend
   - packages/frontend-embed
   - packages/sw
   - packages/megalodon
-  - packages/misskey-js
-  - packages/misskey-js/generator
   - packages/misskey-reversi
   - packages/misskey-bubble-game
 
