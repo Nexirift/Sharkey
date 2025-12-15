@@ -184,6 +184,7 @@ onUnmounted(() => {
 		padding: 0 12px;
 	}
 	.tabs {
+		margin-left: auto;
 		margin-right: auto;
 	}
 

@@ -6220,6 +6220,14 @@ export interface Locale extends ILocale {
              * Timeline tabs
              */
             "timelineTabs": string;
+            /**
+             * Show icon only tabs
+             */
+            "iconOnlyTabs": string;
+            /**
+             * Show only icons for timeline tabs to save space. The selected tab will still show it's label.
+             */
+            "iconOnlyTabsDescription": string;
         };
         "_postNote": {
             /**

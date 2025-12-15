@@ -16,6 +16,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 	<div :class="$style.root">
 		<MkInfo>{{ i18n.ts._initialTutorial._timeline.customizeTabsDescription }}</MkInfo>
 		
+		<MkSwitch v-model="prefer.r.timelineTabIconOnly.value">
+			<template #label>{{ i18n.ts._initialTutorial._timeline.iconOnlyTabs }}</template>
+			<template #caption>{{ i18n.ts._initialTutorial._timeline.iconOnlyTabsDescription }}</template>
+		</MkSwitch>
+		
 		<MkContainer :showHeader="false">
 			<Sortable
 				v-model="items"
@@ -26,7 +31,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				@end="e => e.item.classList.remove('active')"
 			>
 				<template #item="{element}">
-					<div :class="$style.item">
+					<div :class="[$style.item, { [$style.itemUnavailable]: !isTimelineAvailable(element.type) }]">
 						<button class="_button" :class="$style.itemHandle"><i class="ti ti-menu"></i></button>
 						<i class="ti-fw" :class="[$style.itemIcon, getTabIcon(element.type)]"></i>
 						<span :class="$style.itemText">{{ getTabLabel(element.type) }}</span>
@@ -56,6 +61,7 @@ import { computed, defineAsyncComponent, ref, shallowRef } from 'vue';
 import MkButton from '@/components/MkButton.vue';
 import MkContainer from '@/components/MkContainer.vue';
 import MkInfo from '@/components/MkInfo.vue';
+import MkSwitch from '@/components/MkSwitch.vue';
 import MkModalWindow from '@/components/MkModalWindow.vue';
 import * as os from '@/os.js';
 import { i18n } from '@/i18n.js';
@@ -116,6 +122,15 @@ function getTabLabel(type: string): string {
 	}
 }
 
+function isTimelineAvailable(type: string): boolean {
+	// Non-basic timelines (lists, antennas, etc.) are always available
+	if (!isBasicTimeline(type)) {
+		return true;
+	}
+	// Check if basic timeline is available based on user policies
+	return isAvailableBasicTimeline(type as BasicTimelineType);
+}
+
 function toggleVisibility(type: string, visible: boolean) {
 	const item = items.value.find(i => i.type === type);
 	if (item) {
@@ -170,6 +185,10 @@ async function reset() {
 	&:global(.active) {
 		z-index: 1;
 	}
+}
+
+.itemUnavailable {
+	opacity: 0.5;
 }
 
 .itemHandle {

@@ -328,7 +328,7 @@ const headerTabs = computed(() => {
 		key: 'list:' + l.id,
 		title: l.name,
 		icon: 'ti ti-star',
-		iconOnly: true,
+		iconOnly: prefer.r.timelineTabIconOnly.value && ('list:' + l.id) !== src.value,
 	})));
 	
 	// Process configured tabs
@@ -342,35 +342,35 @@ const headerTabs = computed(() => {
 					key: tab.id,
 					title: i18n.ts._timelines[tab.id],
 					icon: basicTimelineIconClass(tab.id as BasicTimelineType),
-					iconOnly: true,
+					iconOnly: prefer.r.timelineTabIconOnly.value && tab.id !== src.value,
 				});
 			}
 		} else if (tab.id === 'lists') {
 			resultTabs.push({
 				icon: 'ti ti-list',
 				title: i18n.ts.lists,
-				iconOnly: true,
+				iconOnly: prefer.r.timelineTabIconOnly.value,
 				onClick: chooseList,
 			});
 		} else if (tab.id === 'antennas') {
 			resultTabs.push({
 				icon: 'ti ti-antenna',
 				title: i18n.ts.antennas,
-				iconOnly: true,
+				iconOnly: prefer.r.timelineTabIconOnly.value,
 				onClick: chooseAntenna,
 			});
 		} else if (tab.id === 'channels') {
 			resultTabs.push({
 				icon: 'ti ti-device-tv',
 				title: i18n.ts.channel,
-				iconOnly: true,
+				iconOnly: prefer.r.timelineTabIconOnly.value,
 				onClick: chooseChannel,
 			});
 		} else if (tab.id === 'following') {
 			resultTabs.push({
 				icon: 'ph-user-check ph-bold ph-lg',
 				title: i18n.ts.following,
-				iconOnly: true,
+				iconOnly: prefer.r.timelineTabIconOnly.value,
 				onClick: () => router.push('/following-feed'),
 			});
 		}
@@ -389,7 +389,7 @@ const headerTabsWhenNotLogin = computed(() => {
 			key: tab.id,
 			title: i18n.ts._timelines[tab.id],
 			icon: basicTimelineIconClass(tab.id as BasicTimelineType),
-			iconOnly: true,
+			iconOnly: prefer.r.timelineTabIconOnly.value && tab.id !== src.value,
 		})) as Tab[];
 });
 

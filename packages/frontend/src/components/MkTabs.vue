@@ -161,7 +161,8 @@ onUnmounted(() => {
 .tabs {
 	--height: 40px;
 
-	display: block;
+	display: flex;
+	justify-content: center;
 	position: relative;
 	margin: 0;
 	height: var(--height);

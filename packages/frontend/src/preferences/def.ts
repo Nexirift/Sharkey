@@ -232,6 +232,9 @@ export const PREF_DEF = {
 	showFixedPostFormInChannel: {
 		default: false,
 	},
+	timelineTabIconOnly: {
+		default: true,
+	},
 	showAccountMenuOnAvatarClick: {
 		default: false,
 	},

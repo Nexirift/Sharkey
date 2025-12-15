@@ -185,7 +185,8 @@ onUnmounted(() => {
 
 <style lang="scss" module>
 .tabs {
-	display: block;
+	display: flex;
+	justify-content: center;
 	position: relative;
 	margin: 0;
 	height: var(--height);

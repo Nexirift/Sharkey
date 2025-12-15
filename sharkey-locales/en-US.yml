@@ -212,6 +212,8 @@ _initialTutorial:
     customizeTabs: "Customize timeline tabs"
     customizeTabsDescription: "Show, hide, and reorder timeline tabs to customize your timeline experience."
     timelineTabs: "Timeline tabs"
+    iconOnlyTabs: "Show icon only tabs"
+    iconOnlyTabsDescription: "Show only icons for timeline tabs to save space. The selected tab will still show it's label."
   _postNote:
     description1: "When posting a note on Pulsar, various options are available. The posting form looks like this."
     _visibility:
